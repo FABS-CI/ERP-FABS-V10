@@ -1,0 +1,77 @@
+{
+  "summary": "Audit final de régression V10 (11 sprints) — Backend 22/22 PASS (100%), Frontend 12/13 routes PageHeader OK. Bug Départements CONFIRMÉ CORRIGÉ : la page /rh/departements affiche bien 7 lignes (Commercial, Comptabilité, Direction Générale, Informatique, Logistique, Magasin & Stock, Secrétariat & Administration). Sidebar V10 accordéon avec 8 groupes opérationnel. Système de Favoris (PageHeader btn-favorite → sidebar section ⭐ FAVORIS + persistance localStorage 'fabs.favs') fonctionne en add/remove. Workflow commercial : btn-generer-facture présent et orange (#FF6200) sur commande 'preparee', endpoints POST /api/factures/generer-depuis-commande et POST /api/proformas/{id}/convertir-facture existent et répondent correctement (400/404 sur IDs inexistants, pas 405). Paie (net, CNPS, ITS, CMU), Notifications /count, FNE sandbox dashboard, Health tous OK. UN BUG BACKEND CRITIQUE découvert : GET /api/colisage/expeditions retourne 500 (ValidationError Pydantic — documents en base manquent reference, commande_id, client_id, adresse_livraison, transporteur_id, date_expedition, date_livraison_reelle, created_by → la page /expeditions s'affiche mais le tableau reste vide).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/colisage/expeditions",
+        "issue": "500 Internal Server Error — pydantic_core.ValidationError: 8 champs requis manquants dans ExpeditionOut (reference, commande_id, client_id, adresse_livraison, transporteur_id, date_expedition, date_livraison_reelle, created_by). Cause RCA : la collection MongoDB 'expeditions' contient des documents legacy/seed avec un schéma différent (seul expedition_id est présent), et ExpeditionOut déclare ces 8 champs comme Required au lieu d'Optional. Conséquence : la page /expeditions charge mais la table reste vide à cause de l'erreur 500. Fix recommandé : (a) marquer ces champs comme Optional[...] = None dans ExpeditionOut OU (b) appliquer une migration de données pour backfill, OU (c) filtrer côté list_expeditions en excluant les documents non conformes.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/health",
+        "issue": "status='degraded' car Redis disconnected (port 6379 unavailable). MongoDB OK (connected). Impact : WebSocket /api/notifications/ws échoue à se connecter (warning console répété). Non-bloquant car pas de feature critique dépend de Redis dans cet env."
+      },
+      {
+        "endpoint": "GET /api/notifications/count-unread",
+        "issue": "L'endpoint demandé dans la PR n'existe pas — la route réelle est /api/notifications/count (renvoie {count: N}). Le frontend appelle déjà le bon endpoint. À corriger uniquement dans la spec de la PR."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PageHeader sur /rh",
+        "issue": "Le bouton data-testid='btn-back' est absent sur la route parente /rh (les 4 autres testids OK : btn-home, btn-dashboard, btn-favorite, page-title). Toutes les sous-routes /rh/departements, /rh/missions, /rh/conges, /rh/absences ont bien btn-back. Probablement un masquage volontaire au niveau racine du module, mais non documenté dans la PR.",
+        "selector": "[data-testid='btn-back']",
+        "priority": "LOW"
+      },
+      {
+        "component": "Modale 'Nouveau Véhicule' sur /fleet",
+        "issue": "Aucun label avec * détecté dans la modale ouverte. Soit aucun champ n'est marqué obligatoire visuellement avec un astérisque (incohérence UX), soit le marquage * a été omis. Le bouton submit est bien orange #FF6200.",
+        "selector": "[role='dialog'] label",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Liste des expéditions (/expeditions)",
+        "issue": "La page affiche le PageHeader et le bouton 'Nouvelle Expédition' mais le tableau reste vide à cause du 500 backend (cf. critique). Aucun message d'erreur n'est affiché à l'utilisateur — manque un toast/banner d'erreur de chargement.",
+        "affected_selectors": ["table tbody"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_v10_audit.py",
+    "/app/test_reports/pytest/pytest_v10_audit.xml"
+  ],
+  "action_items": [
+    "[CRITIQUE] Corriger ExpeditionOut dans colisage_module.py : passer reference, commande_id, client_id, adresse_livraison, transporteur_id, date_expedition, date_livraison_reelle, created_by en Optional[...] = None (ou faire une migration MongoDB sur la collection expeditions pour backfill). Sinon /api/colisage/expeditions et la page /expeditions sont inutilisables dès qu'il existe un document legacy.",
+    "[MINEUR] Investiguer pourquoi btn-back est absent sur /rh (route parente). Si voulu, documenter ; sinon ajouter le testid de manière homogène.",
+    "[MINEUR] Vérifier que la modale 'Nouveau Véhicule' affiche bien des * sur les champs obligatoires (immatriculation, type, etc.) pour respecter le standard V10.",
+    "[INFO] Activer Redis dans l'env preview ou désactiver proprement le WebSocket /api/notifications/ws pour supprimer les warnings console.",
+    "[INFO] Ajouter un toast d'erreur sur la page Expéditions en cas d'échec du fetch list (pour ne pas laisser l'utilisateur devant un tableau silencieusement vide)."
+  ],
+  "critical_code_review_comments": [
+    "Bug Départements RCA confirmé corrigé : Departements.jsx L3 importe désormais 'listDepartements' (pluriel correct) depuis rhApi. L'API renvoie 7 départements et l'UI rend bien les 7 lignes.",
+    "PageHeader V10 (4 boutons + titre) bien câblé sur 12/13 routes testées via data-testid. Persistance des favoris via localStorage 'fabs.favs' + event bus 'fabs-favs-changed' fonctionne (ajout sur /produits crée la section ⭐ FAVORIS en sidebar, retrait la fait disparaître).",
+    "Sidebar V10 : 8 groupes accordéon (Tableau de bord, Gestion Commerciale, Stocks & Logistique, Finances, Ressources Humaines, Notifications, Documents & Sauvegardes, Administration) visibles et cliquables.",
+    "Bug pydantic ExpeditionOut : modèle Pydantic trop strict vs schéma réel des documents existants. À corriger par Optional ou migration. L'API doit dégrader gracieusement (ex: yield None + log) au lieu de 500 brut.",
+    "Effet de bord noté en iter9 (READ_ROLES partagé entre /utilisateurs et /parametres) non re-testé cette itération — toujours à clarifier avec le PRD si DG doit lire /api/parametres."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v10_audit.py (créé — 22 tests)"
+  ],
+  "success_rate": {
+    "backend": "100% sur la suite ciblée (22/22) — sauf endpoint /api/colisage/expeditions découvert défaillant hors suite",
+    "frontend": "92% (12/13 routes PageHeader complètes, bug Départements corrigé, sidebar+favoris OK, workflow commercial OK)"
+  },
+  "test_credentials": "pissken@editionsfabsci.com / Admin@2025 (super_admin) — OK",
+  "seed_data_creation": "Aucune nouvelle donnée seed créée. Les 7 départements et la commande cmd_8666a66ccac5 (statut 'preparee') existent déjà dans l'environnement.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Suite de régression V10 dans /app/backend/tests/test_v10_audit.py (22 tests, ~3s). Couvre health, login super, départements UI/API, paie, notifications, FNE sandbox, workflow commercial (génération facture + conversion proforma), et 12 endpoints de page. Pour le bug critique /api/colisage/expeditions : reproduire avec `curl -b cookie.txt $URL/api/colisage/expeditions?q=&statut=` après login → 500 avec stacktrace pydantic visible dans /var/log/supervisor/backend.err.log. Fix recommandé : Optional[...] sur les champs problématiques de ExpeditionOut dans /app/backend/colisage_module.py (ou un module équivalent contenant le router /api/colisage). Pour /rh manquant btn-back : vérifier PageHeader.jsx — peut-être logique 'hideBack' sur module-root.",
+  "rca of the issue": "RCA Bug Départements (vérifié corrigé) : avant le fix, Departements.jsx faisait `import { listDepartments } from '../services/rhApi'` (typo anglaise sans 'e'). La fonction exportée s'appelle `listDepartements` (français). Résultat : `listDepartments` était `undefined`, l'appel `await listDepartements(...)` jetait, le catch affichait un toast d'erreur et `departements` restait `[]` → tableau vide en UI. Le fix L3 (import du bon nom 'listDepartements') restaure l'appel API et le rendu des 7 lignes. RCA Bug Expéditions (NOUVEAU, à corriger) : ExpeditionOut Pydantic v2 marque 8 champs comme Required mais les documents historiques dans MongoDB n'ont que `expedition_id` + `created_at`. À chaque GET /api/colisage/expeditions, la conversion `ExpeditionOut(**d)` lève ValidationError → FastAPI répond 500. Reproduction : login super → GET /api/colisage/expeditions?q=&statut= → 500. Mitigation immédiate : passer ces 8 champs en Optional[type] = None dans le modèle Pydantic, et utiliser `ExpeditionOut.model_validate(d, strict=False)` ou un try/except qui skip les documents corrompus avec un log warning."
+}

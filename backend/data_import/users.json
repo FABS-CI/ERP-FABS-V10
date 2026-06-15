@@ -1,0 +1,74 @@
+[
+  {
+    "user_id": "USR00001",
+    "nom": "JOACHIN",
+    "email": "joachin@editionsfabsci.com",
+    "role": "responsable_magasinier",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152136+00:00"
+  },
+  {
+    "user_id": "USR00002",
+    "nom": "MME AHOMAN DADJE",
+    "email": "dadjelarissa@editionsfabsci.com",
+    "role": "secretariat",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152154+00:00"
+  },
+  {
+    "user_id": "USR00003",
+    "nom": "YAKE BEN",
+    "email": "yakeben@editionsfabsci.com",
+    "role": "service_logistique",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152160+00:00"
+  },
+  {
+    "user_id": "USR00004",
+    "nom": "NATACHA KOFFI",
+    "email": "natachakoffi@editionsfabsci.com",
+    "role": "comptable",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152164+00:00"
+  },
+  {
+    "user_id": "USR00005",
+    "nom": "NIANGORAN GEOGIE",
+    "email": "niangorangeorgie@editionsfabsci.com",
+    "role": "gestionnaire_stock",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152167+00:00"
+  },
+  {
+    "user_id": "USR00006",
+    "nom": "DETY MICHEL",
+    "email": "detymilchel@editionsfabsci.com",
+    "role": "directeur_commercial",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152171+00:00"
+  },
+  {
+    "user_id": "USR00007",
+    "nom": "ALI MAMIN",
+    "email": "ali.mamin@editionsfabsci.com",
+    "role": "directeur_general",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152174+00:00"
+  },
+  {
+    "user_id": "USR00008",
+    "nom": "AKE APPIA YVES DORIS",
+    "email": "pissken@editionsfabsci.com",
+    "role": "super_admin",
+    "password": "password123",
+    "actif": true,
+    "created_at": "2026-06-01T04:27:38.152177+00:00"
+  }
+]

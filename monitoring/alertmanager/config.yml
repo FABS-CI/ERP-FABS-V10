@@ -1,0 +1,78 @@
+# Alertmanager Configuration for ERP FABS-CI
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@editionsfabsci.com'
+  smtp_auth_username: 'alerts@editionsfabsci.com'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+
+# Route configuration
+route:
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      continue: true
+    
+    # Warning alerts - email only
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      continue: true
+    
+    # Info alerts - no immediate action
+    - match:
+        severity: info
+      receiver: 'info-receiver'
+
+# Receivers
+receivers:
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'admin@editionsfabsci.com'
+        headers:
+          Subject: '[ERP Alert] {{ .GroupLabels.alertname }}'
+  
+  - name: 'critical-receiver'
+    email_configs:
+      - to: 'admin@editionsfabsci.com, pissken@editionsfabsci.com'
+        headers:
+          Subject: '[CRITICAL] ERP Alert - {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#erp-alerts'
+        title: 'CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+  
+  - name: 'warning-receiver'
+    email_configs:
+      - to: 'admin@editionsfabsci.com'
+        headers:
+          Subject: '[WARNING] ERP Alert - {{ .GroupLabels.alertname }}'
+  
+  - name: 'info-receiver'
+    email_configs:
+      - to: 'admin@editionsfabsci.com'
+        headers:
+          Subject: '[INFO] ERP Alert - {{ .GroupLabels.alertname }}'
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning alerts if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']
+
+# Alert rules
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

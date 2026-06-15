@@ -1,0 +1,2234 @@
+{
+  "timestamp": "2026-06-05T21:34:44.779110",
+  "project_root": "C:\\Users\\SMART PISSKEN\\Desktop\\ERP-fabs-ci-v7",
+  "total_issues": 278,
+  "critical_issues": 94,
+  "warning_issues": 184,
+  "error_issues": 0,
+  "issues": [
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\clients_module.py",
+      "line": 495,
+      "message": "Potential SQL injection pattern",
+      "timestamp": "2026-06-05T21:34:42.827949"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 24,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.898886"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 25,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.899251"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 26,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.899528"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 27,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.900030"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 46,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.900622"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 47,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.900910"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 48,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.901442"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 49,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.901837"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 50,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.902300"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 51,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.902551"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 52,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.905510"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\create_super_admin.py",
+      "line": 53,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.906071"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 200,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.966258"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 203,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.966628"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 206,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.967006"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 209,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.967438"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 212,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.968750"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 215,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.969528"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 218,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.974658"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 221,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.976111"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 224,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.976660"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 227,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.977309"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 230,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.977971"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 232,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.978347"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\export_data_to_json.py",
+      "line": 233,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:42.978755"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\fne_module.py",
+      "line": 406,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.058737"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\fne_module.py",
+      "line": 407,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.059077"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\fne_queue.py",
+      "line": 31,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.068548"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\fne_queue.py",
+      "line": 32,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.068862"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 116,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.073021"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 135,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.073769"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 148,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.074338"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 163,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.075078"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 184,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.075854"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 201,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.076433"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 229,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.077789"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 299,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.080193"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 321,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.080928"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 379,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.081897"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 432,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.084180"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\fne_queue.py",
+      "line": 510,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.087583"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 190,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.100478"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 192,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.100814"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 197,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.101270"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 200,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.101951"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 203,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.102371"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 206,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.104423"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 209,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.105744"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 212,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.106123"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 215,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.106540"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 218,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.107402"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 221,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.108119"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 224,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.108433"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_data.py",
+      "line": 226,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.110551"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 149,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.113979"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 156,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.114537"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 167,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.115171"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 175,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.115902"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 177,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.116626"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 178,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.116982"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 181,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.117398"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 190,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.117927"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\import_real_clients.py",
+      "line": 236,
+      "message": "Potential SQL injection pattern",
+      "timestamp": "2026-06-05T21:34:43.118883"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 246,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.123140"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 248,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.123716"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\import_real_clients.py",
+      "line": 249,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.125404"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\products_module.py",
+      "line": 553,
+      "message": "Potential SQL injection pattern",
+      "timestamp": "2026-06-05T21:34:43.397905"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 20,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.642988"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 23,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.673882"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 75,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.701504"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 77,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.706035"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 80,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.706917"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 127,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.709305"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 129,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.709708"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 132,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.710576"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 210,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.713912"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 212,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.714298"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 215,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.714785"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 277,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.717682"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 279,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.718287"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 281,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.723227"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 282,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.723649"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 283,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.723928"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 284,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.724171"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 285,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.724410"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 286,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.724649"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 287,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.724885"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 288,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.725131"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 289,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.725374"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_demo_data.py",
+      "line": 290,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.725631"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_products_fabs.py",
+      "line": 73,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.730751"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\seed_products_fabs.py",
+      "line": 95,
+      "message": "Potential SQL injection pattern",
+      "timestamp": "2026-06-05T21:34:43.732858"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_products_fabs.py",
+      "line": 97,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.733276"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_products_fabs.py",
+      "line": 100,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.734202"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\seed_products_fabs.py",
+      "line": 102,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.734670"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\server.py",
+      "line": 93,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.743325"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\server.py",
+      "line": 96,
+      "message": "Hardcoded SECRET detected",
+      "timestamp": "2026-06-05T21:34:43.743682"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\server.py",
+      "line": 490,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.760354"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "backend\\server.py",
+      "line": 645,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:43.767997"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 27,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.857613"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 28,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.909446"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 29,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.912742"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 30,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.914723"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 33,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.916712"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 51,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.922386"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 52,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.923345"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 55,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.924417"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 64,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.925145"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 65,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.925976"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 68,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.926917"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 84,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.928062"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 85,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.928810"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 88,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.930010"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 92,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.930536"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 96,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.931287"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 100,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.931816"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 114,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.932662"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 115,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.932988"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 117,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.933543"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 118,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.934100"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 119,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.938492"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 120,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.939430"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 121,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.940990"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 122,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.941403"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 123,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.942369"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 124,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.943240"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 125,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.943775"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 126,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.944761"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 136,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.945733"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 137,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.946076"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 140,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.948030"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 158,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.948791"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 159,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.949114"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 162,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.949666"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 171,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.950418"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 172,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.951009"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 175,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.951547"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 191,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.956246"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 192,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.956618"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 195,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.957292"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 197,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.957783"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 198,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.958081"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\add_fne_fields.py",
+      "line": 200,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.958471"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 27,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.959833"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 28,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.960190"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 29,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.960543"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 30,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.961256"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 33,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.961685"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 53,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.962561"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 55,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.962850"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 62,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.963216"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 65,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.964040"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 93,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.965304"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 95,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.965611"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 104,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.966228"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 107,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.966809"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 126,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.970716"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 132,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.972045"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 135,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.972481"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 141,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.972901"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 143,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.973223"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 149,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.973638"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 151,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.973900"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 153,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.974128"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 154,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.974416"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 155,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.974710"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 156,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.975006"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 157,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.975352"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 158,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.975591"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 159,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.975811"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 160,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.976037"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 161,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.976404"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 162,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.977651"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 163,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.977945"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 164,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.978187"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 165,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.978418"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 173,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.978849"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 176,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.979240"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 179,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.979619"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 182,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.980410"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "backend\\migrations\\create_fournisseurs_approvisionnements.py",
+      "line": 184,
+      "message": "Debug print statement found",
+      "timestamp": "2026-06-05T21:34:43.980797"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 92,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.022605"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 100,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.023178"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 108,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.024168"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 116,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.025356"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 124,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.025862"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 132,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.026595"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 140,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.027107"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 148,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.027622"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 156,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.027936"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 164,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.028283"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 172,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.029658"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 182,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.030326"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 190,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.030706"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 200,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.031193"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 208,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.031510"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 216,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.032345"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 226,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.032936"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 234,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.037904"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 242,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.038733"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 252,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.039521"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 262,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.040022"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 270,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.040371"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 280,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.040894"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 288,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.041570"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 298,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.042268"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 308,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.043402"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 318,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.049546"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 446,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.055306"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 466,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.056973"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\App.js",
+      "line": 476,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.057673"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\src\\index.js",
+      "line": 11,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.072252"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\src\\index.js",
+      "line": 13,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.074761"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 5,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.080495"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 6,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.094587"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 7,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.096218"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 8,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.098166"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 9,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.099757"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 10,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.107564"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 11,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.108027"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 12,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.108860"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 13,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.109328"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 14,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.109796"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 15,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.110532"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 16,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.111093"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 17,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.111621"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 18,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.112031"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 19,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.113705"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 20,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.115600"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 21,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.117711"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 22,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.124378"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 23,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.125606"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 24,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.125993"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 25,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.126714"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 26,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.127118"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 27,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.127702"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 28,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.128072"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 29,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.128437"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\constants\\permissions.js",
+      "line": 30,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.129212"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\hooks\\useDarkMode.js",
+      "line": 3,
+      "message": "Hardcoded KEY detected",
+      "timestamp": "2026-06-05T21:34:44.134144"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 24,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.201157"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 168,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.207281"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 169,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.207698"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 170,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.208347"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 171,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.208876"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 172,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.209360"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 173,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.209802"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Code Quality",
+      "file": "frontend\\plugins\\health-check\\health-endpoints.js",
+      "line": 174,
+      "message": "Console.log statement found",
+      "timestamp": "2026-06-05T21:34:44.210195"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\ProtectedRoute.jsx",
+      "line": 10,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.217282"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ClientDetail.jsx",
+      "line": 16,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.255030"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ClientDetail.jsx",
+      "line": 17,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.255392"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ClientDetail.jsx",
+      "line": 18,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.255812"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ClientDetail.jsx",
+      "line": 19,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.256172"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ClientDetail.jsx",
+      "line": 20,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.256559"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ProduitDetail.jsx",
+      "line": 20,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.471231"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ProduitDetail.jsx",
+      "line": 21,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.472658"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\ProduitDetail.jsx",
+      "line": 22,
+      "message": "Hardcoded key detected",
+      "timestamp": "2026-06-05T21:34:44.473536"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 236,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.515076"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 239,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.516761"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 251,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.519900"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 252,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.521978"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 273,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.523312"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\pages\\Rapports.jsx",
+      "line": 277,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.524117"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 47,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.593054"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 56,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.609603"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 79,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.611243"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 82,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.612425"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 100,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.614140"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 101,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.615365"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 139,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.616765"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "frontend\\src\\components\\dashboard\\Charts.jsx",
+      "line": 144,
+      "message": "Hardcoded Key detected",
+      "timestamp": "2026-06-05T21:34:44.617573"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "docker-compose.yml",
+      "line": 11,
+      "message": "Default password detected - must be changed in production",
+      "timestamp": "2026-06-05T21:34:44.743818"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "docker-compose.yml",
+      "line": 52,
+      "message": "Default password detected - must be changed in production",
+      "timestamp": "2026-06-05T21:34:44.745420"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "Security",
+      "file": "docker-compose.yml",
+      "line": 55,
+      "message": "Default password detected - must be changed in production",
+      "timestamp": "2026-06-05T21:34:44.747644"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Configuration",
+      "file": "backend/env.example",
+      "line": 25,
+      "message": "Placeholder value detected - must be configured in production",
+      "timestamp": "2026-06-05T21:34:44.756567"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Configuration",
+      "file": "backend/env.example",
+      "line": 41,
+      "message": "Placeholder value detected - must be configured in production",
+      "timestamp": "2026-06-05T21:34:44.757596"
+    },
+    {
+      "severity": "WARNING",
+      "category": "Configuration",
+      "file": "backend/env.example",
+      "line": 45,
+      "message": "Placeholder value detected - must be configured in production",
+      "timestamp": "2026-06-05T21:34:44.758714"
+    }
+  ]
+}

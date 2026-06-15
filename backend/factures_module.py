@@ -1,0 +1,1187 @@
+"""
+Module Factures — Sprint 7
+- CRUD complet sur les collections MongoDB `factures` et `facture_lignes`
+- Référence auto-incrémentée FABS-FC-26-27-XXXX (factures) et FABS-AV-26-27-XXXX (avoirs)
+- Type facture : facture / avoir
+- Statut : brouillon, emise, partiellement_payee, payee, annulee
+- Génération automatique depuis commandes validées/préparées
+- Gestion paiements (montant_regle, montant_restant)
+- Génération avoirs (credit notes)
+- Génération automatique écritures comptables
+- RBAC : 
+    READ = {super_admin, DG, commercial, comptable, secrétariat}
+    WRITE = {super_admin, DG, commercial, comptable}
+    PAYMENT = {super_admin, DG, comptable}
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone, date as date_type
+from typing import Literal, Optional, List
+from decimal import Decimal
+import uuid
+import logging
+import os
+
+from fastapi import APIRouter, HTTPException, Header, Query, Request
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel, Field, field_validator
+
+logger = logging.getLogger("fabsci.factures")
+
+# Import des fonctions de génération d'écritures comptables
+from comptabilite_module import (
+    generate_ecriture_comptable_facture,
+    generate_ecriture_comptable_avoir
+)
+
+# RBAC
+READ_ROLES = {
+    "super_admin", "directeur_general", "directeur_commercial",
+    "comptable", "secretariat",
+}
+WRITE_ROLES = {
+    "super_admin", "directeur_general",
+    "directeur_commercial", "comptable",
+}
+PAYMENT_ROLES = {"super_admin", "directeur_general", "comptable"}
+
+TypeFacture = Literal["facture", "avoir"]
+Statut = Literal["brouillon", "emise", "partiellement_payee", "payee", "annulee"]
+
+TVA_RATE = 0.18  # 18% TVA in Côte d'Ivoire
+
+
+def _ensure(condition: bool, status: int, detail: str) -> None:
+    if not condition:
+        raise HTTPException(status_code=status, detail=detail)
+
+
+async def _send_email_smtp(destinataire: str, sujet: str, corps_html: str, corps_texte: str) -> dict:
+    """Envoyer email via SMTP"""
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = os.getenv("SMTP_PORT", "587")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM")
+    
+    if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
+        return {"success": False, "error": "Configuration SMTP manquante"}
+    
+    try:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = sujet
+        msg["From"] = smtp_from
+        msg["To"] = destinataire
+        
+        msg.attach(MIMEText(corps_texte, "plain", "utf-8"))
+        msg.attach(MIMEText(corps_html, "html", "utf-8"))
+        
+        with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+        
+        return {"success": True, "message_id": f"email_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"}
+    except Exception as e:
+        logger.error(f"Erreur SMTP: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+async def next_facture_reference(db: AsyncIOMotorDatabase, type_facture: TypeFacture) -> str:
+    """Generate FABS-FC-26-27-XXXX (facture) or FABS-AV-26-27-XXXX (avoir)"""
+    counter_id = "factures" if type_facture == "facture" else "avoirs"
+    prefix = "FABS-FC-26-27" if type_facture == "facture" else "FABS-AV-26-27"
+    
+    doc = await db.counters.find_one_and_update(
+        {"_id": counter_id},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True,
+    )
+    seq = doc["seq"]
+    return f"{prefix}-{seq:04d}"
+
+
+# ---------------------------------------------------------------------------
+# Schemas
+# ---------------------------------------------------------------------------
+class LigneFactureIn(BaseModel):
+    produit_id: str
+    designation: str  # Product title/description
+    quantite: int = Field(..., gt=0)
+    prix_unitaire: float = Field(..., gt=0)
+    remise_ligne: float = Field(default=0, ge=0, le=100)
+
+    @property
+    def montant_ht(self) -> float:
+        base = self.quantite * self.prix_unitaire
+        return base * (1 - self.remise_ligne / 100)
+
+
+class LigneFactureOut(BaseModel):
+    ligne_id: str
+    facture_id: str
+    produit_id: str
+    designation: str
+    quantite: int
+    prix_unitaire: float
+    remise_ligne: float
+    montant_ht: float
+
+
+class FactureIn(BaseModel):
+    client_id: str
+    commande_id: Optional[str] = None
+    date_facture: Optional[str] = None  # ISO date YYYY-MM-DD
+    date_echeance: Optional[str] = None
+    remise_globale: float = Field(default=0, ge=0, le=100)
+    taux_tva: float = Field(default=18.0, ge=0, le=100, description="Taux TVA en % (0 pour exonérés)")
+    notes: Optional[str] = Field(default=None, max_length=1000)
+    lignes: List[LigneFactureIn] = Field(..., min_length=1)
+
+    @field_validator("date_facture", "date_echeance", mode="before")
+    @classmethod
+    def _validate_date(cls, v):
+        if v:
+            try:
+                date_type.fromisoformat(v)
+            except ValueError:
+                raise ValueError("Format de date invalide (YYYY-MM-DD attendu)")
+        return v
+
+
+class FacturePatch(BaseModel):
+    date_facture: Optional[str] = None
+    date_echeance: Optional[str] = None
+    remise_globale: Optional[float] = Field(default=None, ge=0, le=100)
+    notes: Optional[str] = Field(default=None, max_length=1000)
+    lignes: Optional[List[LigneFactureIn]] = None
+
+
+class FactureOut(BaseModel):
+    facture_id: str
+    reference: str
+    type_facture: TypeFacture
+    client_id: str
+    client_nom: Optional[str] = None
+    commande_id: Optional[str] = None
+    commande_reference: Optional[str] = None
+    statut: Statut
+    date_facture: str
+    date_echeance: Optional[str] = None
+    date_emission: Optional[str] = None
+    remise_globale: float
+    montant_ht: float
+    montant_tva: float
+    montant_ttc: float
+    montant_regle: float
+    montant_restant: float
+    notes: Optional[str] = None
+    facture_origine_id: Optional[str] = None  # Pour les avoirs
+    created_by: str
+    created_at: str
+    updated_at: str
+
+
+class FactureDetail(FactureOut):
+    lignes: List[LigneFactureOut]
+
+
+class GenerateFactureFromCommandeIn(BaseModel):
+    commande_id: str
+    date_facture: Optional[str] = None
+    date_echeance: Optional[str] = None
+
+
+class GenerateAvoirIn(BaseModel):
+    facture_id: str
+    montant: float = Field(..., gt=0)
+    motif: str = Field(..., min_length=10, max_length=500)
+
+
+# ---------------------------------------------------------------------------
+# Helper Functions
+# ---------------------------------------------------------------------------
+async def _get_client_nom(db: AsyncIOMotorDatabase, client_id: str) -> Optional[str]:
+    client = await db.clients.find_one({"client_id": client_id}, {"_id": 0, "nom": 1})
+    return client["nom"] if client else None
+
+
+async def _get_commande_reference(db: AsyncIOMotorDatabase, commande_id: str) -> Optional[str]:
+    cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0, "reference": 1})
+    return cmd["reference"] if cmd else None
+
+
+async def _calculate_totals(lignes: List[LigneFactureIn], remise_globale: float, taux_tva: float = 18.0) -> dict:
+    """Calculate montant_ht, montant_tva, montant_ttc"""
+    montant_ht_brut = sum(l.montant_ht for l in lignes)
+    montant_remise_globale = montant_ht_brut * (remise_globale / 100)
+    montant_ht = montant_ht_brut - montant_remise_globale
+    montant_tva = montant_ht * (taux_tva / 100)
+    montant_ttc = montant_ht + montant_tva
+    
+    return {
+        "montant_ht": round(montant_ht, 2),
+        "montant_tva": round(montant_tva, 2),
+        "montant_ttc": round(montant_ttc, 2),
+    }
+
+
+async def _enrich_facture_with_client(db: AsyncIOMotorDatabase, facture: dict) -> dict:
+    """Add client_nom and commande_reference to facture dict"""
+    if facture.get("client_id"):
+        facture["client_nom"] = await _get_client_nom(db, facture["client_id"])
+    if facture.get("commande_id"):
+        facture["commande_reference"] = await _get_commande_reference(db, facture["commande_id"])
+    return facture
+
+
+async def _get_facture_with_lignes(db: AsyncIOMotorDatabase, facture_id: str) -> Optional[dict]:
+    """Fetch facture + lignes"""
+    facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+    if not facture:
+        return None
+    
+    # Fetch lignes
+    lignes_cursor = db.facture_lignes.find({"facture_id": facture_id}, {"_id": 0})
+    lignes = await lignes_cursor.to_list(500)
+    
+    facture["lignes"] = lignes
+    await _enrich_facture_with_client(db, facture)
+    return facture
+
+
+async def _update_facture_statut(db: AsyncIOMotorDatabase, facture_id: str) -> None:
+    """Update facture statut based on montant_regle"""
+    facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+    if not facture:
+        return
+    
+    montant_ttc = facture["montant_ttc"]
+    montant_regle = facture["montant_regle"]
+    
+    if montant_regle >= montant_ttc:
+        new_statut = "payee"
+    elif montant_regle > 0:
+        new_statut = "partiellement_payee"
+    else:
+        new_statut = facture["statut"]  # Keep current if no payment
+    
+    await db.factures.update_one(
+        {"facture_id": facture_id},
+        {"$set": {
+            "statut": new_statut,
+            "montant_restant": round(montant_ttc - montant_regle, 2),
+            "updated_at": _now_iso(),
+        }}
+    )
+
+
+# ---------------------------------------------------------------------------
+# Router Builder
+# ---------------------------------------------------------------------------
+def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=None) -> APIRouter:
+    router = APIRouter(prefix="/factures", tags=["factures"])
+
+    # ---------- LIST ----------
+    @router.get("", response_model=List[FactureOut])
+    async def list_factures(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        type_facture: Optional[TypeFacture] = None,
+        statut: Optional[Statut] = None,
+        client_id: Optional[str] = None,
+        date_debut: Optional[str] = None,
+        date_fin: Optional[str] = None,
+        q: Optional[str] = None,
+        skip: int = Query(0, ge=0),
+        limit: int = Query(50, ge=1, le=200),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        filters = {}
+        if type_facture:
+            filters["type_facture"] = type_facture
+        if statut:
+            filters["statut"] = statut
+        if client_id:
+            filters["client_id"] = client_id
+        if date_debut or date_fin:
+            date_filter = {}
+            if date_debut:
+                date_filter["$gte"] = date_debut
+            if date_fin:
+                date_filter["$lte"] = date_fin
+            filters["date_facture"] = date_filter
+        
+        # Use aggregation with $lookup to avoid N+1 queries
+        pipeline = [
+            {"$match": filters},
+            {"$lookup": {
+                "from": "clients",
+                "localField": "client_id",
+                "foreignField": "client_id",
+                "as": "client_info"
+            }},
+            {"$lookup": {
+                "from": "commandes",
+                "localField": "commande_id",
+                "foreignField": "commande_id",
+                "as": "commande_info"
+            }},
+            {"$addFields": {
+                "client_nom": {"$arrayElemAt": ["$client_info.nom", 0]},
+                "client_ville": {"$arrayElemAt": ["$client_info.ville", 0]},
+                "client_telephone": {"$arrayElemAt": ["$client_info.telephone", 0]},
+                "client_representant": {"$arrayElemAt": ["$client_info.representant", 0]},
+                "commande_reference": {"$arrayElemAt": ["$commande_info.reference", 0]}
+            }},
+            {"$project": {
+                "client_info": 0,
+                "commande_info": 0,
+                "_id": 0
+            }},
+        ]
+        if q:
+            pipeline.append({"$match": {"$or": [
+                {"reference": {"$regex": q, "$options": "i"}},
+                {"client_nom": {"$regex": q, "$options": "i"}},
+                {"client_ville": {"$regex": q, "$options": "i"}},
+                {"client_telephone": {"$regex": q, "$options": "i"}},
+                {"client_representant": {"$regex": q, "$options": "i"}},
+            ]}})
+        pipeline += [
+            {"$sort": {"date_facture": -1}},
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+        
+        docs = await db.factures.aggregate(pipeline).to_list(limit)
+        return [FactureOut(**d) for d in docs]
+
+    # ---------- CREATE ----------
+    @router.post("", response_model=FactureOut, status_code=201)
+    async def create_facture(
+        payload: FactureIn,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        type_facture: TypeFacture = Query("facture"),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        # Verify client exists
+        client = await db.clients.find_one({"client_id": payload.client_id, "actif": True}, {"_id": 0})
+        _ensure(client is not None, 404, "Client introuvable ou inactif")
+
+        # Verify commande if provided
+        if payload.commande_id:
+            cmd = await db.commandes.find_one({"commande_id": payload.commande_id}, {"_id": 0})
+            _ensure(cmd is not None, 404, "Commande introuvable")
+
+        # Calculate totals
+        totals = await _calculate_totals(payload.lignes, payload.remise_globale, payload.taux_tva)
+
+        # Create facture
+        facture_id = f"fac_{uuid.uuid4().hex[:12]}"
+        reference = await next_facture_reference(db, type_facture)
+        date_facture = payload.date_facture or _now_iso()[:10]
+
+        now = _now_iso()
+        facture_doc = {
+            "facture_id": facture_id,
+            "reference": reference,
+            "type_facture": type_facture,
+            "client_id": payload.client_id,
+            "commande_id": payload.commande_id,
+            "statut": "brouillon",
+            "date_facture": date_facture,
+            "date_echeance": payload.date_echeance,
+            "date_emission": None,
+            "taux_tva": payload.taux_tva,
+            "remise_globale": payload.remise_globale,
+            "montant_ht": totals["montant_ht"],
+            "montant_tva": totals["montant_tva"],
+            "montant_ttc": totals["montant_ttc"],
+            "total_ttc": totals["montant_ttc"],
+            "montant_regle": 0.0,
+            "montant_restant": totals["montant_ttc"],
+            "notes": payload.notes,
+            "facture_origine_id": None,
+            "created_by": me["user_id"],
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.factures.insert_one(facture_doc)
+
+        # Create lignes
+        for ligne in payload.lignes:
+            ligne_doc = {
+                "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                "facture_id": facture_id,
+                "produit_id": ligne.produit_id,
+                "designation": ligne.designation,
+                "quantite": ligne.quantite,
+                "prix_unitaire": ligne.prix_unitaire,
+                "remise_ligne": ligne.remise_ligne,
+                "montant_ht": ligne.montant_ht,
+            }
+            await db.facture_lignes.insert_one(ligne_doc)
+
+        # Audit log
+        if log_audit_event:
+            await log_audit_event(
+                user_id=me["user_id"],
+                action="CREATE_FACTURE",
+                resource_type="facture",
+                resource_id=facture_id,
+                details={
+                    "reference": reference,
+                    "type_facture": type_facture,
+                    "client_id": payload.client_id,
+                    "commande_id": payload.commande_id,
+                    "montant_ttc": totals["montant_ttc"],
+                    "lignes_count": len(payload.lignes)
+                },
+                ip_address=request.client.host if request.client else None
+            )
+
+        # Return with client_nom
+        facture_doc["client_nom"] = client["nom"]
+        if payload.commande_id:
+            facture_doc["commande_reference"] = await _get_commande_reference(db, payload.commande_id)
+        return FactureOut(**facture_doc)
+
+    # ---------- GENERATE FROM COMMANDE ----------
+    @router.post("/generer-depuis-commande", response_model=FactureOut, status_code=201)
+    async def generate_facture_from_commande(
+        payload: GenerateFactureFromCommandeIn,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        # Get commande with lignes
+        cmd = await db.commandes.find_one({"commande_id": payload.commande_id}, {"_id": 0})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+        _ensure(cmd["statut"] in {"validee", "preparee", "livree"}, 400, "Commande doit être validée, préparée ou livrée")
+
+        # Get commande lignes
+        lignes_cursor = db.commande_lignes.find({"commande_id": payload.commande_id}, {"_id": 0})
+        cmd_lignes = await lignes_cursor.to_list(500)
+        _ensure(len(cmd_lignes) > 0, 400, "Commande sans lignes")
+
+        # Get product designations
+        lignes_facture = []
+        for ligne in cmd_lignes:
+            prod = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0, "titre": 1})
+            lignes_facture.append(LigneFactureIn(
+                produit_id=ligne["produit_id"],
+                designation=prod["titre"] if prod else ligne["produit_id"],
+                quantite=ligne["quantite"],
+                prix_unitaire=ligne["prix_unitaire"],
+                remise_ligne=ligne["remise_ligne"],
+            ))
+
+        # Create facture — hériter taux_tva de la commande
+        taux_tva_cmd = cmd.get("taux_tva", 18.0)
+        facture_in = FactureIn(
+            client_id=cmd["client_id"],
+            commande_id=payload.commande_id,
+            date_facture=payload.date_facture or _now_iso()[:10],
+            date_echeance=payload.date_echeance,
+            remise_globale=cmd["remise_globale"],
+            taux_tva=taux_tva_cmd,
+            notes=f"Facture générée depuis commande {cmd['reference']}",
+            lignes=lignes_facture,
+        )
+
+        # Use create_facture logic
+        totals = await _calculate_totals(facture_in.lignes, facture_in.remise_globale, facture_in.taux_tva)
+        
+        facture_id = f"fac_{uuid.uuid4().hex[:12]}"
+        reference = await next_facture_reference(db, "facture")
+        
+        now = _now_iso()
+        facture_doc = {
+            "facture_id": facture_id,
+            "reference": reference,
+            "type_facture": "facture",
+            "client_id": facture_in.client_id,
+            "commande_id": facture_in.commande_id,
+            "statut": "emise",
+            "date_facture": facture_in.date_facture,
+            "date_echeance": facture_in.date_echeance,
+            "date_emission": now[:10],
+            "remise_globale": facture_in.remise_globale,
+            "montant_ht": totals["montant_ht"],
+            "montant_tva": totals["montant_tva"],
+            "montant_ttc": totals["montant_ttc"],
+            "montant_regle": 0.0,
+            "montant_restant": totals["montant_ttc"],
+            "notes": facture_in.notes,
+            "facture_origine_id": None,
+            "created_by": me["user_id"],
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.factures.insert_one(facture_doc)
+
+        # Create lignes
+        for ligne in facture_in.lignes:
+            ligne_doc = {
+                "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                "facture_id": facture_id,
+                "produit_id": ligne.produit_id,
+                "designation": ligne.designation,
+                "quantite": ligne.quantite,
+                "prix_unitaire": ligne.prix_unitaire,
+                "remise_ligne": ligne.remise_ligne,
+                "montant_ht": ligne.montant_ht,
+            }
+            await db.facture_lignes.insert_one(ligne_doc)
+
+        # Enrich and return
+        await _enrich_facture_with_client(db, facture_doc)
+        return FactureOut(**facture_doc)
+
+    # ---------- GET DETAIL ----------
+    @router.get("/{facture_id}", response_model=FactureDetail)
+    async def get_facture(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        facture = await _get_facture_with_lignes(db, facture_id)
+        _ensure(facture is not None, 404, "Facture introuvable")
+        
+        return FactureDetail(**facture)
+
+    # ---------- UPDATE ----------
+    @router.patch("/{facture_id}", response_model=FactureOut)
+    async def update_facture(
+        facture_id: str,
+        payload: FacturePatch,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        _ensure(facture is not None, 404, "Facture introuvable")
+        _ensure(facture["statut"] == "brouillon", 400, "Seules les factures brouillon peuvent être modifiées")
+
+        updates = {"updated_at": _now_iso()}
+        
+        if payload.date_facture is not None:
+            updates["date_facture"] = payload.date_facture
+        
+        if payload.date_echeance is not None:
+            updates["date_echeance"] = payload.date_echeance
+        
+        if payload.remise_globale is not None:
+            updates["remise_globale"] = payload.remise_globale
+        
+        if payload.notes is not None:
+            updates["notes"] = payload.notes
+        
+        # Update lignes if provided
+        if payload.lignes is not None:
+            _ensure(len(payload.lignes) > 0, 400, "Au moins une ligne requise")
+            
+            # Delete old lignes
+            await db.facture_lignes.delete_many({"facture_id": facture_id})
+            
+            # Create new lignes
+            for ligne in payload.lignes:
+                ligne_doc = {
+                    "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                    "facture_id": facture_id,
+                    "produit_id": ligne.produit_id,
+                    "designation": ligne.designation,
+                    "quantite": ligne.quantite,
+                    "prix_unitaire": ligne.prix_unitaire,
+                    "remise_ligne": ligne.remise_ligne,
+                    "montant_ht": ligne.montant_ht,
+                }
+                await db.facture_lignes.insert_one(ligne_doc)
+            
+            # Recalculate totals — conserver taux_tva existant si non modifié
+            taux_tva_upd = payload.taux_tva if hasattr(payload, "taux_tva") and payload.taux_tva is not None else facture.get("taux_tva", 18.0)
+            totals = await _calculate_totals(payload.lignes, payload.remise_globale or facture["remise_globale"], taux_tva_upd)
+            updates.update(totals)
+            updates["total_ttc"] = totals["montant_ttc"]
+            updates["montant_restant"] = totals["montant_ttc"]
+
+        await db.factures.update_one({"facture_id": facture_id}, {"$set": updates})
+        
+        # Audit log
+        if log_audit_event:
+            await log_audit_event(
+                user_id=me["user_id"],
+                action="UPDATE_FACTURE",
+                resource_type="facture",
+                resource_id=facture_id,
+                details={
+                    "reference": facture["reference"],
+                    "type_facture": facture["type_facture"],
+                    "client_id": facture["client_id"],
+                    "old_statut": facture["statut"],
+                    "updates": {k: v for k, v in updates.items() if k not in ["updated_at", "montant_restant"]}
+                },
+                ip_address=request.client.host if request.client else None
+            )
+        
+        updated = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        await _enrich_facture_with_client(db, updated)
+        return FactureOut(**updated)
+
+    # ---------- EMETTRE (EMIT) ----------
+    @router.post("/{facture_id}/emettre", response_model=FactureOut)
+    async def emettre_facture(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        _ensure(facture is not None, 404, "Facture introuvable")
+        _ensure(facture["statut"] == "brouillon", 400, "Seules les factures brouillon peuvent être émises")
+
+        now = _now_iso()
+        await db.factures.update_one(
+            {"facture_id": facture_id},
+            {"$set": {
+                "statut": "emise",
+                "date_emission": now[:10],
+                "updated_at": now,
+            }}
+        )
+        
+        # Génération automatique des écritures comptables
+        if facture["type_facture"] == "facture":
+            try:
+                await generate_ecriture_comptable_facture(
+                    db=db,
+                    facture_id=facture_id,
+                    facture_reference=facture["reference"],
+                    client_id=facture["client_id"],
+                    montant_ht=facture["montant_ht"],
+                    montant_tva=facture["montant_tva"],
+                    montant_ttc=facture["montant_ttc"],
+                    user_id=me["user_id"],
+                    log_audit_event=log_audit_event
+                )
+                logger.info(f"✅ Écritures comptables générées pour facture {facture['reference']}")
+            except Exception as e:
+                logger.error(f"❌ Erreur génération écritures comptables pour facture {facture['reference']}: {e}")
+        
+        updated = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        await _enrich_facture_with_client(db, updated)
+        return FactureOut(**updated)
+
+    # ---------- CERTIFIER FNE (MANUEL) ----------
+    @router.post("/{facture_id}/certifier-fne", response_model=FactureOut)
+    async def certifier_fne(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Certifie manuellement une facture via l'API FNE de la DGI"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        _ensure(facture is not None, 404, "Facture introuvable")
+        _ensure(facture["statut"] == "emise", 400, "Seules les factures émises peuvent être certifiées")
+        _ensure(facture["type_facture"] == "facture", 400, "Seules les factures peuvent être certifiées (pas les avoirs)")
+        _ensure(facture.get("fne_status") in [None, "pending", "failed"], 400, "Facture déjà certifiée ou en cours de certification")
+
+        # Déclenchement de la certification FNE (asynchrone)
+        try:
+            from fne_queue import FNEQueue
+            
+            # Récupérer les données du client
+            client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0})
+            
+            # Récupérer les lignes de facture
+            lignes_cursor = db.facture_lignes.find({"facture_id": facture_id}, {"_id": 0})
+            lignes_facture = []
+            async for ligne in lignes_cursor:
+                lignes_facture.append(ligne)
+            
+            # Préparer les données pour FNE
+            invoice_data = {
+                "reference": facture["reference"],
+                "client_nom": client["nom"] if client else "",
+                "client_ncc": client.get("ncc"),
+                "client_telephone": client.get("telephone", ""),
+                "client_email": client.get("email"),
+                "client_type": client.get("type_client", "entreprise"),
+                "payment_method": facture.get("mode_paiement", "cash"),
+                "date_facture": facture["date_facture"],
+                "montant_ht": facture["montant_ht"],
+                "montant_tva": facture["montant_tva"],
+                "montant_ttc": facture["montant_ttc"],
+                "remise_globale": facture["remise_globale"],
+                "vendeur": me.get("nom", "Système"),
+                "point_of_vente": "SIEGE FABS-CI",
+                "etablissement": "EDITIONS FABS-CI"
+            }
+            
+            items_data = []
+            for ligne in lignes_facture:
+                items_data.append({
+                    "reference": ligne.get("reference", ""),
+                    "description": ligne["designation"],
+                    "quantity": ligne["quantite"],
+                    "prix_unitaire": ligne["prix_unitaire"],
+                    "remise": ligne["remise_ligne"],
+                    "unite": "pcs",
+                    "taxes": ["TVA"],
+                    "custom_taxes": []
+                })
+            
+            # Enqueue la certification FNE
+            queue = FNEQueue(db)
+            await queue.enqueue_invoice_certification(
+                invoice_id=facture["reference"],
+                invoice_data=invoice_data,
+                items_data=items_data
+            )
+            
+            # Mettre à jour le statut FNE à pending
+            await db.factures.update_one(
+                {"facture_id": facture_id},
+                {"$set": {"fne_status": "pending", "fne_submitted_at": _now_iso()}}
+            )
+            
+            logger.info(f"📋 Certification FNE enqueued pour facture {facture['reference']}")
+        except Exception as e:
+            logger.error(f"❌ Erreur enqueue certification FNE pour facture {facture['reference']}: {e}")
+            raise HTTPException(status_code=500, detail="Erreur lors de l'envoi de la certification FNE")
+        
+        updated = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        await _enrich_facture_with_client(db, updated)
+        return FactureOut(**updated)
+
+    # ---------- GENERER AVOIR ----------
+    @router.post("/generer-avoir", response_model=FactureOut, status_code=201)
+    async def generer_avoir(
+        payload: GenerateAvoirIn,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        # Get original facture
+        facture_orig = await _get_facture_with_lignes(db, payload.facture_id)
+        _ensure(facture_orig is not None, 404, "Facture origine introuvable")
+        _ensure(facture_orig["type_facture"] == "facture", 400, "Impossible de créer un avoir depuis un avoir")
+        _ensure(payload.montant <= facture_orig["montant_ttc"], 400, "Montant avoir supérieur au montant facture")
+
+        # Create avoir with same lignes but negative amounts
+        avoir_id = f"fac_{uuid.uuid4().hex[:12]}"
+        reference = await next_facture_reference(db, "avoir")
+        
+        # Calculate proportional amounts
+        ratio = payload.montant / facture_orig["montant_ttc"]
+        montant_ht = round(facture_orig["montant_ht"] * ratio, 2)
+        montant_tva = round(facture_orig["montant_tva"] * ratio, 2)
+        montant_ttc = round(payload.montant, 2)
+
+        now = _now_iso()
+        avoir_doc = {
+            "avoir_id": avoir_id,
+            "reference": reference,
+            "type_facture": "avoir",
+            "client_id": facture_orig["client_id"],
+            "commande_id": facture_orig.get("commande_id"),
+            "statut": "emise",
+            "date_facture": now[:10],
+            "date_echeance": None,
+            "date_emission": now[:10],
+            "remise_globale": 0,
+            "montant_ht": -montant_ht,  # Negative
+            "montant_tva": -montant_tva,
+            "montant_ttc": -montant_ttc,
+            "montant_regle": 0.0,
+            "montant_restant": -montant_ttc,
+            "notes": f"Avoir généré depuis facture {facture_orig['reference']}. Motif: {payload.motif}",
+            "facture_origine_id": payload.facture_id,
+            "created_by": me["user_id"],
+            "created_at": now,
+            "updated_at": now,
+        }
+        # Fix: use facture_id as key
+        avoir_doc["facture_id"] = avoir_id
+        await db.factures.insert_one(avoir_doc)
+
+        # Copy lignes (proportional quantities)
+        for ligne_orig in facture_orig["lignes"]:
+            ligne_avoir = {
+                "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                "facture_id": avoir_id,
+                "produit_id": ligne_orig["produit_id"],
+                "designation": ligne_orig["designation"],
+                "quantite": -int(ligne_orig["quantite"] * ratio),  # Negative
+                "prix_unitaire": ligne_orig["prix_unitaire"],
+                "remise_ligne": ligne_orig["remise_ligne"],
+                "montant_ht": -round(ligne_orig["montant_ht"] * ratio, 2),
+            }
+            await db.facture_lignes.insert_one(ligne_avoir)
+
+        # Génération automatique des écritures comptables pour l'avoir
+        try:
+            await generate_ecriture_comptable_avoir(
+                db=db,
+                avoir_id=avoir_id,
+                avoir_reference=reference,
+                client_id=facture_orig["client_id"],
+                montant_ht=montant_ht,
+                montant_tva=montant_tva,
+                montant_ttc=montant_ttc,
+                facture_origine_id=payload.facture_id,
+                user_id=me["user_id"],
+                log_audit_event=log_audit_event
+            )
+            logger.info(f"✅ Écritures comptables générées pour avoir {reference}")
+        except Exception as e:
+            logger.error(f"❌ Erreur génération écritures comptables pour avoir {reference}: {e}")
+
+        # Enrich and return
+        await _enrich_facture_with_client(db, avoir_doc)
+        return FactureOut(**avoir_doc)
+
+    # ---------- PDF ----------
+    @router.get("/{facture_id}/pdf")
+    async def facture_pdf(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        from fastapi.responses import StreamingResponse
+        from pdf_generator import generate_facture_pdf
+
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        facture = await _get_facture_with_lignes(db, facture_id)
+        _ensure(facture is not None, 404, "Facture introuvable")
+
+        client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0}) or {}
+        # Inject representant from client into facture context if missing
+        facture.setdefault("representant", client.get("representant"))
+
+        buffer = generate_facture_pdf(facture, facture.get("lignes", []), client)
+        filename = f"{facture['reference']}.pdf"
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
+
+    # ---------- WHATSAPP ----------
+    @router.post("/{facture_id}/envoyer-whatsapp")
+    async def envoyer_facture_whatsapp(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Prepare WhatsApp sharing link for Facture"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await _get_facture_with_lignes(db, facture_id)
+        _ensure(facture is not None, 404, "Facture introuvable")
+
+        # Get client WhatsApp number
+        client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0})
+        _ensure(client is not None, 404, "Client introuvable")
+
+        whatsapp_number = client.get("numero_whatsapp") or client.get("telephone")
+        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible pour ce client")
+
+        # Clean phone number
+        clean_number = whatsapp_number.replace(" ", "").replace("-", "").replace("+", "")
+
+        # Prepare message
+        message = f"""Bonjour {client.get('nom', 'Client')}
+
+Veuillez trouver ci-joint votre FACTURE N° {facture['reference']}
+
+Montant TTC : {facture['montant_ttc']:,.2f} FCFA
+
+Merci de votre confiance.
+
+Cordialement,
+ÉDITIONS FABS-CI"""
+
+        # WhatsApp URL
+        encoded_message = message.replace("\n", "%0A")
+        whatsapp_url = f"https://wa.me/{clean_number}?text={encoded_message}"
+
+        # Update facture tracking
+        await db.factures.update_one(
+            {"facture_id": facture_id},
+            {
+                "$set": {
+                    "date_envoi_whatsapp": _now_iso(),
+                    "updated_at": _now_iso()
+                }
+            }
+        )
+
+        # Log audit
+        await db.audit_logs.insert_one({
+            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+            "user_id": me["user_id"],
+            "action": "SEND_WHATSAPP",
+            "resource_type": "facture",
+            "resource_id": facture_id,
+            "details": {"whatsapp_number": clean_number},
+            "ip_address": request.client.host if request.client else None,
+            "timestamp": _now_iso(),
+        })
+
+        return {
+            "whatsapp_url": whatsapp_url,
+            "message": message,
+            "pdf_filename": f"{facture['reference']}.pdf"
+        }
+
+    # ---------- EMAIL ----------
+    @router.post("/{facture_id}/envoyer-email")
+    async def envoyer_facture_email(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Send Facture via Email"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await _get_facture_with_lignes(db, facture_id)
+        _ensure(facture is not None, 404, "Facture introuvable")
+
+        # Get client email
+        client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0})
+        _ensure(client is not None, 404, "Client introuvable")
+
+        client_email = client.get("email")
+        _ensure(client_email, 400, "Email non disponible pour ce client")
+
+        # Generate PDF
+        from pdf_generator import generate_facture_pdf
+        pdf_buffer = generate_facture_pdf(facture, facture.get("lignes", []), client)
+        
+        # Prepare email content
+        sujet = f"Facture {facture['reference']} - ÉDITIONS FABS-CI"
+        corps_texte = f"""Bonjour {client.get('nom', 'Client')},
+
+Veuillez trouver ci-joint votre facture {facture['reference']}.
+
+Montant TTC : {facture['montant_ttc']:,.2f} FCFA
+
+Merci de votre confiance.
+
+Cordialement,
+ÉDITIONS FABS-CI"""
+
+        corps_html = f"""
+<html>
+<body>
+    <h2>Facture {facture['reference']}</h2>
+    <p>Bonjour {client.get('nom', 'Client')},</p>
+    <p>Veuillez trouver ci-joint votre facture {facture['reference']}.</p>
+    <p><strong>Montant TTC : {facture['montant_ttc']:,.2f} FCFA</strong></p>
+    <p>Merci de votre confiance.</p>
+    <p>Cordialement,<br>ÉDITIONS FABS-CI</p>
+</body>
+</html>"""
+
+        # Send email with PDF attachment
+        try:
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            from email.mime.application import MIMEApplication
+            
+            smtp_host = os.getenv("SMTP_HOST")
+            smtp_port = os.getenv("SMTP_PORT", "587")
+            smtp_user = os.getenv("SMTP_USER")
+            smtp_password = os.getenv("SMTP_PASSWORD")
+            smtp_from = os.getenv("SMTP_FROM")
+            
+            if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
+                raise HTTPException(status_code=500, detail="Configuration SMTP manquante")
+            
+            msg = MIMEMultipart("mixed")
+            msg["Subject"] = sujet
+            msg["From"] = smtp_from
+            msg["To"] = client_email
+            
+            # Attach HTML body
+            msg.attach(MIMEText(corps_html, "html", "utf-8"))
+            
+            # Attach PDF
+            pdf_attachment = MIMEApplication(pdf_buffer.getvalue(), _subtype="pdf")
+            pdf_attachment.add_header("Content-Disposition", "attachment", filename=f"{facture['reference']}.pdf")
+            msg.attach(pdf_attachment)
+            
+            with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+            
+            # Update facture tracking
+            await db.factures.update_one(
+                {"facture_id": facture_id},
+                {
+                    "$set": {
+                        "date_envoi_email": _now_iso(),
+                        "updated_at": _now_iso()
+                    }
+                }
+            )
+
+            # Log audit
+            await db.audit_logs.insert_one({
+                "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+                "user_id": me["user_id"],
+                "action": "SEND_EMAIL",
+                "resource_type": "facture",
+                "resource_id": facture_id,
+                "details": {"email": client_email, "status": "sent"},
+                "ip_address": request.client.host if request.client else None,
+                "timestamp": _now_iso(),
+            })
+
+            return {
+                "message": "Email envoyé avec succès",
+                "email": client_email,
+                "subject": sujet
+            }
+        except Exception as e:
+            logger.error(f"Erreur envoi email: {e}")
+            # Log failed attempt
+            await db.audit_logs.insert_one({
+                "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+                "user_id": me["user_id"],
+                "action": "SEND_EMAIL",
+                "resource_type": "facture",
+                "resource_id": facture_id,
+                "details": {"email": client_email, "status": "failed", "error": str(e)},
+                "ip_address": request.client.host if request.client else None,
+                "timestamp": _now_iso(),
+            })
+            raise HTTPException(status_code=500, detail=f"Erreur lors de l'envoi de l'email: {str(e)}")
+
+    return router
+
+
+# ---------------------------------------------------------------------------
+# Seed (optional demo data)
+# ---------------------------------------------------------------------------
+async def seed_factures(db: AsyncIOMotorDatabase, user_id: str) -> int:
+    """Seed demo factures (optional)"""
+    existing = await db.factures.count_documents({})
+    if existing > 0:
+        return 0
+    
+    # Get first client and first commande
+    client = await db.clients.find_one({"actif": True}, {"_id": 0})
+    if not client:
+        return 0
+    
+    commandes = await db.commandes.find({"statut": {"$in": ["validee", "livree"]}}, {"_id": 0}).limit(2).to_list(2)
+    if len(commandes) == 0:
+        return 0
+
+    demo_factures = []
+    for i, cmd in enumerate(commandes):
+        # Get commande lignes
+        lignes_cursor = db.commande_lignes.find({"commande_id": cmd["commande_id"]}, {"_id": 0})
+        cmd_lignes = await lignes_cursor.to_list(500)
+        
+        if len(cmd_lignes) == 0:
+            continue
+
+        facture_id = f"fac_{uuid.uuid4().hex[:12]}"
+        reference = f"FABS-FC-26-27-{i+1:04d}"
+        
+        # Calculate totals from commande
+        montant_ht = cmd["montant_ht"] - cmd["montant_remise"]
+        montant_tva = round(montant_ht * TVA_RATE, 2)
+        montant_ttc = round(montant_ht + montant_tva, 2)
+        
+        now = _now_iso()
+        statut = "emise" if i == 0 else "payee"
+        montant_regle = montant_ttc if i == 1 else 0.0
+        
+        facture_doc = {
+            "facture_id": facture_id,
+            "reference": reference,
+            "type_facture": "facture",
+            "client_id": cmd["client_id"],
+            "commande_id": cmd["commande_id"],
+            "statut": statut,
+            "date_facture": now[:10],
+            "date_echeance": None,
+            "date_emission": now[:10],
+            "remise_globale": cmd["remise_globale"],
+            "montant_ht": montant_ht,
+            "montant_tva": montant_tva,
+            "montant_ttc": montant_ttc,
+            "montant_regle": montant_regle,
+            "montant_restant": montant_ttc - montant_regle,
+            "notes": f"Facture de démonstration {i+1}",
+            "facture_origine_id": None,
+            "created_by": user_id,
+            "created_at": now,
+            "updated_at": now,
+        }
+        demo_factures.append(facture_doc)
+        
+        # Insert lignes
+        for ligne in cmd_lignes:
+            prod = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0, "titre": 1})
+            ligne_doc = {
+                "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                "facture_id": facture_id,
+                "produit_id": ligne["produit_id"],
+                "designation": prod["titre"] if prod else "Produit",
+                "quantite": ligne["quantite"],
+                "prix_unitaire": ligne["prix_unitaire"],
+                "remise_ligne": ligne["remise_ligne"],
+                "montant_ht": ligne["montant_ligne"],
+            }
+            await db.facture_lignes.insert_one(ligne_doc)
+    
+    if demo_factures:
+        await db.factures.insert_many(demo_factures)
+        # Update counter
+        await db.counters.update_one(
+            {"_id": "factures"},
+            {"$set": {"seq": len(demo_factures)}},
+            upsert=True
+        )
+    
+    return len(demo_factures)
