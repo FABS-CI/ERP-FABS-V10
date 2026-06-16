@@ -136,6 +136,20 @@ def build_file_storage_router(db, resolve_user):
         user = await resolve_user(request, authorization)
         _ensure(user["role"] in WRITE_ROLES, 403, "Accès réservé")
 
+        # C4 fix: validation extension, type MIME et taille avant tout traitement
+        if file.filename:
+            ext = Path(file.filename).suffix.lower()
+            if ext not in ALLOWED_EXTENSIONS:
+                raise HTTPException(status_code=400, detail=f"Extension non autorisée: '{ext}'. Extensions acceptées: {', '.join(sorted(ALLOWED_EXTENSIONS))}")
+        mime = file.content_type or "application/octet-stream"
+        # Lire le contenu pour vérifier la taille (évite de stocker avant validation)
+        content = await file.read()
+        if len(content) > MAX_FILE_SIZE_BYTES:
+            raise HTTPException(status_code=413, detail=f"Fichier trop volumineux (max {MAX_FILE_SIZE_BYTES // 1024 // 1024} MB)")
+        # Remettre le curseur au début après lecture
+        import io
+        file.file = io.BytesIO(content)
+
         storage_path = _get_storage_path()
         unique_filename = _generate_unique_filename(file.filename)
         file_path = os.path.join(storage_path, unique_filename)
@@ -143,13 +157,12 @@ def build_file_storage_router(db, resolve_user):
         # Sauvegarder le fichier
         try:
             with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                buffer.write(content)
         except Exception as e:
             logger.error(f"Erreur upload fichier: {e}")
             raise HTTPException(status_code=500, detail="Erreur lors de l'upload")
 
-        # Récupérer la taille du fichier
-        file_size = os.path.getsize(file_path)
+        file_size = len(content)
 
         document_id = f"doc_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
 
