@@ -358,7 +358,8 @@ def build_backup_router(db, resolve_user):
             doc = await _run_backup(db, user_id=user["user_id"])
             return BackupOut(**doc)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"Backup échoué: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Erreur lors de la création du backup")
 
     @router.get("/backups", response_model=List[BackupOut])
     async def list_backups(
@@ -411,8 +412,8 @@ def build_backup_router(db, resolve_user):
             return RestoreOut(**restore_doc)
         except Exception as e:
             _cleanup_tmp(tmp_restore)
-            logger.error(f"Restore échoué : {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"Restore échoué: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Erreur lors de la restauration")
 
     @router.delete("/backups/{backup_id}")
     async def delete_backup(

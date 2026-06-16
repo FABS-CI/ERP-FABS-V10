@@ -451,11 +451,13 @@ if PROMETHEUS_ENABLED:
 else:
     logger.info("Prometheus metrics désactivé (production)")
 
-# CORS Middleware — allow all origins in dev (Runable preview support)
+# CORS Middleware — fix E2: refuser par défaut si ENVIRONMENT non défini
+# En dev uniquement (explicitement), ouvrir tout; sinon whitelist stricte
+_cors_allow_all = (env == "development")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if env != "production" else cors_origins,
-    allow_credentials=False if env != "production" else True,
+    allow_origins=["*"] if _cors_allow_all else cors_origins,
+    allow_credentials=False if _cors_allow_all else True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
@@ -882,14 +884,25 @@ async def root():
 
 @api_router.get("/health")
 async def health():
-    """Enhanced health check endpoint with detailed status"""
+    """Health check public — réponse minimale sans infos infra (fix C3)."""
+    # Vérification rapide MongoDB sans exposer les détails
+    try:
+        await db.command("ping")
+        return {"status": "ok"}
+    except Exception:
+        raise HTTPException(status_code=503, detail={"status": "unhealthy"})
+
+
+@api_router.get("/health/details")
+async def health_details(me: dict = Depends(get_current_user)):
+    """Health check détaillé — réservé super_admin (fix C3)."""
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
     health_status = {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "checks": {}
     }
-    
-    # Check MongoDB connection
     try:
         await db.command("ping")
         health_status["checks"]["mongodb"] = {"status": "connected"}
@@ -897,8 +910,6 @@ async def health():
         health_status["status"] = "unhealthy"
         health_status["checks"]["mongodb"] = {"status": "disconnected", "error": str(e)}
         logger.error(f"MongoDB health check failed: {e}")
-    
-    # Check Redis connection
     try:
         await redis_client.ping()
         health_status["checks"]["redis"] = {"status": "connected"}
@@ -906,18 +917,14 @@ async def health():
         health_status["status"] = "degraded"
         health_status["checks"]["redis"] = {"status": "disconnected", "error": str(e)}
         logger.error(f"Redis health check failed: {e}")
-    
-    # Check database collections
     try:
         collections = await db.list_collection_names()
         health_status["checks"]["collections"] = {"status": "ok", "count": len(collections)}
     except Exception as e:
         health_status["status"] = "unhealthy"
         health_status["checks"]["collections"] = {"status": "error", "error": str(e)}
-    
     if health_status["status"] == "unhealthy":
         raise HTTPException(status_code=503, detail=health_status)
-    
     return health_status
 
 # ============================================================================
