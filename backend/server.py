@@ -1185,6 +1185,29 @@ async def startup_event():
     except Exception as exc:
         logger.warning("Factures uniqueness index failed: %s", exc)
 
+    # M1/M2 fix: Index manquants — users, refresh_tokens, bons_livraison, proformas, etc.
+    try:
+        await db.users.create_index("email", unique=True, name="idx_users_email_unique")
+        await db.refresh_tokens.create_index("user_id", name="idx_refresh_tokens_user_id")
+        await db.refresh_tokens.create_index(
+            "expires_at",
+            expireAfterSeconds=0,
+            name="idx_refresh_tokens_ttl"
+        )
+        await db.bons_livraison.create_index([("statut", 1), ("date_creation", -1)], name="idx_bl_statut_date")
+        await db.bons_livraison.create_index("commande_id", name="idx_bl_commande_id")
+        await db.proformas.create_index([("client_id", 1), ("statut", 1)], name="idx_proformas_client_statut")
+        await db.proformas.create_index("date_creation", name="idx_proformas_date")
+        await db.audit_logs.create_index([("user_id", 1), ("created_at", -1)], name="idx_audit_user_date")
+        await db.audit_logs.create_index("resource_type", name="idx_audit_resource_type")
+        await db.facture_lignes.create_index("facture_id", name="idx_facture_lignes_facture_id")
+        await db.commande_lignes.create_index("commande_id", name="idx_commande_lignes_commande_id")
+        await db.bl_lignes.create_index("bl_id", name="idx_bl_lignes_bl_id")
+        await db.affectations_paiement.create_index("paiement_id", name="idx_affectations_paiement_id")
+        logger.info("✅ Security/performance indexes ensured (M1/M2/E4 fix)")
+    except Exception as exc:
+        logger.warning("Security/performance indexes failed: %s", exc)
+
     logger.info("✅ ERP EDITIONS FABS-CI backend ready!")
 
 @app.on_event("shutdown")
