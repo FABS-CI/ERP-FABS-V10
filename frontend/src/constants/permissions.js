@@ -72,7 +72,7 @@ export const MODULES = [
 export const PERMISSIONS = {
   // 📊 TABLEAU DE BORD
   dashboard:                  { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 1, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
-  "bi-analytics":             { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
+  "bi-analytics":             { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   rapports:                   { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
 
   // 👥 GESTION COMMERCIALE
@@ -80,7 +80,7 @@ export const PERMISSIONS = {
   commandes:                  { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 1, assistante: 1, service_logistique: 0, assistante_commerciale: 1 },
   // Proformas : phase pré-commerciale → mêmes accès que clients/commandes (READ_ROLES backend = super_admin, DG, dir_com, comptable, secretariat)
   proformas:                  { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 1, assistante: 1, service_logistique: 0, assistante_commerciale: 1 },
-  factures:                   { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 1, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
+  factures:                   { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   paiements:                  { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   livraisons:                 { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
   retours:                    { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
@@ -93,12 +93,12 @@ export const PERMISSIONS = {
   stock:                      { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   logistique:                 { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
   fleet:                      { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
-  "logistics-costs":          { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
+  "logistics-costs":          { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
   fournisseurs:               { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   approvisionnements:         { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
 
   // 💰 FINANCES
-  comptabilite:               { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
+  comptabilite:               { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   "comptabilite-avancee":     { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   fne:                        { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
 

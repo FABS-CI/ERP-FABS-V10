@@ -894,8 +894,12 @@ async def health():
 
 
 @api_router.get("/health/details")
-async def health_details(me: dict = Depends(get_current_user)):
+async def health_details(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
     """Health check détaillé — réservé super_admin (fix C3)."""
+    me = await resolve_user(request, authorization)
     if me.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
     health_status = {
@@ -994,7 +998,7 @@ async def get_envois_historique(
     user = await resolve_user(request, authorization)
     ALLOWED = {
         "super_admin", "directeur_general", "directeur_commercial",
-        "commercial", "comptable", "secretariat", "assistante_commerciale",
+        "comptable", "secretariat", "assistante_commerciale",
     }
     if user["role"] not in ALLOWED:
         raise HTTPException(status_code=403, detail="Accès refusé")
