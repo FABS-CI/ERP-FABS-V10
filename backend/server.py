@@ -13,7 +13,7 @@ import bcrypt
 import re
 import html
 
-from fastapi import FastAPI, APIRouter, HTTPException, Header, Request, Depends, Response, Body, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Header, Request, Response, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
