@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import datetime, timezone, date as date_type
 from typing import Literal, Optional, List
 from decimal import Decimal
+import re
 import uuid
 import logging
 import os
@@ -368,12 +369,14 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
             }},
         ]
         if q:
+            # C5 fix: échapper q pour éviter ReDoS et injection NoSQL
+            safe_q = re.escape(q)
             pipeline.append({"$match": {"$or": [
-                {"reference": {"$regex": q, "$options": "i"}},
-                {"client_nom": {"$regex": q, "$options": "i"}},
-                {"client_ville": {"$regex": q, "$options": "i"}},
-                {"client_telephone": {"$regex": q, "$options": "i"}},
-                {"client_representant": {"$regex": q, "$options": "i"}},
+                {"reference": {"$regex": safe_q, "$options": "i"}},
+                {"client_nom": {"$regex": safe_q, "$options": "i"}},
+                {"client_ville": {"$regex": safe_q, "$options": "i"}},
+                {"client_telephone": {"$regex": safe_q, "$options": "i"}},
+                {"client_representant": {"$regex": safe_q, "$options": "i"}},
             ]}})
         pipeline += [
             {"$sort": {"date_facture": -1}},

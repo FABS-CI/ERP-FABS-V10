@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Literal, Optional, List
+import re
 import uuid
 import logging
 
@@ -125,12 +126,14 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
             {"$project": {"commande_info": 0, "client_info": 0, "client_id_from_cmd": 0, "_id": 0}},
         ]
         if q:
+            # C5 fix: échapper q pour éviter ReDoS et injection NoSQL
+            safe_q = re.escape(q)
             pipeline.append({"$match": {"$or": [
-                {"reference": {"$regex": q, "$options": "i"}},
-                {"client_nom": {"$regex": q, "$options": "i"}},
-                {"client_ville": {"$regex": q, "$options": "i"}},
-                {"client_telephone": {"$regex": q, "$options": "i"}},
-                {"client_representant": {"$regex": q, "$options": "i"}},
+                {"reference": {"$regex": safe_q, "$options": "i"}},
+                {"client_nom": {"$regex": safe_q, "$options": "i"}},
+                {"client_ville": {"$regex": safe_q, "$options": "i"}},
+                {"client_telephone": {"$regex": safe_q, "$options": "i"}},
+                {"client_representant": {"$regex": safe_q, "$options": "i"}},
             ]}})
         pipeline += [{"$sort": {"date_creation": -1}}, {"$limit": limit}]
 

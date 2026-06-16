@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import datetime, timezone, date
 from typing import Literal, Optional, List
 from decimal import Decimal
+import re
 import uuid
 import logging
 import os
@@ -339,13 +340,15 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         ]
 
         # Search full-text: reference, client_nom, ville, telephone, representant
+        # C5 fix: échapper le paramètre q pour éviter ReDoS et injection NoSQL
         if q:
+            safe_q = re.escape(q)
             pipeline.append({"$match": {"$or": [
-                {"reference": {"$regex": q, "$options": "i"}},
-                {"client_nom": {"$regex": q, "$options": "i"}},
-                {"client_ville": {"$regex": q, "$options": "i"}},
-                {"client_telephone": {"$regex": q, "$options": "i"}},
-                {"client_representant": {"$regex": q, "$options": "i"}},
+                {"reference": {"$regex": safe_q, "$options": "i"}},
+                {"client_nom": {"$regex": safe_q, "$options": "i"}},
+                {"client_ville": {"$regex": safe_q, "$options": "i"}},
+                {"client_telephone": {"$regex": safe_q, "$options": "i"}},
+                {"client_representant": {"$regex": safe_q, "$options": "i"}},
             ]}})
 
         pipeline += [
@@ -1238,7 +1241,7 @@ Cordialement,
                 "ip_address": request.client.host if request.client else None,
                 "timestamp": _now_iso(),
             })
-            raise HTTPException(status_code=500, detail=f"Erreur lors de l'envoi de l'email: {str(e)}")
+            raise HTTPException(status_code=500, detail="Erreur lors de l'envoi de l'email")
 
     # ---------- CHECK DOUBLON ----------
     @router.post("/check-doublon")
