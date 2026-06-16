@@ -91,5 +91,6 @@ frontend/node_modules/.cache/default-development/31.pack
 /etc/erp-fabs.env
 
 # Secrets de production
+.env
 .env.production
 .env.local
