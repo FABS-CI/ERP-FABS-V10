@@ -1,14 +1,12 @@
 /**
- * Page Commandes - Liste et gestion des commandes
- * Sprint 6
+ * Page Factures - Liste et gestion des factures
+ * Sprint 7
  */
 import React, { useState, useEffect } from 'react';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, FileText, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
-import { getCommandes } from '../services/commandesApi';
+import { Plus, Search, Filter, FileText, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { getFactures } from '../services/facturesApi';
 import { listClients } from '../services/clientsApi';
-import { createProforma } from '../services/proformasApi';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -22,20 +20,32 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 
 const STATUT_CONFIG = {
   brouillon: { label: 'Brouillon', color: 'bg-gray-500' },
-  en_attente: { label: 'En attente', color: 'bg-yellow-500' },
-  validee: { label: 'Validée', color: 'bg-blue-500' },
-  preparee: { label: 'Préparée', color: 'bg-purple-500' },
-  livree: { label: 'Livrée', color: 'bg-green-500' },
+  emise: { label: 'Émise', color: 'bg-blue-500' },
+  partiellement_payee: { label: 'Partiellement payée', color: 'bg-orange-500' },
+  payee: { label: 'Payée', color: 'bg-green-500' },
   annulee: { label: 'Annulée', color: 'bg-red-500' },
 };
 
-export default function Commandes() {
+const FNE_STATUS_CONFIG = {
+  pending: { label: '⏳ En attente DGI', color: 'bg-orange-500' },
+  certified: { label: '✅ Certifiée DGI', color: 'bg-green-500' },
+  rejected: { label: '❌ Rejetée DGI', color: 'bg-red-500' },
+  failed: { label: '🔴 Échec technique', color: 'bg-red-700' },
+};
+
+const TYPE_CONFIG = {
+  facture: { label: 'Facture', color: 'text-blue-600' },
+  avoir: { label: 'Avoir', color: 'text-red-600' },
+};
+
+export default function Factures() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [commandes, setCommandes] = useState([]);
+  const [factures, setFactures] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
+    type_facture: 'all',
     statut: 'all',
     client_id: 'all',
     q: '',
@@ -45,25 +55,17 @@ export default function Commandes() {
 
   const [stats, setStats] = useState({
     total: 0,
-    en_attente: 0,
-    validees: 0,
+    emises: 0,
+    impayees: 0,
     ca_total: 0,
   });
 
-  const canWrite = user && can(user.role, 'commandes', 'create');
-
-  const debouncedQ = useDebouncedValue(filters.q, 350);
+  const canWrite = user && can(user.role, 'factures', 'create');
 
   useEffect(() => {
     fetchClients();
-    fetchCommandes();
+    fetchFactures();
   }, []);
-
-  // Live search sur q (debounced)
-  useEffect(() => {
-    fetchCommandes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ]);
 
   const fetchClients = async () => {
     try {
@@ -75,23 +77,25 @@ export default function Commandes() {
     }
   };
 
-  const fetchCommandes = async () => {
+  const fetchFactures = async () => {
     setLoading(true);
     try {
-      const data = await getCommandes({ ...filters, limit: 100 });
-      setCommandes(data);
+      const data = await getFactures({ ...filters, limit: 100 });
+      setFactures(data);
       
       // Calculate stats
       const stats = {
         total: data.length,
-        en_attente: data.filter(c => c.statut === 'en_attente').length,
-        validees: data.filter(c => c.statut === 'validee').length,
-        ca_total: data.reduce((sum, c) => sum + (c.statut !== 'annulee' ? c.montant_total : 0), 0),
+        emises: data.filter(f => f.statut === 'emise').length,
+        impayees: data.filter(f => ['emise', 'partiellement_payee'].includes(f.statut)).length,
+        ca_total: data
+          .filter(f => f.statut !== 'annulee' && f.type_facture === 'facture')
+          .reduce((sum, f) => sum + f.montant_ttc, 0),
       };
       setStats(stats);
     } catch (error) {
-      console.error('Erreur chargement commandes:', error);
-      toast.error('Erreur lors du chargement des commandes');
+      console.error('Erreur chargement factures:', error);
+      toast.error('Erreur lors du chargement des factures');
     } finally {
       setLoading(false);
     }
@@ -102,34 +106,19 @@ export default function Commandes() {
   };
 
   const handleSearch = () => {
-    fetchCommandes();
+    fetchFactures();
   };
 
   const handleReset = () => {
     setFilters({
+      type_facture: 'all',
       statut: 'all',
       client_id: 'all',
       q: '',
       date_debut: '',
       date_fin: '',
     });
-    setTimeout(() => fetchCommandes(), 100);
-  };
-
-  const handleCreateProforma = async (commande) => {
-    try {
-      const payload = {
-        client_id: commande.client_id,
-        commande_id: commande.commande_id,
-        notes: `Proforma générée depuis commande ${commande.reference}`,
-      };
-      const proforma = await createProforma(payload);
-      toast.success('Proforma créée avec succès');
-      navigate(`/proformas/${proforma.proforma_id}`);
-    } catch (error) {
-      console.error('Erreur création proforma:', error);
-      toast.error('Erreur lors de la création de la proforma');
-    }
+    setTimeout(() => fetchFactures(), 100);
   };
 
   const formatCurrency = (amount) => {
@@ -150,19 +139,19 @@ export default function Commandes() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Commandes</h1>
+          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Factures</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestion du cycle de vie des commandes
+            Gestion et suivi des factures
           </p>
         </div>
         {canWrite && (
           <Button
-            onClick={() => navigate('/commandes/nouvelle')}
+            onClick={() => navigate('/factures/nouvelle')}
             className="bg-[#FF6200] hover:bg-[#E55900] text-white"
-            data-testid="btn-nouvelle-commande"
+            data-testid="btn-nouvelle-facture"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nouvelle commande
+            Nouvelle facture
           </Button>
         )}
       </div>
@@ -171,7 +160,7 @@ export default function Commandes() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total commandes</CardDescription>
+            <CardDescription>Total factures</CardDescription>
             <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -181,27 +170,27 @@ export default function Commandes() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>En attente</CardDescription>
-            <CardTitle className="text-2xl text-yellow-600">{stats.en_attente}</CardTitle>
+            <CardDescription>Émises</CardDescription>
+            <CardTitle className="text-2xl text-blue-600">{stats.emises}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Calendar className="h-4 w-4 text-yellow-500" />
+            <DollarSign className="h-4 w-4 text-blue-500" />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Validées</CardDescription>
-            <CardTitle className="text-2xl text-blue-600">{stats.validees}</CardTitle>
+            <CardDescription>Impayées</CardDescription>
+            <CardTitle className="text-2xl text-orange-600">{stats.impayees}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Filter className="h-4 w-4 text-blue-500" />
+            <AlertCircle className="h-4 w-4 text-orange-500" />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>CA Total</CardDescription>
+            <CardDescription>CA Total (TTC)</CardDescription>
             <CardTitle className="text-2xl text-green-600">{formatCurrency(stats.ca_total)}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -219,16 +208,30 @@ export default function Commandes() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Recherche</label>
               <Input
-                placeholder="Référence, client, représentant, ville, téléphone..."
+                placeholder="Client, représentant, ville, téléphone..."
                 value={filters.q}
                 onChange={(e) => handleFilterChange('q', e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                data-testid="input-search-commande"
+                data-testid="input-search-facture"
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Type</label>
+              <Select value={filters.type_facture} onValueChange={(v) => handleFilterChange('type_facture', v)}>
+                <SelectTrigger data-testid="select-type">
+                  <SelectValue placeholder="Tous" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="facture">Facture</SelectItem>
+                  <SelectItem value="avoir">Avoir</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -299,18 +302,18 @@ export default function Commandes() {
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Liste des commandes</CardTitle>
-          <CardDescription>{commandes.length} commande(s)</CardDescription>
+          <CardTitle>Liste des factures</CardTitle>
+          <CardDescription>{factures.length} facture(s)</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
-          ) : commandes.length === 0 ? (
+          ) : factures.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Aucune commande trouvée</p>
+              <p className="text-gray-600 dark:text-gray-400">Aucune facture trouvée</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -318,62 +321,68 @@ export default function Commandes() {
                 <thead className="border-b">
                   <tr className="text-left">
                     <th className="pb-3 font-semibold">Référence</th>
+                    <th className="pb-3 font-semibold">Type</th>
                     <th className="pb-3 font-semibold">Client</th>
                     <th className="pb-3 font-semibold">Date</th>
-                    <th className="pb-3 font-semibold text-right">Montant</th>
+                    <th className="pb-3 font-semibold text-right">Montant TTC</th>
+                    <th className="pb-3 font-semibold text-right">Restant</th>
                     <th className="pb-3 font-semibold">Statut</th>
+                    <th className="pb-3 font-semibold">FNE</th>
                     <th className="pb-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {commandes.map((commande) => (
+                  {factures.map((facture) => (
                     <tr
-                      key={commande.commande_id}
+                      key={facture.facture_id}
                       className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                      onClick={() => navigate(`/commandes/${commande.commande_id}`)}
-                      data-testid={`row-commande-${commande.reference}`}
+                      onClick={() => navigate(`/factures/${facture.facture_id}`)}
+                      data-testid={`row-facture-${facture.reference}`}
                     >
-                      <td className="py-3 font-mono text-sm">{commande.reference}</td>
-                      <td className="py-3">{commande.client_nom || '-'}</td>
+                      <td className="py-3 font-mono text-sm">{facture.reference}</td>
+                      <td className="py-3">
+                        <span className={`font-medium ${TYPE_CONFIG[facture.type_facture].color}`}>
+                          {TYPE_CONFIG[facture.type_facture].label}
+                        </span>
+                      </td>
+                      <td className="py-3">{facture.client_nom || '-'}</td>
                       <td className="py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {formatDate(commande.date_commande)}
+                        {formatDate(facture.date_facture)}
                       </td>
                       <td className="py-3 text-right font-semibold">
-                        {formatCurrency(commande.montant_total)}
+                        {formatCurrency(facture.montant_ttc)}
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className={facture.montant_restant > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500'}>
+                          {formatCurrency(facture.montant_restant)}
+                        </span>
                       </td>
                       <td className="py-3">
-                        <Badge className={`${STATUT_CONFIG[commande.statut].color} text-white`}>
-                          {STATUT_CONFIG[commande.statut].label}
+                        <Badge className={`${STATUT_CONFIG[facture.statut].color} text-white`}>
+                          {STATUT_CONFIG[facture.statut].label}
                         </Badge>
                       </td>
                       <td className="py-3">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/commandes/${commande.commande_id}`);
-                            }}
-                            data-testid={`btn-voir-${commande.reference}`}
-                          >
-                            Voir
-                          </Button>
-                          {commande.statut === 'validee' && canWrite && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCreateProforma(commande);
-                              }}
-                              data-testid={`btn-proforma-${commande.reference}`}
-                            >
-                              <MessageCircle className="h-4 w-4 mr-1" />
-                              Proforma
-                            </Button>
-                          )}
-                        </div>
+                        {facture.fne_status && FNE_STATUS_CONFIG[facture.fne_status] ? (
+                          <Badge className={`${FNE_STATUS_CONFIG[facture.fne_status].color} text-white`}>
+                            {FNE_STATUS_CONFIG[facture.fne_status].label}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/factures/${facture.facture_id}`);
+                          }}
+                          data-testid={`btn-voir-${facture.reference}`}
+                        >
+                          Voir
+                        </Button>
                       </td>
                     </tr>
                   ))}

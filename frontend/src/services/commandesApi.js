@@ -73,13 +73,30 @@ export const generateCommandePDF = async (commandeId) => {
 };
 
 // Send commande via WhatsApp
-export const sendCommandeWhatsApp = async (commandeId) => {
-  const response = await axios.post(`${API}/commandes/${commandeId}/envoyer-whatsapp`);
+export const sendCommandeWhatsApp = async (commandeId, payload = {}) => {
+  const response = await axios.post(`${API}/commandes/${commandeId}/envoyer-whatsapp`, payload || {});
   return response.data;
 };
 
 // Send commande via Email
-export const sendCommandeEmail = async (commandeId) => {
-  const response = await axios.post(`${API}/commandes/${commandeId}/envoyer-email`);
+export const sendCommandeEmail = async (commandeId, payload = {}) => {
+  const response = await axios.post(`${API}/commandes/${commandeId}/envoyer-email`, payload || {});
+  return response.data;
+};
+
+// Delete commande (super_admin uniquement — cascade complète)
+export const deleteCommande = async (commandeId) => {
+  await axios.delete(`${API}/commandes/${commandeId}`);
+};
+
+// Check doublon en temps réel
+export const checkDoublon = async (payload) => {
+  const response = await axios.post(`${API}/commandes/check-doublon`, payload);
+  return response.data;
+};
+
+// Logger la décision utilisateur face à un doublon
+export const logDoublonDecision = async (logId, decision) => {
+  const response = await axios.patch(`${API}/commandes/check-doublon/${logId}`, { decision });
   return response.data;
 };

@@ -3,6 +3,7 @@
  * Sprint 7
  */
 import React, { useState, useEffect } from 'react';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, FileText, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { getFactures } from '../services/facturesApi';
@@ -62,10 +63,18 @@ export default function Factures() {
 
   const canWrite = user && can(user.role, 'factures', 'create');
 
+  const debouncedQ = useDebouncedValue(filters.q, 350);
+
   useEffect(() => {
     fetchClients();
     fetchFactures();
   }, []);
+
+  // Live search sur q (debounced)
+  useEffect(() => {
+    fetchFactures();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ]);
 
   const fetchClients = async () => {
     try {

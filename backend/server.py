@@ -13,7 +13,7 @@ import bcrypt
 import re
 import html
 
-from fastapi import FastAPI, APIRouter, HTTPException, Header, Request, Depends, Response, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Header, Request, Depends, Response, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
@@ -52,6 +52,7 @@ from bi_analytics_module import build_bi_analytics_router
 from workflow_approvals_module import build_workflow_approvals_router
 from file_storage_module import build_file_storage_router
 from backup_module import build_backup_router
+from twofa_module import build_twofa_router
 from dashboard_data import build_dashboard_payload
 from rh_module import build_rh_router, seed_rh_data
 from document_settings_module import router as document_settings_router
@@ -172,9 +173,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none';"
+        )
         
         # Remove server information
         response.headers["Server"] = "ERP-FABS-CI"
@@ -261,6 +271,18 @@ def create_jwt_token(user_id: str, email: str, role: str) -> str:
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+def create_preauth_token(user_id: str, email: str, role: str) -> str:
+    """Token temporaire 2FA pré-auth (5 min, scope limité)"""
+    exp = datetime.now(timezone.utc) + timedelta(minutes=5)
+    payload = {
+        "user_id": user_id,
+        "email": email,
+        "role": role,
+        "scope": "2fa_pending",
+        "exp": exp
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
 def create_refresh_token(user_id: str) -> str:
     """Create JWT refresh token"""
     exp = datetime.now(timezone.utc) + timedelta(days=JWT_REFRESH_TOKEN_EXPIRY_DAYS)
@@ -313,7 +335,12 @@ async def resolve_user(request: Request, authorization: Optional[str] = None) ->
     
     if not user.get('actif', True):
         raise HTTPException(status_code=403, detail="Compte désactivé")
-    
+
+    # Injecter le scope du token (ex: "2fa_pending") dans le dict retourné
+    if payload.get("scope"):
+        user = dict(user)
+        user["scope"] = payload["scope"]
+
     return user
 
 # ============================================================================
@@ -334,6 +361,8 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: dict
+    twofa_pending: Optional[bool] = None        # True → saisir le code OTP
+    twofa_setup_required: Optional[bool] = None  # True → activer le 2FA d'abord
 
 class UserProfile(BaseModel):
     user_id: str
@@ -350,7 +379,7 @@ VALID_ROLES = {
     "super_admin", "directeur_general", "comptable",
     "directeur_commercial", "gestionnaire_stock",
     "responsable_magasinier", "secretariat", "assistante",
-    "service_logistique",
+    "service_logistique", "assistante_commerciale",
 }
 
 
@@ -412,9 +441,15 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Prometheus metrics setup
-instrumentator = Instrumentator()
-instrumentator.instrument(app).expose(app, endpoint="/metrics")
+# Prometheus metrics — désactivé en production (faille sécurité : exposition publique)
+# Pour activer en dev uniquement : PROMETHEUS_ENABLED=true dans .env
+PROMETHEUS_ENABLED = os.environ.get("PROMETHEUS_ENABLED", "false").lower() == "true"
+if PROMETHEUS_ENABLED:
+    instrumentator = Instrumentator()
+    instrumentator.instrument(app).expose(app, endpoint="/metrics")
+    logger.info("Prometheus metrics actif sur /metrics (dev uniquement)")
+else:
+    logger.info("Prometheus metrics désactivé (production)")
 
 # CORS Middleware — allow all origins in dev (Runable preview support)
 app.add_middleware(
@@ -431,18 +466,49 @@ api_router = APIRouter(prefix="/api")
 # ============================================================================
 # AUTH ENDPOINTS
 # ============================================================================
+# Constantes lockout
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
+
 @api_router.post("/auth/login")
-@limiter.limit("30/minute")  # Limit login attempts
+@limiter.limit("20/minute")  # Limit login attempts
 async def login(request: Request, response: Response, credentials: LoginRequest = Body(...)):
     """
     Login with email/password
     Sets JWT token in httpOnly cookie
     """
+    lockout_key = f"lockout:{credentials.email}"
+    attempts_key = f"login_attempts:{credentials.email}"
+
+    # Vérifier si le compte est verrouillé
+    try:
+        is_locked = await redis_client.get(lockout_key)
+        if is_locked:
+            ttl = await redis_client.ttl(lockout_key)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Compte temporairement bloqué après trop de tentatives. Réessayez dans {ttl // 60} min {ttl % 60} sec."
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Redis indisponible — on continue sans lockout
+
     # Find user
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
     
+    async def record_failed_attempt():
+        try:
+            attempts = await redis_client.incr(attempts_key)
+            await redis_client.expire(attempts_key, LOGIN_LOCKOUT_SECONDS)
+            if int(attempts) >= LOGIN_MAX_ATTEMPTS:
+                await redis_client.setex(lockout_key, LOGIN_LOCKOUT_SECONDS, "1")
+                await redis_client.delete(attempts_key)
+        except Exception:
+            pass
+
     if not user:
-        # Log failed login attempt
+        await record_failed_attempt()
         await log_audit_event(
             user_id="anonymous",
             action="LOGIN_FAILED",
@@ -455,7 +521,7 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
     # Verify password (if password field exists)
     if 'password_hash' in user:
         if not verify_password(credentials.password, user['password_hash']):
-            # Log failed login attempt
+            await record_failed_attempt()
             await log_audit_event(
                 user_id=user['user_id'],
                 action="LOGIN_FAILED",
@@ -467,6 +533,13 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
     else:
         # For backward compatibility - allow login without password hash
         # This is for Google OAuth users
+        pass
+
+    # Connexion réussie — réinitialiser le compteur
+    try:
+        await redis_client.delete(attempts_key)
+        await redis_client.delete(lockout_key)
+    except Exception:
         pass
     
     if not user.get('actif', True):
@@ -515,7 +588,39 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
         "actif": user['actif'],
         "picture": user.get('picture'),
     }
-    
+
+    # ── Vérification 2FA obligatoire ────────────────────────────────────────
+    from twofa_module import ROLES_2FA_REQUIRED
+    if user['role'] in ROLES_2FA_REQUIRED:
+        db_user = await db.users.find_one({"user_id": user['user_id']}, {"_id": 0})
+        twofa_enabled = db_user.get("twofa_enabled", False) if db_user else False
+
+        if not twofa_enabled:
+            # 2FA obligatoire mais pas encore configuré → forcer le setup
+            # On retourne quand même le vrai token pour accéder à /parametres uniquement
+            return LoginResponse(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type="bearer",
+                expires_in=JWT_ACCESS_TOKEN_EXPIRY_MINUTES * 60,
+                user=user_info,
+                twofa_setup_required=True
+            )
+        else:
+            # 2FA activé → retourner un token pré-auth, pas de cookie complet
+            preauth_token = create_preauth_token(user['user_id'], user['email'], user['role'])
+            # Supprimer le cookie complet — session pas encore validée
+            response.delete_cookie("session_token")
+            return LoginResponse(
+                access_token=preauth_token,
+                refresh_token="",
+                token_type="bearer",
+                expires_in=300,
+                user=user_info,
+                twofa_pending=True
+            )
+    # ────────────────────────────────────────────────────────────────────────
+
     return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -760,7 +865,7 @@ async def dashboard_stats(
         return json.loads(cached)
     
     # Build payload
-    payload = build_dashboard_payload(user['role'])
+    payload = await build_dashboard_payload(user['role'], db)
     
     # Cache the result
     import json
@@ -843,6 +948,13 @@ api_router.include_router(build_bi_analytics_router(db, resolve_user))
 api_router.include_router(build_workflow_approvals_router(db, resolve_user))
 api_router.include_router(build_file_storage_router(db, resolve_user))
 api_router.include_router(build_backup_router(db, resolve_user))
+api_router.include_router(build_twofa_router(
+    db, resolve_user, log_audit_event,
+    create_jwt_token=create_jwt_token,
+    create_refresh_token=create_refresh_token,
+    JWT_ACCESS_TOKEN_EXPIRY_MINUTES=JWT_ACCESS_TOKEN_EXPIRY_MINUTES,
+    JWT_REFRESH_TOKEN_EXPIRY_DAYS=JWT_REFRESH_TOKEN_EXPIRY_DAYS
+))
 api_router.include_router(build_rh_router(db, resolve_user))
 
 # Include document settings router
@@ -854,6 +966,53 @@ api_router.include_router(fournisseurs_router)
 api_router.include_router(approvisionnement_router)
 api_router.include_router(build_proformas_router(db, resolve_user, log_audit_event))
 api_router.include_router(paie_router)
+
+
+# ============================================================================
+# ENDPOINT : Journal des envois (cross-documents)
+# ============================================================================
+@api_router.get("/envois-historique")
+async def get_envois_historique(
+    request: Request,
+    date_debut: Optional[str] = Query(default=None),
+    date_fin: Optional[str] = Query(default=None),
+    user_id: Optional[str] = Query(default=None),
+    type_document: Optional[str] = Query(default=None),
+    canal: Optional[str] = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+    authorization: Optional[str] = Header(default=None),
+):
+    """Journal des envois (WhatsApp + Email) pour tous les documents."""
+    user = await resolve_user(request, authorization)
+    ALLOWED = {
+        "super_admin", "directeur_general", "directeur_commercial",
+        "commercial", "comptable", "secretariat", "assistante_commerciale",
+    }
+    if user["role"] not in ALLOWED:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    query: dict = {}
+    if type_document:
+        query["type_document"] = type_document
+    if canal:
+        query["canal"] = canal
+    if user_id:
+        query["user_id"] = user_id
+    if date_debut or date_fin:
+        query["created_at"] = {}
+        if date_debut:
+            query["created_at"]["$gte"] = date_debut
+        if date_fin:
+            query["created_at"]["$lte"] = date_fin + "T23:59:59Z"
+
+    total = await db.envoi_logs.count_documents(query)
+    skip = (page - 1) * page_size
+    cursor = db.envoi_logs.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size)
+    items = await cursor.to_list(length=page_size)
+
+    return {"total": total, "page": page, "page_size": page_size, "items": items}
+
 
 # Include API router in main app
 app.include_router(api_router)
@@ -1003,6 +1162,21 @@ async def startup_event():
         logger.info("✅ Notifications indexes ensured")
     except Exception as exc:
         logger.warning("Notifications indexes failed: %s", exc)
+
+    # Index unicité : 1 facture par commande (type "facture" uniquement)
+    try:
+        await db.factures.create_index(
+            [("commande_id", 1), ("type_facture", 1)],
+            unique=True,
+            partialFilterExpression={
+                "commande_id": {"$exists": True, "$type": "string"},
+                "type_facture": {"$eq": "facture"}
+            },
+            name="unique_facture_par_commande"
+        )
+        logger.info("✅ Factures uniqueness index ensured")
+    except Exception as exc:
+        logger.warning("Factures uniqueness index failed: %s", exc)
 
     logger.info("✅ ERP EDITIONS FABS-CI backend ready!")
 

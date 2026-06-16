@@ -3,9 +3,15 @@ import { getApiBase } from '../config/api';
 
 const API = getApiBase("/colisage");
 
-// Colis
+// ─── COLIS ───────────────────────────────────────────────────────────────────
+
 export const listColis = async (filters = {}) => {
   const response = await axios.get(`${API}/colis`, { params: filters });
+  return response.data;
+};
+
+export const getColisByFacture = async (factureId) => {
+  const response = await axios.get(`${API}/colis/by-facture/${factureId}`);
   return response.data;
 };
 
@@ -24,19 +30,25 @@ export const updateColis = async (colisId, data) => {
   return response.data;
 };
 
+export const updateColisStatut = async (colisId, statut, motif = null) => {
+  const response = await axios.patch(`${API}/colis/${colisId}/statut`, { statut, motif });
+  return response.data;
+};
+
 export const deleteColis = async (colisId) => {
   const response = await axios.delete(`${API}/colis/${colisId}`);
   return response.data;
 };
 
-export const updateColisStatut = async (colisId, statut) => {
-  const response = await axios.patch(`${API}/colis/${colisId}/statut`, null, {
-    params: { statut },
-  });
+// ─── STATS ───────────────────────────────────────────────────────────────────
+
+export const getStatsColisageFacture = async (factureId) => {
+  const response = await axios.get(`${API}/stats/facture/${factureId}`);
   return response.data;
 };
 
-// Expéditions
+// ─── EXPÉDITIONS (legacy — module séparé) ────────────────────────────────────
+
 export const listExpeditions = async (filters = {}) => {
   const response = await axios.get(`${API}/expeditions`, { params: filters });
   return response.data;
@@ -59,7 +71,8 @@ export const updateExpeditionStatut = async (expeditionId, statut, dateLivraison
   return response.data;
 };
 
-// Mouvements
+// ─── MOUVEMENTS ──────────────────────────────────────────────────────────────
+
 export const listMouvements = async (filters = {}) => {
   const response = await axios.get(`${API}/mouvements`, { params: filters });
   return response.data;

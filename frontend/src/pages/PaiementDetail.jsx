@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
+import DocumentActionBar from "../components/document/DocumentActionBar";
 
-import { getPaiement } from "../services/paiementsApi";
+import { getPaiement, sendPaiementWhatsApp, sendPaiementEmail } from "../services/paiementsApi";
 
 const MODES = {
   especes: { label: "Espèces", color: "bg-green-600" },
@@ -37,6 +38,15 @@ export default function PaiementDetail() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  const handleSendWhatsApp = async (payload) => {
+    const data = await sendPaiementWhatsApp(id, payload);
+    if (data.whatsapp_url) window.open(data.whatsapp_url, "_blank");
+  };
+
+  const handleSendEmail = async (payload) => {
+    await sendPaiementEmail(id, payload);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -49,19 +59,32 @@ export default function PaiementDetail() {
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="paiement-detail">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/paiements")} data-testid="btn-retour">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">{paiement.reference}</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge className={`${MODES[paiement.mode_paiement]?.color} text-white`}>
-                {MODES[paiement.mode_paiement]?.label}
-              </Badge>
-              <span className="text-sm text-gray-500">{paiement.date_paiement}</span>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate("/paiements")} data-testid="btn-retour">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">{paiement.reference}</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge className={`${MODES[paiement.mode_paiement]?.color} text-white`}>
+                  {MODES[paiement.mode_paiement]?.label}
+                </Badge>
+                <span className="text-sm text-gray-500">{paiement.date_paiement}</span>
+              </div>
             </div>
           </div>
+          <DocumentActionBar
+            documentType="Reçu de Paiement"
+            documentId={paiement.paiement_id}
+            documentReference={paiement.reference}
+            clientWhatsApp={paiement.client_numero_whatsapp}
+            clientEmail={paiement.client_email}
+            clientNom={paiement.client_nom}
+            montant={paiement.montant_total ? `${Number(paiement.montant_total).toLocaleString('fr-FR')} FCFA` : ''}
+            onSendWhatsApp={handleSendWhatsApp}
+            onSendEmail={handleSendEmail}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

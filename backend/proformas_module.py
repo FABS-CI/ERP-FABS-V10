@@ -25,13 +25,14 @@ import logging
 from fastapi import APIRouter, HTTPException, Header, Query, Request, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.proformas")
 
 # RBAC
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "commercial", "comptable", "secretariat",
+    "commercial", "comptable", "secretariat", "assistante_commerciale",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
@@ -39,7 +40,7 @@ WRITE_ROLES = {
 }
 SEND_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "commercial",
+    "directeur_commercial", "commercial", "assistante_commerciale",
 }
 CONVERT_ROLES = {
     "super_admin", "directeur_general",
@@ -166,6 +167,18 @@ class ProformaListOut(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class EmailPayload(BaseModel):
+    destinataire: Optional[str] = None  # override email client si fourni
+    cc: Optional[str] = None
+    bcc: Optional[str] = None
+    objet: Optional[str] = None
+    message: Optional[str] = None
+
+
+class WhatsAppPayload(BaseModel):
+    numero: Optional[str] = None  # override numéro WhatsApp si fourni manuellement
 
 
 # ---------------------------------------------------------------------------
@@ -414,7 +427,20 @@ def build_proformas_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             doc["client_telephone"] = client.get("telephone")
             doc["client_numero_whatsapp"] = client.get("numero_whatsapp")
             doc["client_email"] = client.get("email")
-        
+
+        # 🔔 Notification vente — nouvelle proforma
+        try:
+            _client_nom = client.get("nom", payload.client_id) if client else payload.client_id
+            await notify_vente_event(
+                db, "info", "commande",
+                f"📄 Nouvelle proforma {reference}",
+                f"Proforma créée pour {_client_nom} — {doc['montant_ttc']:,.0f} FCFA",
+                lien=f"/proformas/{doc['proforma_id']}",
+                exclude_user_id=user["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify create_proforma: %s", _e)
+
         return ProformaOut(**doc)
     
     @router.patch("/{proforma_id}", response_model=ProformaOut)
@@ -566,7 +592,8 @@ def build_proformas_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
     @router.post("/{proforma_id}/envoyer-whatsapp")
     async def envoyer_proforma_whatsapp(
         proforma_id: str,
-        request: Request,
+        payload: WhatsAppPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None)
     ):
         """Prepare WhatsApp sharing link for Proforma"""
@@ -576,15 +603,14 @@ def build_proformas_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         proforma = await db.proformas.find_one({"proforma_id": proforma_id})
         _ensure(proforma is not None, 404, "Proforma introuvable")
         
-        # Ensure PDF is generated
-        _ensure(proforma.get("proforma_pdf_path"), 400, "PDF non généré")
-        
         # Get client WhatsApp number
         client = await db.clients.find_one({"client_id": proforma["client_id"]})
         _ensure(client is not None, 404, "Client introuvable")
         
-        whatsapp_number = client.get("numero_whatsapp") or client.get("telephone")
-        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible pour ce client")
+        # Numéro : override manuel (payload) ou numéro client en base
+        whatsapp_number = (payload.numero if payload and payload.numero else None) \
+            or client.get("numero_whatsapp") or client.get("telephone")
+        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible — veuillez en saisir un")
         
         # Clean phone number (remove spaces, dashes, etc.)
         clean_number = whatsapp_number.replace(" ", "").replace("-", "").replace("+", "")
@@ -618,9 +644,10 @@ Cordialement,
             }
         )
         
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
         # Log audit
         await db.audit_logs.insert_one({
-            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{user['user_id'][:8]}",
+            "audit_id": f"audit_{ts}_{user['user_id'][:8]}",
             "user_id": user["user_id"],
             "action": "SEND_WHATSAPP",
             "resource_type": "proforma",
@@ -628,6 +655,22 @@ Cordialement,
             "details": {"whatsapp_number": clean_number},
             "ip_address": request.client.host if request.client else None,
             "timestamp": _now_iso(),
+        })
+        # Log envoi
+        await db.envoi_logs.insert_one({
+            "log_id": f"envoi_{ts}_{user['user_id'][:8]}",
+            "type_document": "proforma",
+            "document_id": proforma_id,
+            "reference": proforma.get("numero_proforma", ""),
+            "canal": "whatsapp",
+            "destinataire": clean_number,
+            "cc": None,
+            "bcc": None,
+            "objet": None,
+            "statut": "envoye",
+            "user_id": user["user_id"],
+            "user_email": user.get("email", ""),
+            "created_at": _now_iso(),
         })
         
         return {
@@ -639,25 +682,33 @@ Cordialement,
     @router.post("/{proforma_id}/envoyer-email")
     async def envoyer_proforma_email(
         proforma_id: str,
-        request: Request,
+        payload: EmailPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None)
     ):
-        """Send Proforma via Email"""
+        """Send Proforma via Email with optional CC/BCC/custom subject+body"""
         user = await resolve_user(request, authorization)
         _ensure(user["role"] in SEND_ROLES, 403, "Accès refusé")
         
         proforma = await db.proformas.find_one({"proforma_id": proforma_id})
         _ensure(proforma is not None, 404, "Proforma introuvable")
         
-        # Ensure PDF is generated
-        _ensure(proforma.get("proforma_pdf_path"), 400, "PDF non généré")
-        
         # Get client email
         client = await db.clients.find_one({"client_id": proforma["client_id"]})
         _ensure(client is not None, 404, "Client introuvable")
         
-        client_email = client.get("email")
+        # Destinataire : payload override ou email client
+        if payload and payload.destinataire:
+            client_email = payload.destinataire
+        else:
+            client_email = client.get("email")
         _ensure(client_email, 400, "Email non disponible pour ce client")
+        
+        # Objet / message par défaut si non fournis
+        email_objet = (payload.objet if payload and payload.objet else None) or \
+            f"Facture Proforma {proforma['numero_proforma']}"
+        email_message = (payload.message if payload and payload.message else None) or \
+            f"Bonjour,\n\nVeuillez trouver ci-joint votre Facture Proforma N° {proforma['numero_proforma']}.\n\nCordialement,\nÉditions FABS-CI"
         
         # Update proforma
         await db.proformas.update_one(
@@ -666,14 +717,16 @@ Cordialement,
                 "$set": {
                     "envoye_email": True,
                     "date_envoi_email": _now_iso(),
+                    "statut_proforma": "envoyee",
                     "updated_at": _now_iso()
                 }
             }
         )
         
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
         # Log audit
         await db.audit_logs.insert_one({
-            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{user['user_id'][:8]}",
+            "audit_id": f"audit_{ts}_{user['user_id'][:8]}",
             "user_id": user["user_id"],
             "action": "SEND_EMAIL",
             "resource_type": "proforma",
@@ -682,11 +735,30 @@ Cordialement,
             "ip_address": request.client.host if request.client else None,
             "timestamp": _now_iso(),
         })
+        # Log envoi
+        await db.envoi_logs.insert_one({
+            "log_id": f"envoi_{ts}_{user['user_id'][:8]}",
+            "type_document": "proforma",
+            "document_id": proforma_id,
+            "reference": proforma.get("numero_proforma", ""),
+            "canal": "email",
+            "destinataire": client_email,
+            "cc": payload.cc if payload else None,
+            "bcc": payload.bcc if payload else None,
+            "objet": email_objet,
+            "statut": "envoye",
+            "user_id": user["user_id"],
+            "user_email": user.get("email", ""),
+            "created_at": _now_iso(),
+        })
         
         return {
             "message": "Email envoyé avec succès",
             "email": client_email,
-            "subject": f"Facture Proforma {proforma['numero_proforma']}"
+            "cc": payload.cc if payload else None,
+            "bcc": payload.bcc if payload else None,
+            "subject": email_objet,
+            "body": email_message,
         }
     
     @router.post("/{proforma_id}/convertir-facture")

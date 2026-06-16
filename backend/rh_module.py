@@ -29,7 +29,7 @@ READ_ROLES = {
     "comptable", "directeur_commercial", "secretariat",
 }
 WRITE_ROLES = {
-    "super_admin", "directeur_general", "responsable_rh",
+    "super_admin", "directeur_general", "responsable_rh", "comptable",
 }
 DELETE_ROLES = {
     "super_admin", "directeur_general",

@@ -2,18 +2,20 @@
  * Composant de formulaire nouvelle commande - 3 étapes
  * Sprint 6
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Save, Send, Plus, Trash2, Search } from 'lucide-react';
-import { createCommande } from '../../services/commandesApi';
+import { ArrowLeft, ArrowRight, Save, Send, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
+import { createCommande, checkDoublon, logDoublonDecision } from '../../services/commandesApi';
 import { listClients } from '../../services/clientsApi';
 import { listProducts } from '../../services/produitsApi';
+import DoublonAlert from './DoublonAlert';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
@@ -29,7 +31,7 @@ export default function CommandeForm() {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [produits, setProduits] = useState([]);
-  const [searchProduit, setSearchProduit] = useState('');
+  const [openProduitIdx, setOpenProduitIdx] = useState(null);
 
   const [formData, setFormData] = useState({
     client_id: preloadClientId,
@@ -40,6 +42,12 @@ export default function CommandeForm() {
   });
 
   const [selectedClient, setSelectedClient] = useState(null);
+
+  // --- Doublon detection ---
+  const [doublonData, setDoublonData] = useState(null);   // { commande, niveau, logId }
+  const [showDoublonAlert, setShowDoublonAlert] = useState(false);
+  const doublonTimerRef = useRef(null);
+  const skipDoublonCheck = useRef(false); // flag "continuer quand même"
 
   useEffect(() => {
     fetchClients();
@@ -90,6 +98,55 @@ export default function CommandeForm() {
     setSelectedClient(client);
     setFormData(prev => ({ ...prev, client_id: clientId }));
   };
+
+  // --- Doublon detection debounce (800ms) ---
+  const triggerDoublonCheck = useCallback((data) => {
+    if (doublonTimerRef.current) clearTimeout(doublonTimerRef.current);
+
+    // Pas assez d'infos pour vérifier
+    if (!data.client_id || data.lignes.length === 0) return;
+
+    // Vérifier que toutes les lignes sont complètes
+    const lignesComplete = data.lignes.every(
+      (l) => l.produit_id && l.quantite > 0 && l.prix_unitaire > 0
+    );
+    if (!lignesComplete) return;
+
+    // Si l'utilisateur a choisi "continuer quand même", ne pas re-checker
+    if (skipDoublonCheck.current) return;
+
+    doublonTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await checkDoublon({
+          client_id: data.client_id,
+          lignes: data.lignes,
+          representant: selectedClient?.representant || null,
+          telephone: selectedClient?.telephone || null,
+        });
+
+        if (result.doublon) {
+          setDoublonData({ commande: result.commande, niveau: result.niveau, logId: result.log_id });
+          setShowDoublonAlert(true);
+        }
+      } catch (err) {
+        // Silencieux — ne pas bloquer la saisie
+        console.warn('Doublon check error:', err);
+      }
+    }, 800);
+  }, [selectedClient]);
+
+  // Déclencher le check quand client ou lignes changent
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    triggerDoublonCheck(formData);
+  }, [formData.client_id, formData.lignes, triggerDoublonCheck]);
+
+  // Réinitialiser le flag "skip" quand le client change
+  useEffect(() => {
+    skipDoublonCheck.current = false;
+    setDoublonData(null);
+    setShowDoublonAlert(false);
+  }, [formData.client_id]);
 
   const addLigne = () => {
     setFormData(prev => ({
@@ -196,17 +253,35 @@ export default function CommandeForm() {
     }).format(amount) + ' FCFA';
   };
 
-  const filteredProduits = Array.isArray(produits) 
-    ? produits.filter(p =>
-        p.titre?.toLowerCase().includes(searchProduit.toLowerCase()) ||
-        p.reference?.toLowerCase().includes(searchProduit.toLowerCase())
-      )
-    : [];
-
   const totals = calculateTotals();
+
+  // Handlers doublon
+  const handleDoublonContinue = async () => {
+    if (doublonData?.logId) {
+      try { await logDoublonDecision(doublonData.logId, 'continuer'); } catch {}
+    }
+    skipDoublonCheck.current = true;
+    setShowDoublonAlert(false);
+  };
+
+  const handleDoublonCancel = async () => {
+    if (doublonData?.logId) {
+      try { await logDoublonDecision(doublonData.logId, 'annuler'); } catch {}
+    }
+    navigate('/commandes');
+  };
 
   return (
     <DashboardLayout>
+    {/* Dialog doublon */}
+    <DoublonAlert
+      open={showDoublonAlert}
+      commande={doublonData?.commande}
+      niveau={doublonData?.niveau}
+      logId={doublonData?.logId}
+      onContinue={handleDoublonContinue}
+      onCancel={handleDoublonCancel}
+    />
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
@@ -340,26 +415,53 @@ export default function CommandeForm() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="col-span-2">
                           <Label>Produit *</Label>
-                          <Select
-                            value={ligne.produit_id}
-                            onValueChange={(v) => updateLigne(index, 'produit_id', v)}
+                          <Popover
+                            open={openProduitIdx === index}
+                            onOpenChange={(o) => setOpenProduitIdx(o ? index : null)}
                           >
-                            <SelectTrigger data-testid={`select-produit-${index}`}>
-                              <SelectValue placeholder="Sélectionner" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.isArray(filteredProduits) && filteredProduits.map((produit) => (
-                                <SelectItem key={produit.product_id} value={produit.product_id}>
-                                  <div>
-                                    <div className="font-medium">{produit.titre}</div>
-                                    <div className="text-sm text-gray-500">
-                                      {produit.reference} - {formatCurrency(produit.prix_vente)}
-                                    </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between font-normal"
+                                data-testid={`select-produit-${index}`}
+                              >
+                                <span className="truncate">
+                                  {ligne.produit_id
+                                    ? produits.find(p => p.product_id === ligne.produit_id)?.titre || 'Sélectionner'
+                                    : 'Sélectionner un produit'}
+                                </span>
+                                <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[400px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Rechercher produit..." />
+                                <CommandList>
+                                  <CommandEmpty>Aucun produit trouvé</CommandEmpty>
+                                  {Array.isArray(produits) && produits.map((produit) => (
+                                    <CommandItem
+                                      key={produit.product_id}
+                                      value={`${produit.titre} ${produit.reference}`}
+                                      onSelect={() => {
+                                        updateLigne(index, 'produit_id', produit.product_id);
+                                        setOpenProduitIdx(null);
+                                      }}
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 shrink-0 ${ligne.produit_id === produit.product_id ? 'opacity-100' : 'opacity-0'}`}
+                                      />
+                                      <div>
+                                        <div className="font-medium">{produit.titre}</div>
+                                        <div className="text-xs text-gray-500">
+                                          {produit.reference} — {formatCurrency(produit.prix_vente)}
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
 
                         <div>
@@ -391,9 +493,12 @@ export default function CommandeForm() {
                             type="number"
                             min="0"
                             max="100"
-                            step="0.1"
+                            step="0.01"
                             value={ligne.remise_ligne}
-                            onChange={(e) => updateLigne(index, 'remise_ligne', parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              updateLigne(index, 'remise_ligne', v === '' ? 0 : parseFloat(v));
+                            }}
                             data-testid={`input-remise-ligne-${index}`}
                           />
                         </div>
@@ -484,9 +589,12 @@ export default function CommandeForm() {
                   type="number"
                   min="0"
                   max="100"
-                  step="0.1"
+                  step="0.01"
                   value={formData.remise_globale}
-                  onChange={(e) => setFormData(prev => ({ ...prev, remise_globale: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFormData(prev => ({ ...prev, remise_globale: v === '' ? 0 : parseFloat(v) }));
+                  }}
                   data-testid="input-remise-globale"
                 />
               </div>

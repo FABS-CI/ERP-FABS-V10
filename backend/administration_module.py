@@ -31,6 +31,8 @@ ROLES_DISPONIBLES = [
     "responsable_magasinier",
     "secretariat",
     "service_logistique",
+    "assistante_commerciale",
+    "assistante",
 ]
 
 

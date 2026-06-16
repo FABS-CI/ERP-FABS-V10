@@ -2,7 +2,6 @@
  * Page Bons de Livraison — Sprint 10
  */
 import React, { useState, useEffect } from "react";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useNavigate } from "react-router-dom";
 import { Plus, Truck, CheckCircle, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
@@ -43,12 +42,7 @@ export default function BonsLivraison() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
 
-  const debouncedQ = useDebouncedValue(search, 350);
-
   useEffect(() => { fetchBls(); /* eslint-disable-next-line */ }, []);
-
-  // Live search (debounced)
-  useEffect(() => { fetchBls(); /* eslint-disable-next-line */ }, [debouncedQ, statut]);
 
   const fetchBls = async () => {
     setLoading(true);

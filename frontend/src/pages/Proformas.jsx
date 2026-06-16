@@ -3,6 +3,7 @@
  * ERP FABS-CI V10 — Module officiel
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, FileText, Send, CheckCircle, Clock, XCircle, ArrowRightCircle } from 'lucide-react';
 import { listProformas, getProformasDashboardStats } from '../services/proformasApi';
@@ -43,12 +44,14 @@ export default function Proformas() {
 
   const canWrite = user && can(user.role, 'proformas');
 
+  const debouncedQ = useDebouncedValue(filters.q, 350);
+
   const fetchProformas = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
       if (filters.statut !== 'all') params.statut = filters.statut;
-      if (filters.q) params.q = filters.q;
+      if (debouncedQ) params.q = debouncedQ;
       const data = await listProformas(params);
       setItems(data.items || []);
     } catch (e) {
@@ -58,7 +61,7 @@ export default function Proformas() {
     } finally {
       setLoading(false);
     }
-  }, [filters.statut, filters.q]);
+  }, [filters.statut, debouncedQ]);
 
   const fetchStats = useCallback(async () => {
     try {

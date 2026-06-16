@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Plus, Search, Truck, Eye, CheckCircle, MapPin, Calendar } from "lucide-react";
 import { listExpeditions, createExpedition, updateExpeditionStatut } from "@/services/colisageService";
@@ -20,7 +19,6 @@ const Expeditions = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 350);
   const [selectedExpedition, setSelectedExpedition] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -40,8 +38,8 @@ const Expeditions = () => {
   });
 
   const { data: expeditionsList, isLoading } = useQuery(
-    ["expeditions", debouncedSearch, statutFilter],
-    () => listExpeditions({ q: debouncedSearch, statut: statutFilter }),
+    ["expeditions", search, statutFilter],
+    () => listExpeditions({ q: search, statut: statutFilter }),
     { enabled: !!user }
   );
 

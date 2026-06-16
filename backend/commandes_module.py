@@ -25,19 +25,23 @@ import os
 from fastapi import APIRouter, HTTPException, Header, Query, Request, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.commandes")
 
 # RBAC
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "secretariat", "comptable",
+    "secretariat", "comptable", "assistante_commerciale",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "secretariat",
+    "directeur_commercial", "secretariat", "assistante_commerciale",
 }
-VALIDATE_ROLES = {"super_admin", "directeur_general", "directeur_commercial"}
+# Validation interdite à l'assistante_commerciale
+VALIDATE_ROLES = {"super_admin", "directeur_general", "directeur_commercial", "secretariat", "comptable"}
+# Annulation interdite à l'assistante_commerciale
+CANCEL_ROLES = {"super_admin", "directeur_general", "directeur_commercial", "secretariat"}
 PREPARE_ROLES = {"super_admin", "directeur_general", "responsable_magasinier"}
 DELIVER_ROLES = {"super_admin", "directeur_general", "service_logistique"}
 
@@ -198,6 +202,25 @@ class CommandeDetail(CommandeOut):
 
 class AnnulerCommandeIn(BaseModel):
     motif: str = Field(..., min_length=10, max_length=500)
+
+
+class DoublonCheckIn(BaseModel):
+    client_id: str
+    lignes: List[LigneCommandeIn]
+    representant: Optional[str] = None
+    telephone: Optional[str] = None
+
+
+class WhatsAppPayload(BaseModel):
+    numero: Optional[str] = None
+
+
+class EmailPayload(BaseModel):
+    destinataire: Optional[str] = None
+    cc: Optional[str] = None
+    bcc: Optional[str] = None
+    objet: Optional[str] = None
+    message: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -403,7 +426,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             }
             await db.commande_lignes.insert_one(ligne_doc)
 
-        # Audit log
+        # Audit log création commande
         if log_audit_event:
             await log_audit_event(
                 user_id=me["user_id"],
@@ -420,8 +443,86 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 ip_address=request.client.host if request.client else None
             )
 
+        # 🆕 GÉNÉRATION AUTOMATIQUE PROFORMA À LA CRÉATION
+        try:
+            from proformas_module import next_proforma_reference, _generate_id as _pro_generate_id
+
+            proforma_id = _pro_generate_id("pro")
+            reference_proforma = await next_proforma_reference(db)
+            pro_now = _now_iso()
+
+            # Dates
+            date_emission = pro_now[:10]
+            from datetime import timedelta
+            date_emission_dt = datetime.fromisoformat(date_emission)
+            date_expiration = (date_emission_dt + timedelta(days=30)).isoformat()
+
+            # Montants (HT net après remise globale)
+            montant_ht_net = round(totals["montant_ht"] - totals["montant_remise"], 2)
+            montant_tva = totals["montant_tva"]
+            montant_ttc = totals["montant_total"]
+
+            proforma_doc = {
+                "proforma_id": proforma_id,
+                "numero_proforma": reference_proforma,
+                "reference": reference_proforma,
+                "client_id": payload.client_id,
+                "commande_id": commande_id,
+                "date_emission": date_emission,
+                "date_expiration": date_expiration,
+                "statut_proforma": "generee",
+                "taux_tva": payload.taux_tva,
+                "montant_ht": montant_ht_net,
+                "montant_tva": montant_tva,
+                "montant_ttc": montant_ttc,
+                "remise_globale": payload.remise_globale,
+                "notes": f"Proforma auto depuis commande {reference}",
+                "commercial_responsable_id": None,
+                "envoye_whatsapp": False,
+                "envoye_email": False,
+                "nombre_impressions": 0,
+                "nombre_telechargements": 0,
+                "utilisateur_generation": me["user_id"],
+                "actif": True,
+                "created_by": me["user_id"],
+                "created_at": pro_now,
+                "updated_at": pro_now,
+            }
+            await db.proformas.insert_one(proforma_doc)
+
+            # Lignes proforma depuis lignes commande
+            for ligne in payload.lignes:
+                await db.proforma_lignes.insert_one({
+                    "ligne_id": _pro_generate_id("lpr"),
+                    "proforma_id": proforma_id,
+                    "produit_id": ligne.produit_id,
+                    "designation": "",
+                    "quantite": ligne.quantite,
+                    "prix_unitaire": ligne.prix_unitaire,
+                    "remise_ligne": ligne.remise_ligne,
+                    "montant_ht": ligne.montant_ligne,
+                })
+
+            logger.info(f"✅ Proforma auto {reference_proforma} créée pour commande {reference}")
+        except Exception as e_pro:
+            logger.error(f"⚠️ Erreur proforma auto à la création (non bloquant): {e_pro}")
+
         # Return with client_nom
         commande_doc["client_nom"] = client["nom"]
+
+        # 🔔 Notification vente — nouvelle commande
+        try:
+            _notif_statut = "brouillon" if not submit else "en attente de validation"
+            await notify_vente_event(
+                db, "success", "commande",
+                f"📦 Nouvelle commande {reference}",
+                f"Commande créée pour {client['nom']} — {totals['montant_total']:,.0f} FCFA ({_notif_statut})",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify create_commande: %s", _e)
+
         return CommandeOut(**commande_doc)
 
     # ---------- GET DETAIL ----------
@@ -526,153 +627,32 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             _ensure(me["role"] in VALIDATE_ROLES, 403, "Accès refusé")
 
         now = _now_iso()
-        
-        # 🆕 GÉNÉRATION AUTOMATIQUE DE LA FACTURE PROFORMA
-        logger.info(f"Génération automatique de facture proforma pour commande {commande_id}")
-        
-        try:
-            # Import proformas module
-            from proformas_module import next_proforma_reference, _generate_id
-            
-            # Récupérer les lignes
-            lignes = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(100)
-            
-            # Créer la proforma
-            proforma_id = _generate_id("pro")
-            reference_proforma = await next_proforma_reference(db)
-            
-            # Calculer dates
-            date_emission = now[:10]
-            from datetime import timedelta
-            date_emission_dt = datetime.fromisoformat(date_emission)
-            date_expiration_dt = date_emission_dt + timedelta(days=30)
-            date_expiration = date_expiration_dt.isoformat()
-            
-            # Calculer montants — hériter taux_tva de la commande
-            taux_tva_cmd = cmd.get("taux_tva", 18.0)
-            montant_ht = cmd["montant_ht"] - cmd.get("montant_remise", 0)  # HT net après remise
-            montant_tva = round(montant_ht * (taux_tva_cmd / 100), 2)
-            montant_ttc = round(montant_ht + montant_tva, 2)
 
-            # Créer document proforma
-            proforma_doc = {
-                "proforma_id": proforma_id,
-                "numero_proforma": reference_proforma,
-                "reference": reference_proforma,
-                "client_id": cmd["client_id"],
-                "commande_id": commande_id,
-                "date_emission": date_emission,
-                "date_expiration": date_expiration,
-                "statut_proforma": "generee",
-                "taux_tva": taux_tva_cmd,
-                "montant_ht": round(montant_ht, 2),
-                "montant_tva": montant_tva,
-                "montant_ttc": montant_ttc,
-                "remise_globale": cmd.get("remise_globale", 0),
-                "notes": f"Proforma auto depuis commande {cmd['reference']}",
-                "commercial_responsable_id": None,
-                "envoye_whatsapp": False,
-                "envoye_email": False,
-                "nombre_impressions": 0,
-                "nombre_telechargements": 0,
-                "utilisateur_generation": me["user_id"],
-                "actif": True,
-                "created_by": me["user_id"],
-                "created_at": now,
+        # Passer la commande à "validee"
+        await db.commandes.update_one(
+            {"commande_id": commande_id},
+            {"$set": {
+                "statut": "validee",
+                "date_validation": now[:10],
+                "validated_by": me["user_id"],
                 "updated_at": now,
-            }
-            
-            await db.proformas.insert_one(proforma_doc)
-            
-            # Créer lignes proforma
-            proforma_lignes = []
-            for ligne in lignes:
-                proforma_ligne = {
-                    "ligne_id": _generate_id("lpr"),
-                    "proforma_id": proforma_id,
-                    "produit_id": ligne.get("produit_id"),
-                    "designation": ligne.get("designation", ""),
-                    "quantite": ligne.get("quantite"),
-                    "prix_unitaire": ligne.get("prix_unitaire"),
-                    "remise_ligne": ligne.get("remise_ligne", 0),
-                    "montant_ht": ligne.get("montant_ligne", 0),
-                }
-                proforma_lignes.append(proforma_ligne)
-            
-            if proforma_lignes:
-                await db.proforma_lignes.insert_many(proforma_lignes)
-            
-            # Log audit
-            await db.audit_logs.insert_one({
-                "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
-                "user_id": me["user_id"],
-                "action": "CREATE_PROFORMA_AUTO",
-                "resource_type": "proforma",
-                "resource_id": proforma_id,
-                "details": {
-                    "numero_proforma": reference_proforma,
-                    "commande_id": commande_id,
-                    "commande_reference": cmd['reference']
+            }}
+        )
+
+        # Audit log validation
+        if log_audit_event:
+            await log_audit_event(
+                user_id=me["user_id"],
+                action="VALIDATE_COMMANDE",
+                resource_type="commande",
+                resource_id=commande_id,
+                details={
+                    "reference": cmd['reference'],
+                    "client_id": cmd["client_id"],
+                    "montant_total": cmd["montant_total"],
                 },
-                "ip_address": request.client.host if request.client else None,
-                "timestamp": now,
-            })
-            
-            logger.info(f"✅ Proforma {reference_proforma} créée automatiquement pour commande {cmd['reference']}")
-            
-            # Only update commande status after successful proforma creation
-            await db.commandes.update_one(
-                {"commande_id": commande_id},
-                {"$set": {
-                    "statut": "validee",
-                    "date_validation": now[:10],
-                    "validated_by": me["user_id"],
-                    "updated_at": now,
-                }}
+                ip_address=request.client.host if request.client else None
             )
-            
-            # Audit log for commande validation
-            if log_audit_event:
-                await log_audit_event(
-                    user_id=me["user_id"],
-                    action="VALIDATE_COMMANDE",
-                    resource_type="commande",
-                    resource_id=commande_id,
-                    details={
-                        "reference": cmd['reference'],
-                        "client_id": cmd["client_id"],
-                        "montant_total": cmd["montant_total"],
-                        "proforma_id": proforma_id,
-                        "proforma_reference": reference_proforma
-                    },
-                    ip_address=request.client.host if request.client else None
-                )
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur génération proforma: {e}")
-            # Rollback: ensure commande stays in "en_attente" status
-            await db.commandes.update_one(
-                {"commande_id": commande_id},
-                {"$set": {
-                    "statut": "en_attente",
-                    "updated_at": now,
-                }}
-            )
-            # Log the rollback
-            await db.audit_logs.insert_one({
-                "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
-                "user_id": me["user_id"],
-                "action": "ROLLBACK_PROFORMA_FAILED",
-                "resource_type": "commande",
-                "resource_id": commande_id,
-                "details": {
-                    "error": str(e),
-                    "reason": "Proforma generation failed, commande status rolled back to en_attente"
-                },
-                "ip_address": request.client.host if request.client else None,
-                "timestamp": now,
-            })
-            raise HTTPException(status_code=500, detail=f"Erreur lors de la génération automatique de la Proforma: {str(e)}")
 
         # 🆕 AUTO-CRÉATION BON DE LIVRAISON
         try:
@@ -725,8 +705,84 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         except Exception as e_bl:
             logger.error(f"⚠️ Erreur auto-BL (non bloquant): {e_bl}")
 
+        # 🆕 AUTO-GÉNÉRATION FACTURE à la validation
+        try:
+            from factures_module import next_facture_reference
+            # Récupérer les lignes de la commande
+            lignes_fac = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(100)
+            if lignes_fac:
+                fac_id = f"fac_{uuid.uuid4().hex[:12]}"
+                fac_reference = await next_facture_reference(db, "facture")
+                fac_now = _now_iso()
+                taux_tva_cmd = cmd.get("taux_tva", 18.0)
+                remise_globale_cmd = cmd.get("remise_globale", 0.0)
+
+                # Calcul des montants depuis la commande directement
+                montant_ht_cmd = cmd.get("montant_ht", 0.0) - cmd.get("montant_remise", 0.0)
+                montant_tva_fac = round(montant_ht_cmd * (taux_tva_cmd / 100), 2)
+                montant_ttc_fac = round(montant_ht_cmd + montant_tva_fac, 2)
+
+                fac_doc = {
+                    "facture_id": fac_id,
+                    "reference": fac_reference,
+                    "type_facture": "facture",
+                    "client_id": cmd["client_id"],
+                    "commande_id": commande_id,
+                    "statut": "emise",
+                    "date_facture": fac_now[:10],
+                    "date_echeance": None,
+                    "date_emission": fac_now[:10],
+                    "taux_tva": taux_tva_cmd,
+                    "remise_globale": remise_globale_cmd,
+                    "montant_ht": round(montant_ht_cmd, 2),
+                    "montant_tva": montant_tva_fac,
+                    "montant_ttc": montant_ttc_fac,
+                    "total_ttc": montant_ttc_fac,
+                    "montant_regle": 0.0,
+                    "montant_restant": montant_ttc_fac,
+                    "notes": f"Facture auto générée depuis commande {cmd['reference']}",
+                    "facture_origine_id": None,
+                    "created_by": me["user_id"],
+                    "created_at": fac_now,
+                    "updated_at": fac_now,
+                }
+                await db.factures.insert_one(fac_doc)
+
+                # Copier les lignes commande dans la facture
+                for l in lignes_fac:
+                    prod = await db.produits.find_one({"product_id": l.get("produit_id")}, {"_id": 0, "titre": 1})
+                    fac_ligne = {
+                        "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
+                        "facture_id": fac_id,
+                        "produit_id": l.get("produit_id"),
+                        "designation": prod["titre"] if prod else l.get("designation", ""),
+                        "quantite": l.get("quantite", 0),
+                        "prix_unitaire": l.get("prix_unitaire", 0),
+                        "remise_ligne": l.get("remise_ligne", 0),
+                        "montant_ht": l.get("montant_ligne", 0),
+                    }
+                    await db.facture_lignes.insert_one(fac_ligne)
+
+                logger.info(f"✅ Facture auto {fac_reference} générée pour commande {cmd['reference']}")
+        except Exception as e_fac:
+            logger.error(f"⚠️ Erreur auto-Facture (non bloquant): {e_fac}")
+
         updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         await _enrich_commande_with_client(db, updated)
+
+        # 🔔 Notification vente — commande validée
+        try:
+            _client_nom = updated.get("client_nom", cmd.get("client_id", ""))
+            await notify_vente_event(
+                db, "success", "commande",
+                f"✅ Commande validée — {cmd['reference']}",
+                f"Commande {cmd['reference']} pour {_client_nom} validée par {me.get('email', me['user_id'])}",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify valider_commande: %s", _e)
+
         return CommandeOut(**updated)
 
     # ---------- PREPARER ----------
@@ -772,6 +828,20 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         
         updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         await _enrich_commande_with_client(db, updated)
+
+        # 🔔 Notification vente — commande préparée
+        try:
+            _client_nom = updated.get("client_nom", cmd.get("client_id", ""))
+            await notify_vente_event(
+                db, "info", "commande",
+                f"🏭 Commande préparée — {cmd['reference']}",
+                f"Commande {cmd['reference']} pour {_client_nom} est prête pour livraison",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify preparer_commande: %s", _e)
+
         return CommandeOut(**updated)
 
     # ---------- LIVRER ----------
@@ -817,6 +887,20 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         
         updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         await _enrich_commande_with_client(db, updated)
+
+        # 🔔 Notification vente — commande livrée
+        try:
+            _client_nom = updated.get("client_nom", cmd.get("client_id", ""))
+            await notify_vente_event(
+                db, "success", "livraison",
+                f"🚚 Commande livrée — {cmd['reference']}",
+                f"Commande {cmd['reference']} pour {_client_nom} a été livrée",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify livrer_commande: %s", _e)
+
         return CommandeOut(**updated)
 
     # ---------- ANNULER ----------
@@ -828,7 +912,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         authorization: Optional[str] = Header(default=None),
     ):
         me = await resolve_user(request, authorization)
-        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+        _ensure(me["role"] in CANCEL_ROLES, 403, "Annulation non autorisée pour votre rôle")
 
         cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         _ensure(cmd is not None, 404, "Commande introuvable")
@@ -846,7 +930,92 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         
         updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         await _enrich_commande_with_client(db, updated)
+
+        # 🔔 Notification vente — commande annulée
+        try:
+            _client_nom = updated.get("client_nom", cmd.get("client_id", ""))
+            await notify_vente_event(
+                db, "warning", "commande",
+                f"❌ Commande annulée — {cmd['reference']}",
+                f"Commande {cmd['reference']} pour {_client_nom} annulée. Motif : {payload.motif or 'non précisé'}",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify annuler_commande: %s", _e)
+
         return CommandeOut(**updated)
+
+    # ---------- DELETE (super_admin uniquement — cascade complète) ----------
+    @router.delete("/{commande_id}", status_code=204)
+    async def supprimer_commande(
+        commande_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """
+        Suppression définitive d'une commande avec cascade automatique :
+        commande_lignes → proformas → bl_lignes → bons_livraison
+        → facture_lignes → factures → commande
+        Réservé au super_admin.
+        """
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] == "super_admin", 403, "Suppression réservée au super_admin")
+
+        cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+
+        ref = cmd.get("reference", commande_id)
+        logger.info(f"[DELETE] Début suppression commande {ref} par {me.get('email')}")
+
+        # 1. Lignes de commande
+        r = await db.commande_lignes.delete_many({"commande_id": commande_id})
+        logger.info(f"[DELETE] {r.deleted_count} commande_lignes supprimées")
+
+        # 2. Proformas liés
+        r = await db.proformas.delete_many({"commande_id": commande_id})
+        logger.info(f"[DELETE] {r.deleted_count} proformas supprimés")
+
+        # 3. Bons de livraison + leurs lignes
+        bls = await db.bons_livraison.find({"commande_id": commande_id}, {"bl_id": 1, "_id": 0}).to_list(200)
+        bl_ids = [bl["bl_id"] for bl in bls if "bl_id" in bl]
+        if bl_ids:
+            r = await db.bl_lignes.delete_many({"bl_id": {"$in": bl_ids}})
+            logger.info(f"[DELETE] {r.deleted_count} bl_lignes supprimées")
+        r = await db.bons_livraison.delete_many({"commande_id": commande_id})
+        logger.info(f"[DELETE] {r.deleted_count} bons_livraison supprimés")
+
+        # 4. Factures + leurs lignes
+        factures = await db.factures.find({"commande_id": commande_id}, {"facture_id": 1, "_id": 0}).to_list(200)
+        facture_ids = [f["facture_id"] for f in factures if "facture_id" in f]
+        if facture_ids:
+            r = await db.facture_lignes.delete_many({"facture_id": {"$in": facture_ids}})
+            logger.info(f"[DELETE] {r.deleted_count} facture_lignes supprimées")
+        r = await db.factures.delete_many({"commande_id": commande_id})
+        logger.info(f"[DELETE] {r.deleted_count} factures supprimées")
+
+        # 5. La commande elle-même
+        await db.commandes.delete_one({"commande_id": commande_id})
+        logger.info(f"[DELETE] Commande {ref} supprimée définitivement par {me.get('email')}")
+
+        # Audit log
+        try:
+            await db.audit_logs.insert_one({
+                "action": "DELETE_COMMANDE",
+                "commande_id": commande_id,
+                "reference": ref,
+                "by": me.get("email"),
+                "role": me.get("role"),
+                "timestamp": _now_iso(),
+                "cascade": {
+                    "bl_ids": bl_ids,
+                    "facture_ids": facture_ids,
+                }
+            })
+        except Exception:
+            pass  # audit non bloquant
+
+        return Response(status_code=204)
 
     # ---------- PDF ----------
     @router.get("/{commande_id}/pdf")
@@ -887,7 +1056,8 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
     @router.post("/{commande_id}/envoyer-whatsapp")
     async def envoyer_commande_whatsapp(
         commande_id: str,
-        request: Request,
+        payload: WhatsAppPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None),
     ):
         """Prepare WhatsApp sharing link for Bon de Commande"""
@@ -901,8 +1071,9 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         client = await db.clients.find_one({"client_id": cmd["client_id"]}, {"_id": 0})
         _ensure(client is not None, 404, "Client introuvable")
 
-        whatsapp_number = client.get("numero_whatsapp") or client.get("telephone")
-        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible pour ce client")
+        whatsapp_number = (payload.numero if payload and payload.numero else None) \
+            or client.get("numero_whatsapp") or client.get("telephone")
+        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible — veuillez en saisir un")
 
         # Clean phone number
         clean_number = whatsapp_number.replace(" ", "").replace("-", "").replace("+", "")
@@ -956,7 +1127,8 @@ Cordialement,
     @router.post("/{commande_id}/envoyer-email")
     async def envoyer_commande_email(
         commande_id: str,
-        request: Request,
+        payload: EmailPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None),
     ):
         """Send Bon de Commande via Email"""
@@ -970,17 +1142,23 @@ Cordialement,
         client = await db.clients.find_one({"client_id": cmd["client_id"]}, {"_id": 0})
         _ensure(client is not None, 404, "Client introuvable")
 
-        client_email = client.get("email")
-        _ensure(client_email, 400, "Email non disponible pour ce client")
+        # Destinataire : payload override ou email client
+        if payload and payload.destinataire:
+            client_email = payload.destinataire
+        else:
+            client_email = client.get("email")
+        _ensure(client_email, 400, "Email non disponible — veuillez en saisir un")
 
         # Generate PDF
         from pdf_generator import generate_commande_pdf
         lignes = await db.commande_lignes.find({"commande_id": commande_id}).to_list(100)
         pdf_buffer = generate_commande_pdf(cmd, lignes, client)
         
-        # Prepare email content
-        sujet = f"Bon de Commande {cmd['reference']} - ÉDITIONS FABS-CI"
-        corps_texte = f"""Bonjour {client.get('nom', 'Client')},
+        # Prepare email content — payload override si fourni
+        sujet = (payload.objet if payload and payload.objet else None) or \
+            f"Bon de Commande {cmd['reference']} - ÉDITIONS FABS-CI"
+        corps_texte = (payload.message if payload and payload.message else None) or \
+            f"""Bonjour {client.get('nom', 'Client')},
 
 Veuillez trouver ci-joint votre BON DE COMMANDE N° {cmd['reference']}.
 
@@ -1061,6 +1239,127 @@ Cordialement,
                 "timestamp": _now_iso(),
             })
             raise HTTPException(status_code=500, detail=f"Erreur lors de l'envoi de l'email: {str(e)}")
+
+    # ---------- CHECK DOUBLON ----------
+    @router.post("/check-doublon")
+    async def check_doublon(
+        payload: DoublonCheckIn,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Détection de doublons en temps réel — fenêtre 48h."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        since = now - timedelta(hours=48)
+        since_iso = since.isoformat()
+
+        # Chercher commandes du même client dans les 48h (hors annulées)
+        candidates_cursor = db.commandes.find(
+            {
+                "client_id": payload.client_id,
+                "created_at": {"$gte": since_iso},
+                "statut": {"$ne": "annulee"},
+            },
+            {"_id": 0},
+        )
+        candidates = await candidates_cursor.to_list(50)
+
+        # Normaliser les lignes payload pour comparaison
+        payload_lignes_set = {
+            (l.produit_id, int(l.quantite)) for l in payload.lignes
+        }
+
+        doublon = None
+        niveau = None
+
+        for cmd in candidates:
+            cmd_lignes_cursor = db.commande_lignes.find(
+                {"commande_id": cmd["commande_id"]}, {"_id": 0}
+            )
+            cmd_lignes = await cmd_lignes_cursor.to_list(200)
+            cmd_lignes_set = {
+                (l["produit_id"], int(l["quantite"])) for l in cmd_lignes
+            }
+
+            if cmd_lignes_set != payload_lignes_set:
+                continue  # Produits/quantités différents → pas un doublon
+
+            # Produits identiques — vérifier représentant + téléphone
+            rep_match = (
+                (cmd.get("representant") or "").strip().lower()
+                == (payload.representant or "").strip().lower()
+            )
+            tel_match = (
+                (cmd.get("telephone") or "").strip()
+                == (payload.telephone or "").strip()
+            )
+
+            if rep_match and tel_match:
+                doublon = cmd
+                niveau = "certain"
+                break
+            else:
+                # Probable si pas encore trouvé certain
+                if niveau != "certain":
+                    doublon = cmd
+                    niveau = "probable"
+
+        # Enrichir la commande doublon avec info client
+        if doublon:
+            await _enrich_commande_with_client(db, doublon)
+
+        # Logger dans doublon_logs
+        log_id = f"dlog_{uuid.uuid4().hex[:16]}"
+        await db.doublon_logs.insert_one({
+            "log_id": log_id,
+            "ts": now.isoformat(),
+            "user_id": me["user_id"],
+            "user_email": me.get("email", ""),
+            "commande_existante_id": doublon["commande_id"] if doublon else None,
+            "commande_en_cours": {
+                "client_id": payload.client_id,
+                "representant": payload.representant,
+                "telephone": payload.telephone,
+                "lignes": [{"produit_id": l.produit_id, "quantite": l.quantite} for l in payload.lignes],
+            },
+            "niveau": niveau,
+            "decision": None,
+        })
+
+        if not doublon:
+            return {"doublon": False, "niveau": None, "commande": None, "log_id": log_id}
+
+        return {
+            "doublon": True,
+            "niveau": niveau,
+            "commande": doublon,
+            "log_id": log_id,
+        }
+
+    # ---------- LOG DECISION ----------
+    @router.patch("/check-doublon/{log_id}")
+    async def log_doublon_decision(
+        log_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Enregistrer la décision de l'utilisateur face à un doublon."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        body = await request.json()
+        decision = body.get("decision")  # "continuer" ou "annuler"
+        _ensure(decision in ("continuer", "annuler"), 400, "Decision invalide (continuer|annuler)")
+
+        result = await db.doublon_logs.update_one(
+            {"log_id": log_id, "user_id": me["user_id"]},
+            {"$set": {"decision": decision, "decision_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        _ensure(result.matched_count > 0, 404, "Log introuvable")
+        return {"ok": True, "log_id": log_id, "decision": decision}
 
     return router
 

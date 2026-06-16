@@ -25,6 +25,7 @@ import os
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.factures")
 
@@ -207,6 +208,18 @@ class GenerateAvoirIn(BaseModel):
     motif: str = Field(..., min_length=10, max_length=500)
 
 
+class WhatsAppPayload(BaseModel):
+    numero: Optional[str] = None
+
+
+class EmailPayload(BaseModel):
+    destinataire: Optional[str] = None
+    cc: Optional[str] = None
+    bcc: Optional[str] = None
+    objet: Optional[str] = None
+    message: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------------------------
@@ -309,6 +322,9 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
 
         filters = {}
+        # Secrétariat : uniquement les factures générées depuis une commande
+        if me["role"] == "secretariat":
+            filters["commande_id"] = {"$ne": None, "$exists": True}
         if type_facture:
             filters["type_facture"] = type_facture
         if statut:
@@ -387,6 +403,16 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         if payload.commande_id:
             cmd = await db.commandes.find_one({"commande_id": payload.commande_id}, {"_id": 0})
             _ensure(cmd is not None, 404, "Commande introuvable")
+            # Unicité : une seule facture de type "facture" par commande
+            existing = await db.factures.find_one(
+                {"commande_id": payload.commande_id, "type_facture": "facture"},
+                {"_id": 0, "reference": 1}
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Une facture existe déjà pour cette commande : {existing['reference']}"
+                )
 
         # Calculate totals
         totals = await _calculate_totals(payload.lignes, payload.remise_globale, payload.taux_tva)
@@ -459,6 +485,19 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         facture_doc["client_nom"] = client["nom"]
         if payload.commande_id:
             facture_doc["commande_reference"] = await _get_commande_reference(db, payload.commande_id)
+
+        # 🔔 Notification vente — nouvelle facture
+        try:
+            await notify_vente_event(
+                db, "success", "paiement",
+                f"🧾 Nouvelle facture {facture_doc['reference']}",
+                f"Facture générée pour {client['nom']} — {facture_doc['montant_ttc']:,.0f} FCFA",
+                lien=f"/factures/{facture_doc['facture_id']}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify create_facture: %s", _e)
+
         return FactureOut(**facture_doc)
 
     # ---------- GENERATE FROM COMMANDE ----------
@@ -474,6 +513,16 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         # Get commande with lignes
         cmd = await db.commandes.find_one({"commande_id": payload.commande_id}, {"_id": 0})
         _ensure(cmd is not None, 404, "Commande introuvable")
+        # Unicité : une seule facture de type "facture" par commande
+        existing = await db.factures.find_one(
+            {"commande_id": payload.commande_id, "type_facture": "facture"},
+            {"_id": 0, "reference": 1}
+        )
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Une facture existe déjà pour cette commande : {existing['reference']}"
+            )
         _ensure(cmd["statut"] in {"validee", "preparee", "livree"}, 400, "Commande doit être validée, préparée ou livrée")
 
         # Get commande lignes
@@ -553,6 +602,20 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
 
         # Enrich and return
         await _enrich_facture_with_client(db, facture_doc)
+
+        # 🔔 Notification vente — facture depuis commande
+        try:
+            _client_nom = facture_doc.get("client_nom", "")
+            await notify_vente_event(
+                db, "success", "paiement",
+                f"🧾 Facture auto {facture_doc['reference']}",
+                f"Facture générée depuis commande pour {_client_nom} — {facture_doc['montant_ttc']:,.0f} FCFA",
+                lien=f"/factures/{facture_doc['facture_id']}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify generate_facture_from_commande: %s", _e)
+
         return FactureOut(**facture_doc)
 
     # ---------- GET DETAIL ----------
@@ -902,7 +965,8 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
     @router.post("/{facture_id}/envoyer-whatsapp")
     async def envoyer_facture_whatsapp(
         facture_id: str,
-        request: Request,
+        payload: WhatsAppPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None),
     ):
         """Prepare WhatsApp sharing link for Facture"""
@@ -916,8 +980,9 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0})
         _ensure(client is not None, 404, "Client introuvable")
 
-        whatsapp_number = client.get("numero_whatsapp") or client.get("telephone")
-        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible pour ce client")
+        whatsapp_number = (payload.numero if payload and payload.numero else None) \
+            or client.get("numero_whatsapp") or client.get("telephone")
+        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible — veuillez en saisir un")
 
         # Clean phone number
         clean_number = whatsapp_number.replace(" ", "").replace("-", "").replace("+", "")
@@ -971,7 +1036,8 @@ Cordialement,
     @router.post("/{facture_id}/envoyer-email")
     async def envoyer_facture_email(
         facture_id: str,
-        request: Request,
+        payload: EmailPayload = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None),
     ):
         """Send Facture via Email"""
@@ -985,16 +1051,22 @@ Cordialement,
         client = await db.clients.find_one({"client_id": facture["client_id"]}, {"_id": 0})
         _ensure(client is not None, 404, "Client introuvable")
 
-        client_email = client.get("email")
-        _ensure(client_email, 400, "Email non disponible pour ce client")
+        # Destinataire : payload override ou email client
+        if payload and payload.destinataire:
+            client_email = payload.destinataire
+        else:
+            client_email = client.get("email")
+        _ensure(client_email, 400, "Email non disponible — veuillez en saisir un")
 
         # Generate PDF
         from pdf_generator import generate_facture_pdf
         pdf_buffer = generate_facture_pdf(facture, facture.get("lignes", []), client)
         
-        # Prepare email content
-        sujet = f"Facture {facture['reference']} - ÉDITIONS FABS-CI"
-        corps_texte = f"""Bonjour {client.get('nom', 'Client')},
+        # Prepare email content — payload override si fourni
+        sujet = (payload.objet if payload and payload.objet else None) or \
+            f"Facture {facture['reference']} - ÉDITIONS FABS-CI"
+        corps_texte = (payload.message if payload and payload.message else None) or \
+            f"""Bonjour {client.get('nom', 'Client')},
 
 Veuillez trouver ci-joint votre facture {facture['reference']}.
 

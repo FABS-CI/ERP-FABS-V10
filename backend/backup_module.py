@@ -274,19 +274,24 @@ def build_backup_router(db, resolve_user):
 
     # ── Démarrage du scheduler ──
     _scheduler = AsyncIOScheduler(timezone="Africa/Abidjan")
-    _scheduler.start()
 
     # ── Lire config initiale et planifier ──
     import asyncio
 
     async def _init_scheduler():
+        global _scheduler
+        _scheduler.start()
         config = await db.backup_config.find_one({"config_id": "default"})
         if config and config.get("actif", True):
             _reschedule(config.get("heure_execution", "02:00"), True)
         else:
             _reschedule("02:00", True)  # défaut si pas encore de config
 
-    asyncio.get_event_loop().create_task(_init_scheduler())
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_init_scheduler())
+    except RuntimeError:
+        pass  # sera démarré au startup
 
     router = APIRouter(prefix="/backup", tags=["backup"])
 

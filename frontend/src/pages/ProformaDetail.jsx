@@ -72,12 +72,12 @@ export default function ProformaDetail() {
     return await generateProformaPDF(proformaId);
   };
 
-  const handleSendWhatsApp = async () => {
-    return await sendProformaWhatsApp(proformaId);
+  const handleSendWhatsApp = async (payload) => {
+    return await sendProformaWhatsApp(proformaId, payload);
   };
 
-  const handleSendEmail = async () => {
-    return await sendProformaEmail(proformaId);
+  const handleSendEmail = async (payload) => {
+    return await sendProformaEmail(proformaId, payload);
   };
 
   const handleConvertToInvoice = async () => {
@@ -147,7 +147,8 @@ export default function ProformaDetail() {
     );
   }
 
-  const canConvert = proforma.statut_proforma !== 'convertie_facture';
+  const isAssistante = user?.role === 'assistante_commerciale';
+  const canConvert = proforma.statut_proforma !== 'convertie_facture' && !isAssistante;
   const alreadyConverted = proforma.statut_proforma === 'convertie_facture' && proforma.facture_id;
 
   return (
@@ -183,11 +184,13 @@ export default function ProformaDetail() {
           </CardHeader>
           <CardContent>
             <DocumentActionBar
-              documentType="proforma"
+              documentType="Facture Proforma"
               documentId={proformaId}
               documentReference={proforma.numero_proforma}
+              clientNom={proforma.client_nom}
               clientWhatsApp={proforma.client_numero_whatsapp}
               clientEmail={proforma.client_email}
+              montant={proforma.montant_ttc ? new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(proforma.montant_ttc) + ' FCFA' : null}
               onGeneratePDF={handleGeneratePDF}
               onPrint={handlePrintPDF}
               onDownload={handleDownloadPDF}

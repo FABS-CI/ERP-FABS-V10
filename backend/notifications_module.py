@@ -232,6 +232,49 @@ async def publish_notification(db, user_id: str, type: str, categorie: str, titr
     """API publique pour les autres modules métier (commandes, factures…)."""
     return await _send_notification(db, user_id, type, categorie, titre, message, lien)
 
+
+# Rôles qui reçoivent les notifications vente
+VENTE_NOTIF_ROLES = {
+    "super_admin", "directeur_general", "directeur_commercial",
+    "secretariat", "assistante_commerciale", "comptable",
+    "responsable_magasinier", "service_logistique",
+}
+
+
+async def notify_vente_event(
+    db,
+    type: str,
+    categorie: str,
+    titre: str,
+    message: str,
+    lien: Optional[str] = None,
+    exclude_user_id: Optional[str] = None,
+):
+    """
+    Envoie une notification à tous les utilisateurs actifs ayant un rôle vente.
+    exclude_user_id : ne pas notifier l'auteur de l'action.
+    """
+    try:
+        cursor = db.users.find(
+            {"role": {"$in": list(VENTE_NOTIF_ROLES)}, "actif": True},
+            {"user_id": 1, "_id": 0},
+        )
+        users = await cursor.to_list(500)
+        tasks = []
+        for u in users:
+            uid = u.get("user_id")
+            if not uid:
+                continue
+            if exclude_user_id and uid == exclude_user_id:
+                continue
+            tasks.append(_send_notification(db, uid, type, categorie, titre, message, lien))
+        if tasks:
+            import asyncio as _aio
+            await _aio.gather(*tasks, return_exceptions=True)
+        logger.info("notify_vente_event titre=%s → %d destinataires", titre, len(tasks))
+    except Exception as exc:
+        logger.error("notify_vente_event error: %s", exc)
+
 async def _publish_event(db, event_type: str, payload: dict):
     """Publier un événement sur Redis pour traitement asynchrone"""
     try:

@@ -3,7 +3,6 @@
  * Sprint 6
  */
 import React, { useState, useEffect } from 'react';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, FileText, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
 import { getCommandes } from '../services/commandesApi';
@@ -52,18 +51,10 @@ export default function Commandes() {
 
   const canWrite = user && can(user.role, 'commandes', 'create');
 
-  const debouncedQ = useDebouncedValue(filters.q, 350);
-
   useEffect(() => {
     fetchClients();
     fetchCommandes();
   }, []);
-
-  // Live search sur q (debounced)
-  useEffect(() => {
-    fetchCommandes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ]);
 
   const fetchClients = async () => {
     try {

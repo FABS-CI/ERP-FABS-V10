@@ -7,7 +7,7 @@ import {
   Settings, Edit, Save, X, Upload, Trash2, ImageIcon, CheckCircle2,
   Eye, Palette, RefreshCw, Star, LayoutGrid, ChevronDown, ChevronUp,
   Monitor, Tablet, Smartphone, Layers, FileText, BookOpen, Building2,
-  Sparkles, Zap, Crown, Award
+  Sparkles, Zap, Crown, Award, Shield, ShieldCheck, ShieldOff, ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,9 @@ import { Label } from "../components/ui/label";
 import {
   getParametres, updateParametre, getDocumentSettings, uploadLogo, deleteLogo
 } from "../services/parametresApi";
+import { get2FAStatus } from "../services/twoFAApi";
+import TwoFASetupModal from "../components/TwoFASetupModal";
+import TwoFADisableModal from "../components/TwoFADisableModal";
 import { useAuth } from "../hooks/useAuth";
 import axios from "axios";
 
@@ -810,6 +813,19 @@ export default function Parametres() {
   const [docSettings, setDocSettings] = useState(null);
   const fileInputRef = useRef(null);
 
+  // 2FA
+  const [twoFAStatus, setTwoFAStatus] = useState(null); // { enabled, required, role }
+  const [twoFALoading, setTwoFALoading] = useState(true);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+
+  const fetchTwoFAStatus = async () => {
+    setTwoFALoading(true);
+    try { setTwoFAStatus(await get2FAStatus()); }
+    catch { /* silencieux si non connecté */ }
+    finally { setTwoFALoading(false); }
+  };
+
   const fetchParams = async () => {
     setLoading(true);
     try { setParams(await getParametres()); }
@@ -827,7 +843,7 @@ export default function Parametres() {
     finally { setLogoLoading(false); }
   };
 
-  useEffect(() => { fetchParams(); fetchSettings(); }, []);
+  useEffect(() => { fetchParams(); fetchSettings(); fetchTwoFAStatus(); }, []);
 
   const handleFileChange = async (file) => {
     if (!file) return;
@@ -983,6 +999,108 @@ export default function Parametres() {
             )}
           </CardContent>
         </Card>
+
+        {/* ── Sécurité — Double authentification (2FA) ─────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-[#FF6200]" />
+              Sécurité — Double authentification (2FA)
+            </CardTitle>
+            <CardDescription>
+              Protégez votre compte avec un code temporaire (TOTP) en plus du mot de passe.
+              {twoFAStatus?.required && (
+                <span className="ml-2 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                  <ShieldAlert className="h-3.5 w-3.5" /> Obligatoire pour votre rôle
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {twoFALoading ? (
+              <Skeleton className="h-20 w-full" />
+            ) : !twoFAStatus ? (
+              <p className="text-sm text-gray-500">Impossible de charger le statut 2FA.</p>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-white/5">
+                <div className="flex items-center gap-3">
+                  {twoFAStatus.enabled ? (
+                    <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                      <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-white/10 flex items-center justify-center">
+                      <ShieldOff className="h-5 w-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {twoFAStatus.enabled ? "2FA activé" : "2FA désactivé"}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {twoFAStatus.enabled
+                        ? "Votre compte est protégé par Google Authenticator ou Authy."
+                        : "Ajoutez une couche de sécurité supplémentaire à votre connexion."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 shrink-0">
+                  {!twoFAStatus.enabled ? (
+                    <Button
+                      className="bg-[#FF6200] hover:bg-[#E55900] text-white gap-2"
+                      onClick={() => setShowSetupModal(true)}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Configurer le 2FA
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => setShowSetupModal(true)}
+                        title="Reconfigurer (génère un nouveau QR code)"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Reconfigurer
+                      </Button>
+                      {!twoFAStatus.required && (
+                        <Button
+                          variant="outline"
+                          className="gap-2 text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => setShowDisableModal(true)}
+                        >
+                          <ShieldOff className="h-4 w-4" />
+                          Désactiver
+                        </Button>
+                      )}
+                      {twoFAStatus.required && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400 self-center">
+                          Non désactivable (rôle obligé)
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Modals 2FA */}
+        {showSetupModal && (
+          <TwoFASetupModal
+            onClose={() => setShowSetupModal(false)}
+            onActivated={() => { setShowSetupModal(false); fetchTwoFAStatus(); }}
+          />
+        )}
+        {showDisableModal && (
+          <TwoFADisableModal
+            onClose={() => setShowDisableModal(false)}
+            onDisabled={() => { setShowDisableModal(false); fetchTwoFAStatus(); }}
+          />
+        )}
 
         {/* ── Liste des paramètres ──────────────────────────────────────── */}
         <Card>

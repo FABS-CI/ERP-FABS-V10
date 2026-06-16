@@ -3,6 +3,19 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useAuth } from "./hooks/useAuth";
+import { visibleModulesFor } from "./constants/permissions";
+import { useIdleLogout } from "./hooks/useIdleLogout";
+import IdleWarningModal from "./components/IdleWarningModal";
+
+// Composant de redirection intelligente vers le premier module accessible
+function SmartRedirect() {
+  const { role, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!role) return <Navigate to="/login" replace />;
+  const firstModule = visibleModulesFor(role)[0];
+  return <Navigate to={firstModule ? firstModule.path : "/login"} replace />;
+}
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -51,6 +64,7 @@ const BIAnalytics = lazy(() => import("./pages/BIAnalytics"));
 const WorkflowApprovals = lazy(() => import("./pages/WorkflowApprovals"));
 const ProformaDetail = lazy(() => import("./pages/ProformaDetail"));
 const Proformas = lazy(() => import("./pages/Proformas"));
+const HistoriqueEnvois = lazy(() => import("./pages/HistoriqueEnvois"));
 // Sprint 2 V10 — Dashboard FNE Enterprise
 const FNE = lazy(() => import("./pages/FNE"));
 const FNEInvoiceDetail = lazy(() => import("./pages/FNEInvoiceDetail"));
@@ -80,23 +94,41 @@ function PageLoader() {
   );
 }
 
+function AppWithIdle({ children }) {
+  const { user, logout } = useAuth();
+  const { showWarning, secondsLeft, stayConnected, doLogout } = useIdleLogout(logout, !!user);
+  return (
+    <>
+      {children}
+      {showWarning && (
+        <IdleWarningModal
+          secondsLeft={secondsLeft}
+          onStay={stayConnected}
+          onLogout={doLogout}
+        />
+      )}
+    </>
+  );
+}
+
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <AppWithIdle>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
             
             {/* Protected Routes */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<SmartRedirect />} />
             
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute moduleKey="dashboard">
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -276,6 +308,16 @@ function App() {
               element={
                 <ProtectedRoute moduleKey="proformas">
                   <ProformaDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Historique des envois */}
+            <Route
+              path="/historique-envois"
+              element={
+                <ProtectedRoute>
+                  <HistoriqueEnvois />
                 </ProtectedRoute>
               }
             />
@@ -624,6 +666,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          </AppWithIdle>
         </AuthProvider>
       </BrowserRouter>
     </div>

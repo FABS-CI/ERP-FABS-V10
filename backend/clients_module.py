@@ -24,9 +24,14 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 # ---------------------------------------------------------------------------
 READ_ROLES = {
     "super_admin", "directeur_general", "comptable",
-    "directeur_commercial", "secretariat",
+    "directeur_commercial", "secretariat", "assistante_commerciale",
 }
 WRITE_ROLES = {
+    "super_admin", "directeur_general",
+    "directeur_commercial", "secretariat", "assistante_commerciale",
+}
+# Désactivation client réservée aux rôles de direction (pas assistante_commerciale)
+DISABLE_ROLES = {
     "super_admin", "directeur_general",
     "directeur_commercial", "secretariat",
 }
@@ -438,7 +443,7 @@ def build_clients_router(
         authorization: Optional[str] = Header(default=None),
     ):
         me = await resolve_user(request, authorization)
-        _ensure(me["role"] in WRITE_ROLES, 403, "Désactivation non autorisée")
+        _ensure(me["role"] in DISABLE_ROLES, 403, "Désactivation non autorisée")
         
         # Get old values for audit
         old_client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
@@ -468,6 +473,41 @@ def build_clients_router(
             )
         
         return ClientOut(**_project_client(result))
+
+    @router.get("/{client_id}/audit-logs")
+    async def get_client_audit_logs(
+        client_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        limit: int = Query(50, le=200),
+        skip: int = Query(0, ge=0),
+    ):
+        """Historique des actions liées à ce client (audit_logs)."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        # Logs directs sur le client
+        client_logs = await db.audit_logs.find(
+            {"resource_type": "client", "resource_id": client_id},
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit).to_list(limit)
+
+        # Logs sur commandes / factures / paiements liés au client
+        related_logs = await db.audit_logs.find(
+            {"details.client_id": client_id},
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit).to_list(limit)
+
+        all_logs = {
+            l.get("audit_id", l.get("log_id", str(i))): l
+            for i, l in enumerate(client_logs + related_logs)
+        }
+        sorted_logs = sorted(
+            all_logs.values(),
+            key=lambda x: x.get("timestamp") or x.get("date_action") or "",
+            reverse=True
+        )
+        return sorted_logs[:limit]
 
     return router
 

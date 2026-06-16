@@ -134,6 +134,8 @@ export default function ClientDetail() {
   const loaded = useRef({});
   const [tabData, setTabData] = useState({});
   const [tabLoading, setTabLoading] = useState({});
+  // tabDataRef mirrors tabData for use in callbacks without causing re-renders
+  const tabDataRef = useRef({});
 
   // Derived stats for statut enrichi
   const [clientStats, setClientStats] = useState(null);
@@ -142,6 +144,7 @@ export default function ClientDetail() {
     setLoading(true);
     setError(null);
     loaded.current = {};
+    tabDataRef.current = {};
     setTabData({});
     try {
       const r = await getClient(id);
@@ -156,6 +159,25 @@ export default function ClientDetail() {
   useEffect(() => { refresh(); }, [refresh]);
 
   // Lazy load tab data on first activation
+  const computeStats = useCallback((factures, paiements) => {
+    if (!factures || !paiements) return;
+    const fList = Array.isArray(factures) ? factures : (factures?.items || []);
+    const pList = Array.isArray(paiements) ? paiements : [];
+    const now = Date.now();
+    const ms30 = 30 * 86400000;
+
+    const encours = fList.reduce((s, f) => {
+      if (["emise", "partiellement_payee"].includes(f.statut)) {
+        return s + (f.montant_ttc - (f.montant_paye || 0));
+      }
+      return s;
+    }, 0);
+    const impaye = fList.filter(f => f.statut === "emise" && f.date_echeance && new Date(f.date_echeance) < now).length;
+    const last30days = pList.filter(p => p.date_paiement && (now - new Date(p.date_paiement).getTime()) < ms30).length;
+
+    setClientStats({ encours, impaye, last30days, plafond: client?.plafond_credit || 0 });
+  }, [client]);
+
   const loadTab = useCallback(async (key) => {
     if (loaded.current[key]) return;
     loaded.current[key] = true;
@@ -173,21 +195,33 @@ export default function ClientDetail() {
       } else if (key === "bl") {
         data = await getBonsLivraison({ client_id: id, limit: 100 });
       } else if (key === "compte") {
-        // Compute from factures + paiements
+        // Compute from factures + paiements (limit max 200 côté backend)
         const [facs, pays] = await Promise.all([
-          getFactures({ client_id: id, limit: 500 }),
-          getPaiements({ client_id: id, limit: 500 }),
+          getFactures({ client_id: id, limit: 200 }),
+          getPaiements({ client_id: id, limit: 200 }),
         ]);
-        data = { factures: facs, paiements: pays };
+        // Les deux endpoints retournent une liste directe
+        const facsList = Array.isArray(facs) ? facs : (facs?.items || []);
+        const paysList = Array.isArray(pays) ? pays : (pays?.items || []);
+        data = { factures: facsList, paiements: paysList };
       } else if (key === "historique") {
-        // Use audit logs via commandes + factures references
-        data = [];
+        const axios = (await import("axios")).default;
+        const resp = await axios.get(`/api/clients/${id}/audit-logs?limit=50`).catch(() => ({ data: [] }));
+        data = Array.isArray(resp.data) ? resp.data : [];
       }
-      setTabData((prev) => ({ ...prev, [key]: data }));
+      setTabData((prev) => {
+        const next = { ...prev, [key]: data };
+        tabDataRef.current = next;
+        return next;
+      });
 
       // Compute stats for statut enrichi once we have factures + paiements
       if (key === "factures" || key === "paiements") {
-        computeStats(key === "factures" ? data : tabData["factures"], key === "paiements" ? data : tabData["paiements"]);
+        const current = tabDataRef.current;
+        computeStats(
+          key === "factures" ? data : current["factures"],
+          key === "paiements" ? data : current["paiements"]
+        );
       }
     } catch (e) {
       toast.error(`Erreur chargement ${key}`);
@@ -195,26 +229,7 @@ export default function ClientDetail() {
     } finally {
       setTabLoading((prev) => ({ ...prev, [key]: false }));
     }
-  }, [id, tabData]);
-
-  const computeStats = (factures, paiements) => {
-    if (!factures || !paiements) return;
-    const fList = Array.isArray(factures) ? factures : (factures?.items || []);
-    const pList = Array.isArray(paiements) ? paiements : [];
-    const now = Date.now();
-    const ms30 = 30 * 86400000;
-
-    const encours = fList.reduce((s, f) => {
-      if (["emise", "partiellement_payee"].includes(f.statut)) {
-        return s + (f.montant_ttc - (f.montant_paye || 0));
-      }
-      return s;
-    }, 0);
-    const impaye = fList.filter(f => f.statut === "emise" && f.date_echeance && new Date(f.date_echeance) < now).length;
-    const last30days = pList.filter(p => p.date_paiement && (now - new Date(p.date_paiement).getTime()) < ms30).length;
-
-    setClientStats({ encours, impaye, last30days, plafond: client?.plafond_credit || 0 });
-  };
+  }, [id, computeStats]);
 
   useEffect(() => {
     if (tab !== "info") {
@@ -485,7 +500,11 @@ export default function ClientDetail() {
               />
             )}
             {tab === "historique" && (
-              <HistoriqueTab client={client} />
+              <HistoriqueTab
+                client={client}
+                data={tabData.historique}
+                loading={tabLoading.historique}
+              />
             )}
           </div>
         </div>
@@ -512,7 +531,7 @@ function KPI({ icon: Icon, accent, label, value }) {
       </div>
       <div className="min-w-0">
         <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">{label}</p>
-        <p className="text-sm font-bold text-[#0A2540] dark:text-white mt-0.5">{value}</p>
+        <div className="text-sm font-bold text-[#0A2540] dark:text-white mt-0.5">{value}</div>
       </div>
     </div>
   );
@@ -999,28 +1018,8 @@ function SummaryCard({ label, value, color, dark }) {
 // ─────────────────────────────────────────────
 // HISTORIQUE TAB
 // ─────────────────────────────────────────────
-function HistoriqueTab({ client }) {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch audit logs for this client
-    import("../config/api").then(({ default: API_BASE_URL }) => {
-      import("axios").then(({ default: axios }) => {
-        Promise.all([
-          axios.get(`${API_BASE_URL}/workflow/audit-logs?resource_type=client&resource_id=${client.client_id}&limit=50`).catch(() => ({ data: [] })),
-          axios.get(`${API_BASE_URL}/workflow/audit-logs?resource_type=commande&limit=30`).catch(() => ({ data: [] })),
-        ]).then(([clientLogs, cmdLogs]) => {
-          const allLogs = [
-            ...(Array.isArray(clientLogs.data) ? clientLogs.data : []),
-            ...(Array.isArray(cmdLogs.data) ? cmdLogs.data : []).filter(l => l.details?.client_id === client.client_id),
-          ];
-          allLogs.sort((a, b) => new Date(b.timestamp || b.date_action || 0) - new Date(a.timestamp || a.date_action || 0));
-          setLogs(allLogs.slice(0, 50));
-        }).finally(() => setLoading(false));
-      });
-    });
-  }, [client.client_id]);
+function HistoriqueTab({ client, data, loading }) {
+  const logs = Array.isArray(data) ? data : [];
 
   const ACTION_ICONS = {
     CREATE: PlusCircle, UPDATE: Pencil, DELETE: XCircle,

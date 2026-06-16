@@ -41,13 +41,13 @@ export async function generateProformaPDF(proformaId) {
   return r.data;
 }
 
-export async function sendProformaWhatsApp(proformaId) {
-  const r = await axios.post(`${API}/proformas/${proformaId}/envoyer-whatsapp`, {});
+export async function sendProformaWhatsApp(proformaId, payload = {}) {
+  const r = await axios.post(`${API}/proformas/${proformaId}/envoyer-whatsapp`, payload || {});
   return r.data;
 }
 
-export async function sendProformaEmail(proformaId) {
-  const r = await axios.post(`${API}/proformas/${proformaId}/envoyer-email`, {});
+export async function sendProformaEmail(proformaId, payload = {}) {
+  const r = await axios.post(`${API}/proformas/${proformaId}/envoyer-email`, payload || {});
   return r.data;
 }
 

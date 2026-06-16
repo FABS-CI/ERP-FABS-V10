@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Package, Truck, FileText, AlertCircle, Receipt } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Package, Truck, FileText, AlertCircle, Receipt, Trash2 } from 'lucide-react';
 import {
   getCommande,
   validerCommande,
@@ -14,6 +14,7 @@ import {
   generateCommandePDF,
   sendCommandeWhatsApp,
   sendCommandeEmail,
+  deleteCommande,
 } from '../services/commandesApi';
 import { generateFactureFromCommande } from '../services/facturesApi';
 import { Button } from '../components/ui/button';
@@ -136,12 +137,12 @@ export default function CommandeDetail() {
     return await generateCommandePDF(id);
   };
 
-  const handleSendWhatsApp = async () => {
-    return await sendCommandeWhatsApp(id);
+  const handleSendWhatsApp = async (payload) => {
+    return await sendCommandeWhatsApp(id, payload);
   };
 
-  const handleSendEmail = async () => {
-    return await sendCommandeEmail(id);
+  const handleSendEmail = async (payload) => {
+    return await sendCommandeEmail(id, payload);
   };
 
   // 🆕 Générer une facture depuis cette commande (Workflow V10)
@@ -159,6 +160,9 @@ export default function CommandeDetail() {
     }
   };
 
+  // assistante_commerciale : lecture + création/modif brouillon uniquement — pas de validation ni annulation ni facture
+  const isAssistanteCommerciale = () => user?.role === 'assistante_commerciale';
+
   const canGenerateFacture = () => {
     if (!user || !commande) return false;
     if (!['validee', 'preparee', 'livree'].includes(commande.statut)) return false;
@@ -170,7 +174,7 @@ export default function CommandeDetail() {
     if (commande.montant_total > 500000) {
       return user.role === 'super_admin' || user.role === 'directeur_general';
     }
-    return ['super_admin', 'directeur_general', 'directeur_commercial'].includes(user.role);
+    return ['super_admin', 'directeur_general', 'directeur_commercial', 'secretariat', 'comptable'].includes(user.role);
   };
 
   const canPrepare = () => {
@@ -183,6 +187,19 @@ export default function CommandeDetail() {
 
   const canCancelOrder = () => {
     return user && ['super_admin', 'directeur_general', 'directeur_commercial', 'secretariat'].includes(user.role);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Supprimer définitivement la commande ${commande.reference} ?\n\nTous les documents associés (proformas, BL, factures) seront également supprimés. Cette action est irréversible.`)) return;
+    setActionLoading(true);
+    try {
+      await deleteCommande(id);
+      toast.success(`Commande ${commande.reference} supprimée`);
+      navigate('/commandes');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      setActionLoading(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -246,11 +263,13 @@ export default function CommandeDetail() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
           <DocumentActionBar
-            documentType="commande"
+            documentType="Bon de Commande"
             documentId={commande.commande_id}
             documentReference={commande.reference}
             clientWhatsApp={commande.client_numero_whatsapp}
             clientEmail={commande.client_email}
+            clientNom={commande.client_nom}
+            montant={commande.montant_total ? `${Number(commande.montant_total).toLocaleString('fr-FR')} FCFA` : ''}
             onGeneratePDF={handleGeneratePDF}
             onPrint={handlePrintPDF}
             onDownload={handleDownloadPDF}
@@ -316,6 +335,18 @@ export default function CommandeDetail() {
             >
               <XCircle className="h-4 w-4 mr-2" />
               Annuler
+            </Button>
+          )}
+
+          {user?.role === 'super_admin' && (
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={actionLoading}
+              data-testid="btn-supprimer"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer
             </Button>
           )}
         </div>

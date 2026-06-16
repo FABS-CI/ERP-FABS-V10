@@ -21,6 +21,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
+from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.paiements")
 
@@ -82,11 +83,22 @@ class PaiementIn(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=500)
 
 
+class WhatsAppPayload(BaseModel):
+    numero: Optional[str] = None
+    message: Optional[str] = None
+
+class EmailPayload(BaseModel):
+    destinataire: Optional[str] = None
+    objet: Optional[str] = None
+    message: Optional[str] = None
+
 class PaiementOut(BaseModel):
     paiement_id: str
     reference: str
     client_id: str
     client_nom: Optional[str] = None
+    client_numero_whatsapp: Optional[str] = None
+    client_email: Optional[str] = None
     date_paiement: str
     mode_paiement: ModePaiement
     montant_total: float
@@ -145,9 +157,13 @@ async def _update_facture_paiement(db: AsyncIOMotorDatabase, facture_id: str, mo
 
 
 async def _enrich_paiement(db: AsyncIOMotorDatabase, paiement: dict) -> dict:
-    """Add client_nom to paiement"""
+    """Add client info to paiement"""
     if paiement.get("client_id"):
-        paiement["client_nom"] = await _get_client_nom(db, paiement["client_id"])
+        client = await db.clients.find_one({"client_id": paiement["client_id"]}, {"_id": 0, "nom": 1, "email": 1, "numero_whatsapp": 1, "telephone": 1})
+        if client:
+            paiement["client_nom"] = client.get("nom")
+            paiement["client_numero_whatsapp"] = client.get("numero_whatsapp") or client.get("telephone")
+            paiement["client_email"] = client.get("email")
     return paiement
 
 
@@ -324,6 +340,20 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         # Return with client_nom
         paiement_doc["client_nom"] = client["nom"]
+
+        # 🔔 Notification vente — paiement reçu
+        try:
+            _mode = paiement_doc.get("mode_paiement", "")
+            await notify_vente_event(
+                db, "success", "paiement",
+                f"💰 Paiement reçu — {client['nom']}",
+                f"Paiement de {payload.montant_total:,.0f} FCFA reçu ({_mode}) de {client['nom']}",
+                lien=f"/paiements/{paiement_doc['paiement_id']}",
+                exclude_user_id=user["user_id"],
+            )
+        except Exception as _e:
+            logger.warning("notify create_paiement: %s", _e)
+
         return PaiementOut(**paiement_doc)
 
     # ---------- GET DETAIL ----------
@@ -386,6 +416,160 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 })
         
         return result
+
+    # ---------- WHATSAPP ----------
+    @router.post("/{paiement_id}/envoyer-whatsapp")
+    async def envoyer_paiement_whatsapp(
+        paiement_id: str,
+        payload: WhatsAppPayload = None,
+        request: Request = None,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Prepare WhatsApp sharing link for reçu de paiement"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        paiement = await db.paiements.find_one({"paiement_id": paiement_id}, {"_id": 0})
+        _ensure(paiement is not None, 404, "Paiement introuvable")
+
+        client = await db.clients.find_one({"client_id": paiement["client_id"]}, {"_id": 0})
+        _ensure(client is not None, 404, "Client introuvable")
+
+        whatsapp_number = (payload.numero if payload and payload.numero else None) \
+            or client.get("numero_whatsapp") or client.get("telephone")
+        _ensure(whatsapp_number, 400, "Numéro WhatsApp non disponible — veuillez en saisir un")
+
+        clean_number = whatsapp_number.replace(" ", "").replace("-", "").replace("+", "")
+
+        message = (payload.message if payload and payload.message else None) or \
+            f"""Bonjour {client.get('nom', 'Client')},
+
+Nous confirmons la réception de votre paiement {paiement['reference']}.
+
+Montant : {paiement['montant_total']:,.0f} FCFA
+Date : {paiement['date_paiement']}
+
+Merci de votre confiance.
+
+Cordialement,
+ÉDITIONS FABS-CI"""
+
+        encoded_message = message.replace("\n", "%0A")
+        whatsapp_url = f"https://wa.me/{clean_number}?text={encoded_message}"
+
+        await db.audit_logs.insert_one({
+            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+            "user_id": me["user_id"],
+            "action": "SEND_WHATSAPP",
+            "resource_type": "paiement",
+            "resource_id": paiement_id,
+            "details": {"whatsapp_number": clean_number},
+            "ip_address": request.client.host if request.client else None,
+            "timestamp": _now_iso(),
+        })
+
+        return {
+            "whatsapp_url": whatsapp_url,
+            "message": message,
+            "pdf_filename": f"{paiement['reference']}.pdf"
+        }
+
+    # ---------- EMAIL ----------
+    @router.post("/{paiement_id}/envoyer-email")
+    async def envoyer_paiement_email(
+        paiement_id: str,
+        payload: EmailPayload = None,
+        request: Request = None,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Send reçu de paiement via Email"""
+        import os
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        paiement = await db.paiements.find_one({"paiement_id": paiement_id}, {"_id": 0})
+        _ensure(paiement is not None, 404, "Paiement introuvable")
+
+        client = await db.clients.find_one({"client_id": paiement["client_id"]}, {"_id": 0})
+        _ensure(client is not None, 404, "Client introuvable")
+
+        if payload and payload.destinataire:
+            client_email = payload.destinataire
+        else:
+            client_email = client.get("email")
+        _ensure(client_email, 400, "Email non disponible — veuillez en saisir un")
+
+        sujet = (payload.objet if payload and payload.objet else None) or \
+            f"Reçu de paiement {paiement['reference']} - ÉDITIONS FABS-CI"
+        corps_texte = (payload.message if payload and payload.message else None) or \
+            f"""Bonjour {client.get('nom', 'Client')},
+
+Nous confirmons la réception de votre paiement {paiement['reference']}.
+
+Montant : {paiement['montant_total']:,.0f} FCFA
+Date : {paiement['date_paiement']}
+
+Merci de votre confiance.
+
+Cordialement,
+ÉDITIONS FABS-CI"""
+
+        corps_html = f"""
+<html>
+<body>
+    <h2>Reçu de paiement {paiement['reference']}</h2>
+    <p>Bonjour {client.get('nom', 'Client')},</p>
+    <p>Nous confirmons la réception de votre paiement.</p>
+    <p><strong>Montant : {paiement['montant_total']:,.0f} FCFA</strong><br>
+    Date : {paiement['date_paiement']}</p>
+    <p>Merci de votre confiance.</p>
+    <p>Cordialement,<br>ÉDITIONS FABS-CI</p>
+</body>
+</html>"""
+
+        try:
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+
+            smtp_host = os.getenv("SMTP_HOST")
+            smtp_port = os.getenv("SMTP_PORT", "587")
+            smtp_user = os.getenv("SMTP_USER")
+            smtp_password = os.getenv("SMTP_PASSWORD")
+            smtp_from = os.getenv("SMTP_FROM")
+
+            if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
+                raise HTTPException(status_code=500, detail="Configuration SMTP manquante")
+
+            msg = MIMEMultipart("mixed")
+            msg["Subject"] = sujet
+            msg["From"] = smtp_from
+            msg["To"] = client_email
+            msg.attach(MIMEText(corps_html, "html", "utf-8"))
+
+            with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+
+            await db.audit_logs.insert_one({
+                "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+                "user_id": me["user_id"],
+                "action": "SEND_EMAIL",
+                "resource_type": "paiement",
+                "resource_id": paiement_id,
+                "details": {"email": client_email},
+                "ip_address": request.client.host if request.client else None,
+                "timestamp": _now_iso(),
+            })
+
+            return {"success": True, "message": f"Email envoyé à {client_email}"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Email paiement error: {e}")
+            raise HTTPException(status_code=500, detail=f"Erreur envoi email : {str(e)}")
 
     return router
 

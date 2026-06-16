@@ -6,6 +6,7 @@
  * - Maintient un compteur de notifications non lues
  * - Ouvre une connexion WebSocket (auth par cookie httpOnly)
  * - Affiche un toast à la réception d'une nouvelle notification
+ * - Joue un son à chaque nouvelle notification (Web Audio API)
  * - Reconnexion automatique avec backoff exponentiel
  */
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -17,6 +18,44 @@ import {
   markAllAsRead as apiMarkAllAsRead,
 } from "../services/notificationsService";
 import { useAuth } from "./useAuth";
+
+// ─── Son de notification via Web Audio API ────────────────────────────────────
+function playNotificationSound(type = "info") {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Paramètres selon le type
+    const configs = {
+      success:  [{ f: 880, t: 0,    d: 0.12 }, { f: 1100, t: 0.13, d: 0.18 }],
+      warning:  [{ f: 660, t: 0,    d: 0.15 }, { f: 550,  t: 0.17, d: 0.15 }],
+      error:    [{ f: 440, t: 0,    d: 0.12 }, { f: 330,  t: 0.13, d: 0.2  }, { f: 220, t: 0.35, d: 0.25 }],
+      info:     [{ f: 880, t: 0,    d: 0.15 }],
+    };
+
+    const notes = configs[type] || configs.info;
+    const now = ctx.currentTime;
+
+    notes.forEach(({ f, t, d }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, now + t);
+      gain.gain.setValueAtTime(0.25, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+      osc.start(now + t);
+      osc.stop(now + t + d + 0.02);
+    });
+
+    // Fermer le contexte après le dernier son
+    const lastNote = notes[notes.length - 1];
+    setTimeout(() => ctx.close(), (lastNote.t + lastNote.d + 0.1) * 1000);
+  } catch (e) {
+    // Web Audio non disponible (headless, etc.) — silencieux
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function buildWsUrl() {
   const apiBase = process.env.REACT_APP_BACKEND_URL || "";
@@ -126,6 +165,8 @@ export function useNotifications() {
         if (data.event === "notification:new") {
           setItems((prev) => [data, ...prev].slice(0, 50));
           setCount((c) => c + 1);
+          // 🔔 Son de notification
+          playNotificationSound(data.type || "info");
           // Toast utilisateur
           const variantFn =
             data.type === "error"
@@ -135,7 +176,13 @@ export function useNotifications() {
               : data.type === "success"
               ? toast.success
               : toast;
-          variantFn(data.titre, { description: data.message });
+          variantFn(data.titre, {
+            description: data.message,
+            duration: 6000,
+            action: data.lien
+              ? { label: "Voir", onClick: () => window.location.assign(data.lien) }
+              : undefined,
+          });
         } else if (data.event === "notification:count") {
           setCount(data.count || 0);
         }

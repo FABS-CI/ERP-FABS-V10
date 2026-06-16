@@ -32,3 +32,13 @@ export const getPaiementsByFacture = async (factureId) => {
   const response = await axios.get(`${API}/paiements/facture/${factureId}`);
   return response.data;
 };
+
+export const sendPaiementWhatsApp = async (paiementId, payload = {}) => {
+  const response = await axios.post(`${API}/paiements/${paiementId}/envoyer-whatsapp`, payload);
+  return response.data;
+};
+
+export const sendPaiementEmail = async (paiementId, payload = {}) => {
+  const response = await axios.post(`${API}/paiements/${paiementId}/envoyer-email`, payload);
+  return response.data;
+};

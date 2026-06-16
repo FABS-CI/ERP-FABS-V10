@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { can } from "../constants/permissions";
+import { can, visibleModulesFor } from "../constants/permissions";
 
 /**
  * Garde de route : vérifie l'authentification + (optionnel) le rôle autorisé
@@ -29,7 +29,10 @@ export default function ProtectedRoute({ children, moduleKey }) {
   }
 
   if (moduleKey && !can(role, moduleKey)) {
-    return <Navigate to="/dashboard" replace state={{ forbidden: moduleKey }} />;
+    // Rediriger vers le premier module accessible (évite boucle si dashboard refusé)
+    const firstModule = visibleModulesFor(role)[0];
+    const fallback = firstModule ? firstModule.path : "/login";
+    return <Navigate to={fallback} replace state={{ forbidden: moduleKey }} />;
   }
 
   return children;

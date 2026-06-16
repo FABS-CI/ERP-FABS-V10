@@ -75,14 +75,14 @@ export const generateFacturePDF = async (factureId) => {
 };
 
 // Send facture via WhatsApp
-export const sendFactureWhatsApp = async (factureId) => {
-  const response = await axios.post(`${API}/factures/${factureId}/envoyer-whatsapp`);
+export const sendFactureWhatsApp = async (factureId, payload = {}) => {
+  const response = await axios.post(`${API}/factures/${factureId}/envoyer-whatsapp`, payload || {});
   return response.data;
 };
 
 // Send facture via Email
-export const sendFactureEmail = async (factureId) => {
-  const response = await axios.post(`${API}/factures/${factureId}/envoyer-email`);
+export const sendFactureEmail = async (factureId, payload = {}) => {
+  const response = await axios.post(`${API}/factures/${factureId}/envoyer-email`, payload || {});
   return response.data;
 };
 

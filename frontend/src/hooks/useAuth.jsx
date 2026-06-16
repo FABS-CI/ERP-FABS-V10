@@ -49,9 +49,16 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const r = await axios.post(`${API}/auth/login`, { email, password });
-    tokenStore.set(r.data.access_token);
-    setUser(r.data.user);
-    return r.data.user;
+    const data = r.data;
+    // Si 2FA obligatoire → stocker le token pré-auth sans finaliser la session
+    if (data.twofa_pending || data.twofa_setup_required) {
+      tokenStore.set(data.access_token); // pré-auth token (ou vrai token pour setup)
+      // Ne pas setUser → session non finalisée
+      return data; // { twofa_pending, twofa_setup_required, user, access_token, ... }
+    }
+    tokenStore.set(data.access_token);
+    setUser(data.user);
+    return data;
   }, []);
 
   const logout = useCallback(async () => {
