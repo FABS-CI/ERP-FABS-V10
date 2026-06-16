@@ -87,7 +87,7 @@ router = APIRouter(prefix="/approvisionnements", tags=["approvisionnements"])
 
 
 async def resolve_user(request: Request, authorization: Optional[str] = Header(default=None)):
-    """Résout l'utilisateur depuis le token JWT (header Authorization ou cookie session_token)."""
+    """Résout l'utilisateur depuis le token JWT — vérifie actif=True en base (fix C2)."""
     token = None
     if authorization:
         token = authorization.replace("Bearer ", "")
@@ -101,6 +101,11 @@ async def resolve_user(request: Request, authorization: Optional[str] = Header(d
         user_id = payload.get('user_id')
         if not user_id:
             raise HTTPException(status_code=401, detail="Token invalide")
+        # Vérification compte actif en base (C2 — authN bypass fix)
+        db = request.app.state.db
+        user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "actif": 1, "role": 1})
+        if not user_doc or not user_doc.get("actif", True):
+            raise HTTPException(status_code=401, detail="Compte désactivé ou introuvable")
         return {"user_id": user_id, "role": payload.get('role', 'user')}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expiré")
