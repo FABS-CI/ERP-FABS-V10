@@ -5,6 +5,7 @@ Module File Storage Enterprise - MinIO/S3, documents, factures PDF
 from fastapi import APIRouter, HTTPException, Header, Request, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from pathlib import Path
 from datetime import datetime, timezone
 import logging
 import os
@@ -12,6 +13,19 @@ import shutil
 import uuid
 
 logger = logging.getLogger("fabsci.file_storage")
+
+# C4 fix: validation upload — extensions et types MIME autorisés
+ALLOWED_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.gif', '.xlsx', '.xls', '.docx', '.doc', '.csv', '.txt', '.zip'}
+ALLOWED_MIME_TYPES = {
+    'application/pdf', 'image/jpeg', 'image/png', 'image/gif',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'text/csv', 'text/plain',
+    'application/zip', 'application/octet-stream',
+}
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 # ============================================================================
 # SCHEMAS
