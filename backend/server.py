@@ -1053,6 +1053,8 @@ async def startup_event():
     # Seed super admin if not exists
     super_admin_email = os.environ.get('SUPER_ADMIN_EMAIL', 'pissken@editionsfabsci.com')
     super_admin_password = os.environ.get('SUPER_ADMIN_PASSWORD', 'Admin@2025')
+    if env == 'production' and super_admin_password == 'Admin@2025':
+        logger.warning("⚠️  [F4] SUPER_ADMIN_PASSWORD non défini — fallback hardcodé actif en production. Définissez SUPER_ADMIN_PASSWORD dans l'environnement.")
     super_admin_name = os.environ.get('SUPER_ADMIN_NAME', 'AKE APPIA YVES DORIS')
     
     admin_exists = await db.users.find_one({"email": super_admin_email})
