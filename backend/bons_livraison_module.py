@@ -242,37 +242,45 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
         # Get lignes and create stock movements
         lignes = await db.bl_lignes.find({"bl_id": bl_id}, {"_id": 0}).to_list(100)
         for ligne in lignes:
-            # Atomic decrement via $inc (évite les race conditions concurrentes)
-            produit_before = await db.produits.find_one(
-                {"product_id": ligne["produit_id"]},
-                {"_id": 0, "stock_actuel": 1},
+            _qte = ligne.get("quantite", ligne.get("quantite_commandee", ligne.get("quantite_livree", 0)))
+            # C6 fix: décrémentation atomique avec guard stock >= qte pour éviter stock négatif
+            updated = await db.produits.find_one_and_update(
+                {"product_id": ligne["produit_id"], "stock_actuel": {"$gte": _qte}},
+                {
+                    "$inc": {"stock_actuel": -_qte},
+                    "$set": {"updated_at": now},
+                },
+                return_document=True,
+                projection={"_id": 0, "stock_actuel": 1},
             )
-            if produit_before:
-                stock_avant = produit_before.get("stock_actuel", 0)
-                _qte = ligne.get("quantite", ligne.get("quantite_commandee", ligne.get("quantite_livree", 0)))
-                stock_apres = max(0, stock_avant - _qte)
-
-                await db.produits.update_one(
+            if not updated:
+                # Stock insuffisant — lire la valeur actuelle pour le message d'erreur
+                produit_cur = await db.produits.find_one(
                     {"product_id": ligne["produit_id"]},
-                    {
-                        "$inc": {"stock_actuel": -_qte},
-                        "$set": {"updated_at": now},
-                    },
+                    {"_id": 0, "stock_actuel": 1, "reference": 1},
                 )
+                stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Stock insuffisant pour le produit {ligne['produit_id']}: "
+                           f"disponible={stock_dispo}, demandé={_qte}",
+                )
+            stock_apres = updated.get("stock_actuel", 0)
+            stock_avant = stock_apres + _qte
 
-                mouvement_doc = {
-                    "mouvement_id": f"mvt_{uuid.uuid4().hex[:12]}",
-                    "produit_id": ligne["produit_id"],
-                    "type_mouvement": "sortie",
-                    "quantite": _qte,
-                    "stock_avant": stock_avant,
-                    "stock_apres": stock_apres,
-                    "bl_id": bl_id,
-                    "motif": f"Livraison BL {bl['reference']}",
-                    "created_by": me["user_id"],
-                    "created_at": now,
-                }
-                await db.mouvements_stock.insert_one(mouvement_doc)
+            mouvement_doc = {
+                "mouvement_id": f"mvt_{uuid.uuid4().hex[:12]}",
+                "produit_id": ligne["produit_id"],
+                "type_mouvement": "sortie",
+                "quantite": _qte,
+                "stock_avant": stock_avant,
+                "stock_apres": stock_apres,
+                "bl_id": bl_id,
+                "motif": f"Livraison BL {bl['reference']}",
+                "created_by": me["user_id"],
+                "created_at": now,
+            }
+            await db.mouvements_stock.insert_one(mouvement_doc)
 
         # Audit log
         if log_audit_event:

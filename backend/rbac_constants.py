@@ -184,7 +184,7 @@ MODULE_PERMISSIONS = {
     },
     "comptabilite_avancee": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG doit pouvoir lire la comptabilité avancée
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -206,7 +206,7 @@ MODULE_PERMISSIONS = {
     },
     "logistics_costs": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG doit voir les coûts logistiques
         "comptable": 1,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -217,7 +217,7 @@ MODULE_PERMISSIONS = {
     },
     "multi_channel_notifications": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG peut voir les notifications
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -228,9 +228,9 @@ MODULE_PERMISSIONS = {
     },
     "bi_analytics": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG doit avoir accès aux analytics BI
         "comptable": 0,
-        "directeur_commercial": 0,
+        "directeur_commercial": 1,
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
         "secretariat": 0,
@@ -239,7 +239,7 @@ MODULE_PERMISSIONS = {
     },
     "workflow_approvals": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 2,  # E1 fix: DG doit pouvoir approuver les workflows
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -250,18 +250,18 @@ MODULE_PERMISSIONS = {
     },
     "file_storage": {
         "super_admin": 2,
-        "directeur_general": 0,
-        "comptable": 0,
+        "directeur_general": 1,  # E1 fix: DG doit pouvoir accéder aux fichiers
+        "comptable": 1,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
-        "secretariat": 0,
+        "secretariat": 1,
         "service_logistique": 0,
         "assistante": 0,
     },
     "backup": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG peut voir les backups (lecture seule)
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -272,7 +272,7 @@ MODULE_PERMISSIONS = {
     },
     "comptabilite": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG doit voir la comptabilité de son entreprise
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -294,7 +294,7 @@ MODULE_PERMISSIONS = {
     },
     "utilisateurs": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG peut voir la liste des utilisateurs
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -305,7 +305,7 @@ MODULE_PERMISSIONS = {
     },
     "parametres": {
         "super_admin": 2,
-        "directeur_general": 0,
+        "directeur_general": 1,  # E1 fix: DG peut voir les paramètres (lecture)
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
