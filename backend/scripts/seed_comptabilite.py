@@ -118,6 +118,16 @@ PLAN_COMPTABLE = [
     },
 ]
 
+# Normaliser chaque entrée: garantir compte_id + intitule (attendus par les modèles/écritures auto)
+for _c in PLAN_COMPTABLE:
+    _c.setdefault("compte_id", f"compte_{_c['numero']}")
+    _c.setdefault("intitule", _c.get("libelle", ""))
+    # classe en int pour cohérence avec CompteComptableOut
+    try:
+        _c["classe_int"] = int(str(_c.get("classe", _c["numero"][0])))
+    except Exception:
+        _c["classe_int"] = 0
+
 
 async def seed_journaux_et_plan_comptable(db) -> dict:
     """
@@ -162,6 +172,16 @@ async def seed_journaux_et_plan_comptable(db) -> dict:
                 inserted["journaux"] += 1
 
     # --- Plan comptable ---
+    # Migration: garantir compte_id + intitule sur docs existants (écritures auto en dépendent)
+    async for doc in db.plan_comptable.find({}):
+        update = {}
+        if "compte_id" not in doc or not doc.get("compte_id"):
+            update["compte_id"] = f"compte_{doc.get('numero', str(uuid.uuid4())[:8])}"
+        if ("intitule" not in doc or not doc.get("intitule")) and doc.get("libelle"):
+            update["intitule"] = doc["libelle"]
+        if update:
+            await db.plan_comptable.update_one({"_id": doc["_id"]}, {"$set": update})
+
     count_plan = await db.plan_comptable.count_documents({})
     if count_plan == 0:
         docs = [{**c, "created_at": now, "updated_at": now} for c in PLAN_COMPTABLE]

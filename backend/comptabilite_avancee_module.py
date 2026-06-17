@@ -300,7 +300,27 @@ def build_comptabilite_avancee_router(db, resolve_user):
 
         cursor = db.plan_comptable.find(filters, {"_id": 0}).sort("numero", 1).skip(skip).limit(limit)
         docs = await cursor.to_list(limit)
-        return [CompteComptableOut(**d) for d in docs]
+        result = []
+        for d in docs:
+            try:
+                numero = d.get("numero") or d.get("compte") or ""
+                normalized = {
+                    "compte_id": d.get("compte_id") or (f"compte_{numero}" if numero else "compte_inconnu"),
+                    "numero": numero,
+                    "intitule": d.get("intitule") or d.get("libelle") or "",
+                    "parent_id": d.get("parent_id"),
+                    "type": d.get("type") or "general",
+                    "classe": d.get("classe") if d.get("classe") is not None else (int(str(numero)[0]) if str(numero)[:1].isdigit() else 0),
+                    "solde_debit": d.get("solde_debit", 0.0) or 0.0,
+                    "solde_credit": d.get("solde_credit", 0.0) or 0.0,
+                    "actif": d.get("actif", True),
+                    "created_at": d.get("created_at") or datetime.now(timezone.utc).isoformat(),
+                }
+                result.append(CompteComptableOut(**normalized))
+            except Exception as e:
+                logger.warning(f"Compte plan_comptable ignoré (invalide): {e}")
+                continue
+        return result
 
     @router.post("/plan-comptable", response_model=CompteComptableOut, status_code=201)
     async def create_compte_comptable(
