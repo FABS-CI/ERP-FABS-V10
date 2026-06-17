@@ -34,15 +34,15 @@ logger = logging.getLogger("fabsci.proformas")
 READ_ROLES = {
     # RBAC 2026-06-17: DG + commercial (rôle inexistant) retirés
     "super_admin", "directeur_commercial",
-    "comptable", "secretariat", "assistante_commerciale", "assistante",
+    "comptable", "secretariat", "assistante",
 }
 WRITE_ROLES = {
     # RBAC 2026-06-17: DG + dir_com + commercial retirés
-    "super_admin", "secretariat", "comptable", "assistante", "assistante_commerciale",
+    "super_admin", "secretariat", "comptable", "assistante",
 }
 SEND_ROLES = {
     # RBAC 2026-06-17: DG + dir_com retirés
-    "super_admin", "secretariat", "comptable", "assistante", "assistante_commerciale",
+    "super_admin", "secretariat", "comptable", "assistante",
 }
 CONVERT_ROLES = {
     # RBAC 2026-06-17: DG + dir_com retirés

@@ -389,7 +389,7 @@ VALID_ROLES = {
     "super_admin", "directeur_general", "comptable",
     "directeur_commercial", "gestionnaire_stock",
     "responsable_magasinier", "secretariat", "assistante",
-    "service_logistique", "assistante_commerciale",
+    "service_logistique",
 }
 
 
@@ -1019,7 +1019,7 @@ async def get_envois_historique(
     user = await resolve_user(request, authorization)
     ALLOWED = {
         "super_admin", "directeur_general", "directeur_commercial",
-        "comptable", "secretariat", "assistante_commerciale",
+        "comptable", "secretariat",
     }
     if user["role"] not in ALLOWED:
         raise HTTPException(status_code=403, detail="Accès refusé")

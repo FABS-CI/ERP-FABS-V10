@@ -25,13 +25,13 @@ from sanitizers import sanitize_str
 # ---------------------------------------------------------------------------
 READ_ROLES = {
     "super_admin", "directeur_general", "comptable",
-    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
+    "directeur_commercial", "secretariat", "assistante",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
+    "directeur_commercial", "secretariat", "assistante",
 }
-# Désactivation client réservée aux rôles de direction (pas assistante_commerciale)
+# Désactivation client réservée aux rôles de direction (pas assistante)
 DISABLE_ROLES = {
     "super_admin", "directeur_general",
     "directeur_commercial", "secretariat",

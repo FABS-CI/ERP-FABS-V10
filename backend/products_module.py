@@ -27,7 +27,7 @@ logger = logging.getLogger("fabsci.produits")
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
     "gestionnaire_stock",
-    "assistante", "assistante_commerciale",  # lecture pour saisie commandes
+    "assistante",  # lecture pour saisie commandes
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",

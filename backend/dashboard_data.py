@@ -18,7 +18,7 @@ ROLE_KPIS: Dict[str, List[str]] = {
     "gestionnaire_stock":     ["alertes_stock", "ruptures", "total_produits", "commandes_en_cours"],
     "responsable_magasinier": ["alertes_stock", "commandes_en_cours", "ruptures", "total_produits"],
     "secretariat":            ["commandes_en_cours", "total_clients", "factures_impayees"],
-    "assistante_commerciale": ["total_clients", "commandes_en_cours", "commandes_attente"],
+    "assistante":             ["total_clients", "commandes_en_cours", "commandes_attente"],
     "service_logistique":     ["commandes_en_cours", "total_clients", "alertes_stock"],
     "commercial":             ["ventes_mois", "top_clients_count", "commandes_en_cours", "factures_impayees"],
     "responsable_rh":         ["total_clients", "commandes_en_cours"],

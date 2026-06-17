@@ -125,7 +125,7 @@ export default function ClientDetail() {
   const canWrite = ["super_admin", "directeur_general", "directeur_commercial", "secretariat"].includes(role);
   // Bouton commander : tous les rôles ayant accès au module commandes
   const canCommande = ["super_admin", "directeur_general", "directeur_commercial", "secretariat",
-    "assistante", "assistante_commerciale", "gestionnaire_stock", "responsable_magasinier", "comptable"].includes(role);
+    "assistante", "gestionnaire_stock", "responsable_magasinier", "comptable"].includes(role);
 
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);

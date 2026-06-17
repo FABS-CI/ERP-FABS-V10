@@ -37,12 +37,12 @@ logger = logging.getLogger("fabsci.commandes")
 READ_ROLES = {
     # RBAC 2026-06-17: DG retiré de commandes
     "super_admin", "directeur_commercial",
-    "secretariat", "comptable", "assistante_commerciale", "assistante",
+    "secretariat", "comptable", "assistante",
     "gestionnaire_stock", "responsable_magasinier",
 }
 WRITE_ROLES = {
     # RBAC 2026-06-17: DG + dir_com retirés de WRITE
-    "super_admin", "secretariat", "assistante_commerciale", "assistante", "comptable",
+    "super_admin", "secretariat", "assistante", "comptable",
 }
 # RBAC 2026-06-17: DG + dir_com retirés de VALIDATE
 VALIDATE_ROLES = {"super_admin", "secretariat", "comptable"}

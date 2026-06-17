@@ -236,7 +236,7 @@ async def publish_notification(db, user_id: str, type: str, categorie: str, titr
 # Rôles qui reçoivent les notifications vente
 VENTE_NOTIF_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "secretariat", "assistante_commerciale", "comptable",
+    "secretariat", "comptable",
     "responsable_magasinier", "service_logistique",
 }
 

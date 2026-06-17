@@ -160,8 +160,8 @@ export default function CommandeDetail() {
     }
   };
 
-  // assistante_commerciale : lecture + création/modif brouillon uniquement — pas de validation ni annulation ni facture
-  const isAssistanteCommerciale = () => user?.role === 'assistante_commerciale';
+  // assistante : lecture + création/modif brouillon uniquement — pas de validation ni annulation ni facture
+  const isAssistanteCommerciale = () => user?.role === 'assistante';
 
   const canGenerateFacture = () => {
     if (!user || !commande) return false;

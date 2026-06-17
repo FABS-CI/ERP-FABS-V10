@@ -147,7 +147,7 @@ export default function ProformaDetail() {
     );
   }
 
-  const isAssistante = user?.role === 'assistante_commerciale';
+  const isAssistante = user?.role === 'assistante';
   const canConvert = proforma.statut_proforma !== 'convertie_facture' && !isAssistante;
   const alreadyConverted = proforma.statut_proforma === 'convertie_facture' && proforma.facture_id;
 
