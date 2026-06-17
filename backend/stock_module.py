@@ -202,6 +202,19 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         return MouvementStockOut(**mouvement_doc)
 
     # ---------- INVENTAIRE PHYSIQUE ----------
+    @router.get("/inventaire", response_model=List[dict])
+    async def list_inventaires(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        limit: int = Query(50, ge=1, le=200),
+        skip: int = Query(0, ge=0),
+    ):
+        """Lister les inventaires physiques."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        docs = await db.inventaires.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        return docs
+
     @router.post("/inventaire", response_model=InventaireOut, status_code=201)
     async def create_inventaire(
         payload: InventaireIn,

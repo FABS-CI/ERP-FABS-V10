@@ -10,12 +10,28 @@ import logging
 
 logger = logging.getLogger("fabsci.comptabilite_avancee")
 
+def _normalize_compte(doc: dict) -> dict:
+    """Normalise un document plan_comptable : ajoute compte_id et intitule si absents (compat DB seed)."""
+    if doc is None:
+        return doc
+    if "compte_id" not in doc:
+        doc["compte_id"] = f"cpt_{doc.get('numero', 'unknown')}"
+    if "intitule" not in doc:
+        doc["intitule"] = doc.get("libelle", doc.get("numero", "?"))
+    # Champs optionnels avec valeur par défaut
+    doc.setdefault("parent_id", None)
+    doc.setdefault("solde_debit", 0.0)
+    doc.setdefault("solde_credit", 0.0)
+    doc.setdefault("created_at", "")
+    return doc
+
+
 # ============================================================================
 # SCHEMAS
 # ============================================================================
 
 class CompteComptableIn(BaseModel):
-    numero: str = Field(pattern="^\d{6}$")
+    numero: str = Field(pattern=r"^\d{6}$")
     intitule: str
     parent_id: Optional[str] = None
     type: str = Field(pattern="^(actif|passif|charge|produit)$")
@@ -134,9 +150,9 @@ async def _generate_ecriture_automatique_facture(db, facture_id: str, user_id: s
         return None
 
     # Récupérer les comptes SYSCOHADA
-    compte_clients = await db.plan_comptable.find_one({"numero": "411000"})
-    compte_ventes = await db.plan_comptable.find_one({"numero": "701000"})
-    compte_tva = await db.plan_comptable.find_one({"numero": "443100"})
+    compte_clients = _normalize_compte(await db.plan_comptable.find_one({"numero": "411000"}))
+    compte_ventes = _normalize_compte(await db.plan_comptable.find_one({"numero": "701000"}))
+    compte_tva = _normalize_compte(await db.plan_comptable.find_one({"numero": "443100"}))
 
     if not compte_clients or not compte_ventes:
         return None
@@ -193,7 +209,7 @@ async def _generate_ecriture_automatique_facture(db, facture_id: str, user_id: s
     # Mettre à jour les soldes des comptes
     for ligne in lignes:
         await db.plan_comptable.update_one(
-            {"compte_id": ligne["compte_id"]},
+            {"numero": ligne["compte_numero"]},
             {"$inc": {"solde_debit": ligne["debit"], "solde_credit": ligne["credit"]}}
         )
 
@@ -214,8 +230,8 @@ async def _generate_ecriture_automatique_paiement(db, paiement_id: str, user_id:
         return None
 
     # Récupérer les comptes SYSCOHADA
-    compte_banque = await db.plan_comptable.find_one({"numero": "521000"})
-    compte_clients = await db.plan_comptable.find_one({"numero": "411000"})
+    compte_banque = _normalize_compte(await db.plan_comptable.find_one({"numero": "521000"}))
+    compte_clients = _normalize_compte(await db.plan_comptable.find_one({"numero": "411000"}))
 
     if not compte_banque or not compte_clients:
         return None
@@ -261,7 +277,7 @@ async def _generate_ecriture_automatique_paiement(db, paiement_id: str, user_id:
     # Mettre à jour les soldes des comptes
     for ligne in lignes:
         await db.plan_comptable.update_one(
-            {"compte_id": ligne["compte_id"]},
+            {"numero": ligne["compte_numero"]},
             {"$inc": {"solde_debit": ligne["debit"], "solde_credit": ligne["credit"]}}
         )
 
@@ -348,6 +364,7 @@ def build_comptabilite_avancee_router(db, resolve_user):
         }
 
         await db.plan_comptable.insert_one(compte_doc)
+        compte_doc = _normalize_compte(compte_doc)
         logger.info(f"Compte comptable créé: {payload.numero} par {user['email']}")
         
         return CompteComptableOut(**compte_doc)
