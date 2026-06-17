@@ -168,10 +168,16 @@ export default function FactureDetail() {
     
     setActionLoading(true);
     try {
-      await genererAvoir(id, parseFloat(avoirData.montant), avoirData.motif);
+      const avoir = await genererAvoir(id, parseFloat(avoirData.montant), avoirData.motif);
       toast.success('Avoir généré avec succès');
       setShowAvoirDialog(false);
-      fetchFacture();
+      // Rediriger vers l'avoir créé pour le voir / télécharger / partager
+      const avoirId = avoir?.facture_id || avoir?.avoir_id;
+      if (avoirId) {
+        navigate(`/factures/${avoirId}`);
+      } else {
+        fetchFacture();
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erreur lors de la génération de l\'avoir');
     } finally {

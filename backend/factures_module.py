@@ -1254,6 +1254,16 @@ Cordialement,
                 "email": client_email,
                 "subject": sujet
             }
+        except HTTPException:
+            # Erreur déjà explicite (ex: 503 service non configuré) → on la laisse passer telle quelle
+            raise
+        except (smtplib.SMTPAuthenticationError, smtplib.SMTPException) as e:
+            logger.error(f"Erreur envoi email (SMTP): {e}")
+            raise HTTPException(
+                status_code=503,
+                detail="Service email indisponible : identifiants SMTP invalides ou non configurés. "
+                       "Vérifiez SMTP_USER / SMTP_PASSWORD côté serveur (mot de passe d'application requis pour Gmail)."
+            )
         except Exception as e:
             logger.error(f"Erreur envoi email: {e}")
             # Log failed attempt
