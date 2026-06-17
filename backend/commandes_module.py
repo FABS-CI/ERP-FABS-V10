@@ -216,6 +216,8 @@ class CommandeOut(BaseModel):
 
 class CommandeDetail(CommandeOut):
     lignes: List[LigneCommandeOut]
+    # État des transformations (anti-doublon UI) : facture/BL déjà générés
+    transformations: Optional[dict] = None
 
 
 class AnnulerCommandeIn(BaseModel):
@@ -580,7 +582,36 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         cmd = await _get_commande_with_lignes(db, commande_id)
         _ensure(cmd is not None, 404, "Commande introuvable")
-        
+
+        # Enrichir avec l'état des transformations (facture / BL déjà générés)
+        facture = await db.factures.find_one(
+            {"commande_id": commande_id, "type_facture": "facture"},
+            {"_id": 0, "facture_id": 1, "reference": 1, "statut": 1},
+        )
+        bls = await db.bons_livraison.find(
+            {"commande_id": commande_id},
+            {"_id": 0, "bl_id": 1, "reference": 1, "statut": 1},
+        ).to_list(100)
+        bl_livre = any(b.get("statut") == "livre" for b in bls)
+        cmd["transformations"] = {
+            "facture": (
+                {
+                    "facture_id": facture["facture_id"],
+                    "reference": facture.get("reference"),
+                    "statut": facture.get("statut"),
+                }
+                if facture
+                else None
+            ),
+            "facture_generee": facture is not None,
+            "bons_livraison": [
+                {"bl_id": b.get("bl_id"), "reference": b.get("reference"), "statut": b.get("statut")}
+                for b in bls
+            ],
+            "bl_genere": len(bls) > 0,
+            "totalement_livree": bl_livre or cmd.get("statut") == "livree",
+        }
+
         return CommandeDetail(**cmd)
 
     # ---------- UPDATE ----------
@@ -1287,13 +1318,12 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         _ensure(cmd is not None, 404, "Commande introuvable")
 
         lignes = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(500)
-        # Enrich lignes with designation from products
+        # Enrich lignes with code_article (reference) + niveau (niveau_scolaire) + cycle
+        from pdf_generator import enrich_lignes_for_pdf
+        _pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
+        _prods = await db.produits.find({"product_id": {"$in": _pids}}, {"_id": 0}).to_list(1000) if _pids else []
+        enrich_lignes_for_pdf({p["product_id"]: p for p in _prods}, lignes)
         for l in lignes:
-            prod = await db.produits.find_one({"produit_id": l.get("produit_id")}, {"_id": 0, "titre": 1, "classe": 1, "isbn": 1})
-            if prod:
-                l["designation"] = prod.get("titre", l.get("designation", ""))
-                l["classe"] = prod.get("classe", "")
-                l["code_article"] = prod.get("isbn", l.get("produit_id", ""))[:14]
             l["montant_ht"] = l.get("montant_ligne", l.get("montant_ht", 0))
 
         client = await db.clients.find_one({"client_id": cmd["client_id"]}, {"_id": 0}) or {}

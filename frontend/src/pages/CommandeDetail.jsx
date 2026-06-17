@@ -166,6 +166,8 @@ export default function CommandeDetail() {
   const canGenerateFacture = () => {
     if (!user || !commande) return false;
     if (!['validee', 'preparee', 'livree'].includes(commande.statut)) return false;
+    // Anti-doublon : si une facture existe déjà, on n'autorise plus la génération
+    if (commande.transformations?.facture_generee) return false;
     return ['super_admin', 'directeur_general', 'directeur_commercial', 'comptable'].includes(user.role);
   };
 
@@ -323,6 +325,19 @@ export default function CommandeDetail() {
               <Receipt className="h-4 w-4 mr-2" />
               Générer Facture
             </Button>
+          )}
+
+          {/* Anti-doublon : facture déjà générée -> badge cliquable, plus de bouton */}
+          {commande.transformations?.facture_generee && (
+            <button
+              type="button"
+              onClick={() => navigate(`/factures/${commande.transformations.facture.facture_id}`)}
+              className="inline-flex items-center gap-2 rounded-md border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100"
+              data-testid="badge-facture-generee"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Facture générée : {commande.transformations.facture.reference}
+            </button>
           )}
 
           {!['livree', 'annulee'].includes(commande.statut) && canCancelOrder() && (
@@ -574,6 +589,64 @@ export default function CommandeDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* État des transformations (anti-doublon) */}
+          {commande.transformations && (
+            <Card>
+              <CardHeader>
+                <CardTitle>État des transformations</CardTitle>
+                <CardDescription>Documents déjà générés depuis cette commande</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {/* Facture */}
+                  {commande.transformations.facture_generee ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/factures/${commande.transformations.facture.facture_id}`)}
+                      className="w-full flex items-center gap-2 rounded-md border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 text-left"
+                    >
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      Facture générée : {commande.transformations.facture.reference}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+                      <Receipt className="h-4 w-4 shrink-0" />
+                      Aucune facture générée
+                    </div>
+                  )}
+
+                  {/* Bons de livraison */}
+                  {commande.transformations.bl_genere ? (
+                    commande.transformations.bons_livraison.map((bl) => (
+                      <div
+                        key={bl.bl_id}
+                        className="flex items-center gap-2 rounded-md border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 shrink-0" />
+                        Bon de livraison : {bl.reference}
+                        <span className="ml-auto text-xs font-normal text-green-600">
+                          {bl.statut === 'livre' ? 'livré' : bl.statut}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+                      <Truck className="h-4 w-4 shrink-0" />
+                      Aucun bon de livraison généré
+                    </div>
+                  )}
+
+                  {commande.transformations.totalement_livree && (
+                    <div className="flex items-center gap-2 rounded-md border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      Commande totalement livrée
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

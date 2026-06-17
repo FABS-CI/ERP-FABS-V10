@@ -283,10 +283,26 @@ async def _get_facture_with_lignes(db: AsyncIOMotorDatabase, facture_id: str) ->
     # Fetch lignes
     lignes_cursor = db.facture_lignes.find({"facture_id": facture_id}, {"_id": 0})
     lignes = await lignes_cursor.to_list(500)
-    
+
+    await _enrich_lignes_produit(db, lignes)
     facture["lignes"] = lignes
     await _enrich_facture_with_client(db, facture)
     return facture
+
+
+async def _enrich_lignes_produit(db: AsyncIOMotorDatabase, lignes: list) -> None:
+    """Ajoute code_article (reference), niveau (niveau_scolaire) et cycle aux lignes
+    de vente en récupérant les vraies données produit. Utilisé pour PDF/WhatsApp/email."""
+    try:
+        from pdf_generator import enrich_lignes_for_pdf
+    except Exception:
+        return
+    pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
+    if not pids:
+        return
+    prods = await db.produits.find({"product_id": {"$in": pids}}, {"_id": 0}).to_list(1000)
+    by_id = {p["product_id"]: p for p in prods}
+    enrich_lignes_for_pdf(by_id, lignes)
 
 
 async def _update_facture_statut(db: AsyncIOMotorDatabase, facture_id: str) -> None:

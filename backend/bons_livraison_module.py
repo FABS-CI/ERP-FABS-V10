@@ -157,6 +157,23 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
         _ensure(cmd is not None, 404, "Commande introuvable")
         _ensure(cmd["statut"] in ["preparee", "livree"], 400, "Commande doit être préparée")
 
+        # Anti-doublon : interdire un nouveau BL si la commande est déjà totalement livrée.
+        # Les livraisons partielles restent autorisées tant qu'il n'existe pas de BL livré couvrant tout.
+        existing_livre = await db.bons_livraison.find_one(
+            {"commande_id": payload.commande_id, "statut": "livre"},
+            {"_id": 0, "reference": 1},
+        )
+        if existing_livre or cmd["statut"] == "livree":
+            ref = existing_livre.get("reference") if existing_livre else None
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Cette commande est déjà totalement livrée"
+                    + (f" (BL {ref})" if ref else "")
+                    + ". Aucun nouveau bon de livraison ne peut être créé."
+                ),
+            )
+
         # Create BL
         bl_id = f"bl_{uuid.uuid4().hex[:12]}"
         reference = await next_bl_reference(db)
@@ -341,12 +358,10 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
         if not lignes:
             lignes = await db.commande_lignes.find({"commande_id": bl["commande_id"]}, {"_id": 0}).to_list(500)
 
-        for l in lignes:
-            prod = await db.produits.find_one({"product_id": l.get("produit_id")}, {"_id": 0, "titre": 1, "classe": 1, "isbn": 1})
-            if prod:
-                l["designation"] = prod.get("titre", l.get("designation", ""))
-                l["classe"] = prod.get("classe", "")
-                l["code_article"] = (prod.get("isbn") or l.get("produit_id") or "")[:14]
+        from pdf_generator import enrich_lignes_for_pdf
+        _pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
+        _prods = await db.produits.find({"product_id": {"$in": _pids}}, {"_id": 0}).to_list(1000) if _pids else []
+        enrich_lignes_for_pdf({p["product_id"]: p for p in _prods}, lignes)
 
         cmd = await db.commandes.find_one({"commande_id": bl["commande_id"]}, {"_id": 0, "reference": 1, "client_id": 1})
         commande_ref = cmd.get("reference") if cmd else None

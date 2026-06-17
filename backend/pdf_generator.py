@@ -443,10 +443,47 @@ def _client_rows_facture(facture: Dict, client: Dict) -> List[List[str]]:
 # ═══════════════════════════════════════════════════════════════════
 # TABLEAUX ARTICLES — groupés par cycle, conforme au modèle
 # ═══════════════════════════════════════════════════════════════════
-HDR_PRIX = ["Classe", "Code Article", "Référence", "Qté", "Prix Unitaire", "Montant"]
-HDR_NOPX = ["Classe", "Code Article", "Référence", "Qté"]
-COL_PRIX = [2.3*cm, 2.7*cm, 5.0*cm, 1.2*cm, 2.7*cm, 3.4*cm]
-COL_NOPX = [3*cm, 3.5*cm, 9*cm, 1.8*cm]
+HDR_PRIX = ["Niveau", "Code Article", "Désignation", "Qté", "Prix Unitaire", "Montant"]
+HDR_NOPX = ["Niveau", "Code Article", "Désignation", "Qté"]
+COL_PRIX = [2.2*cm, 2.5*cm, 5.3*cm, 1.2*cm, 2.7*cm, 3.4*cm]
+COL_NOPX = [2.8*cm, 3.2*cm, 9.3*cm, 1.8*cm]
+
+
+# Libellés lisibles des cycles à partir de la catégorie produit
+_CYCLE_LABELS = {
+    "primaire":      "PRIMAIRE",
+    "premier_cycle": "PREMIER CYCLE",
+    "second_cycle":  "SECOND CYCLE",
+    "litterature":   "LITTÉRATURE",
+    "livre_commun":  "LIVRES COMMUNS",
+}
+
+
+def enrich_lignes_for_pdf(produits_by_id: Dict[str, Dict], lignes: List[Dict]) -> List[Dict]:
+    """Enrichit chaque ligne de document de vente avec les vraies données produit.
+
+    Mapping métier FABS-CI :
+      - Code Article = produit.reference         (ex. FABS-CI79)
+      - Niveau       = produit.niveau_scolaire   (ex. CP1, 6ème, Terminale)
+      - Cycle (regroupement) = produit.categorie (primaire, premier_cycle, ...)
+      - Désignation  = produit.titre (fallback designation de la ligne)
+    Aucune mutation destructrice : on ne remplit que les champs manquants.
+    """
+    for l in lignes:
+        pid = l.get("produit_id") or l.get("product_id")
+        prod = produits_by_id.get(pid, {})
+        if prod:
+            l["code_article"] = prod.get("reference") or l.get("code_article") or ""
+            l["niveau"] = prod.get("niveau_scolaire") or l.get("niveau") or ""
+            cat = prod.get("categorie") or ""
+            l["cycle"] = _CYCLE_LABELS.get(cat, cat.replace("_", " ").upper() if cat else "")
+            if not l.get("designation"):
+                l["designation"] = prod.get("titre") or ""
+        else:
+            l.setdefault("code_article", "")
+            l.setdefault("niveau", "")
+            l.setdefault("cycle", "")
+    return lignes
 
 
 def _articles_tables(lignes: List[Dict], include_prix: bool, theme: Dict) -> List:
@@ -482,7 +519,7 @@ def _articles_tables(lignes: List[Dict], include_prix: bool, theme: Dict) -> Lis
             m = float(ligne.get("montant_ht", 0))
             subtotal += m
             row = [
-                Paragraph(str(ligne.get("classe", "")), S_NORMAL),
+                Paragraph(str(ligne.get("niveau") or ligne.get("classe") or ""), S_NORMAL),
                 Paragraph(str(ligne.get("code_article") or ligne.get("produit_id", ""))[:16], S_NORMAL),
                 Paragraph(str(ligne.get("designation", "")), S_NORMAL),
                 Paragraph(str(int(ligne.get("quantite", 0))), S_NORMAL),
