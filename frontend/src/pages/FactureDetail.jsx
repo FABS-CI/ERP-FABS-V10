@@ -52,6 +52,12 @@ export default function FactureDetail() {
   const [savingColis, setSavingColis] = useState(false);
 
   const fetchFacture = useCallback(async () => {
+    // Garde : 'nouvelle' n'est pas un id valide — les factures se génèrent depuis une commande
+    if (!id || id === 'nouvelle') {
+      toast.info("Une facture se génère depuis une commande validée.");
+      navigate('/commandes');
+      return;
+    }
     setLoading(true);
     try {
       const data = await getFacture(id);

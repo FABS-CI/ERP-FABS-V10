@@ -168,12 +168,13 @@ export default function Factures() {
         </div>
         {canWrite && (
           <Button
-            onClick={() => navigate('/factures/nouvelle')}
+            onClick={() => navigate('/commandes')}
             className="bg-[#FF6200] hover:bg-[#E55900] text-white"
             data-testid="btn-nouvelle-facture"
+            title="Une facture se génère depuis une commande validée"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nouvelle facture
+            Générer depuis une commande
           </Button>
         )}
       </div>
