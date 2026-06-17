@@ -1,5 +1,9 @@
-# Dockerfile for Frontend - ERP FABS-CI V7
-FROM node:18-slim
+# Dockerfile for Frontend - ERP FABS-CI V10
+FROM node:18-slim AS builder
+
+# Build-time variable pour l'URL backend
+ARG REACT_APP_BACKEND_URL=https://erp.editionsfabsci.com
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
 # Set working directory
 WORKDIR /app
@@ -23,13 +27,13 @@ FROM nginx:alpine
 RUN apk add --no-cache wget
 
 # Copy built files from previous stage
-COPY --from=0 /app/build /usr/share/nginx/html
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Config nginx PROD (HTTPS + redirect HTTP)
+COPY nginx.prod.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
-EXPOSE 80
+# Expose ports
+EXPOSE 80 443
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

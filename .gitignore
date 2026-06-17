@@ -122,6 +122,7 @@ test_result.md
 audit_ops.md
 auth_testing.md
 .env*
+!.env.production.example
 !backend/env.example
 backend/simulate_and_audit.py
 backend/export_data_to_json.py
