@@ -123,7 +123,7 @@ class ProductOut(BaseModel):
     niveau_scolaire: Optional[str] = None
     isbn: Optional[str] = None
     prix_achat: Optional[float] = None  # null if requester is not in FINANCIAL_ROLES
-    prix_vente: float
+    prix_vente: Optional[float] = None  # None si prix non encore renseigné
     stock_actuel: int
     stock_minimum: int
     statut_stock: str  # ok | alerte | rupture
