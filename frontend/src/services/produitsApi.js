@@ -9,6 +9,7 @@ export const CATEGORIES = [
   { value: "premier_cycle", label: "Premier cycle",  color: "#FFFFFF", bg: "#0A2540" },
   { value: "second_cycle",  label: "Second cycle",   color: "#FFFFFF", bg: "#FF6200" },
   { value: "litterature",   label: "Littérature",    color: "#FFFFFF", bg: "#C62828" },
+  { value: "livre_commun",  label: "Livre commun",   color: "#FFFFFF", bg: "#455A64" },
 ];
 
 export const CATEGORIES_MAP = Object.fromEntries(
@@ -33,6 +34,10 @@ export async function disableProduct(id) {
 }
 export async function lookupIsbn(isbn) {
   const r = await axios.get(`${API}/produits/lookup-isbn`, { params: { isbn } });
+  return r.data;
+}
+export async function classifierProduit(titre) {
+  const r = await axios.post(`${API}/produits/classifier`, { titre });
   return r.data;
 }
 export async function getStockAlerts() {

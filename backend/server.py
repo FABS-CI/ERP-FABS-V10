@@ -61,6 +61,7 @@ from fne_module import router as fne_router
 from fournisseurs_module import router as fournisseurs_router
 from approvisionnement_module import router as approvisionnement_router
 from proformas_module import build_proformas_router
+from rapports_module import build_rapports_router
 from paie_module import router as paie_router
 from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
 
@@ -988,6 +989,7 @@ api_router.include_router(fne_router)
 api_router.include_router(fournisseurs_router)
 api_router.include_router(approvisionnement_router)
 api_router.include_router(build_proformas_router(db, resolve_user, log_audit_event))
+api_router.include_router(build_rapports_router(db, resolve_user))
 api_router.include_router(paie_router)
 
 

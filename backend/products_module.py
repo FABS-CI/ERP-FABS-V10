@@ -83,7 +83,9 @@ class ProductIn(BaseModel):
     titre: str = Field(..., min_length=2, max_length=200)
     auteur: Optional[str] = Field(default=None, max_length=120)
     collection: Optional[str] = Field(default=None, max_length=120)
-    categorie: Categorie
+    categorie: Optional[Categorie] = None  # auto-classifié si absent
+    matiere: Optional[str] = Field(default=None, max_length=60, description="Auto-classifié depuis le titre, modifiable")
+    cycle: Optional[str] = Field(default=None, max_length=40, description="Maternelle/Primaire/Collège/Lycée — auto-classifié")
     niveau_scolaire: Optional[str] = Field(default=None, max_length=80)
     isbn: Optional[str] = Field(default=None, max_length=20)
     prix_achat: float = Field(default=0, ge=0)
@@ -103,6 +105,8 @@ class ProductPatch(BaseModel):
     auteur: Optional[str] = Field(default=None, max_length=120)
     collection: Optional[str] = Field(default=None, max_length=120)
     categorie: Optional[Categorie] = None
+    matiere: Optional[str] = Field(default=None, max_length=60)
+    cycle: Optional[str] = Field(default=None, max_length=40)
     niveau_scolaire: Optional[str] = Field(default=None, max_length=80)
     isbn: Optional[str] = Field(default=None, max_length=20)
     prix_achat: Optional[float] = Field(default=None, ge=0)
@@ -120,6 +124,8 @@ class ProductOut(BaseModel):
     auteur: Optional[str] = None
     collection: Optional[str] = None
     categorie: Optional[Categorie] = None
+    matiere: Optional[str] = None
+    cycle: Optional[str] = None
     niveau_scolaire: Optional[str] = None
     isbn: Optional[str] = None
     prix_achat: Optional[float] = None  # null if requester is not in FINANCIAL_ROLES
@@ -195,9 +201,42 @@ def project_product(doc: dict, *, see_prix_achat: bool) -> dict:
     d.setdefault("stock_actuel", 0)
     d["statut_stock"] = compute_stock_status(d.get("stock_actuel", 0), d.get("stock_minimum", 0))
     d.setdefault("conditionnement_carton", None)
+    # Classification auto : compléter matiere/cycle/niveau si absents (compat anciens docs)
+    if not d.get("matiere") or not d.get("cycle") or not d.get("niveau_scolaire"):
+        try:
+            from classification import classify
+            c = classify(d.get("titre") or "")
+            d.setdefault("matiere", c.get("matiere"))
+            d.setdefault("cycle", c.get("cycle"))
+            if not d.get("niveau_scolaire"):
+                d["niveau_scolaire"] = c.get("niveau_scolaire")
+        except Exception:
+            pass
+    d.setdefault("matiere", None)
+    d.setdefault("cycle", None)
     if not see_prix_achat:
         d["prix_achat"] = None
     return d
+
+
+# ---------------------------------------------------------------------------
+# Compat resolver : retrouve un produit par product_id OU produit_id (ancien)
+# ---------------------------------------------------------------------------
+async def resolve_produit(db, pid: str, projection: Optional[dict] = None,
+                          require_actif: bool = False) -> Optional[dict]:
+    """Résout un produit quel que soit le nom du champ identifiant.
+
+    Les produits importés utilisent `product_id` comme champ canonique, mais
+    certains anciens documents / lignes de vente référencent `produit_id`.
+    """
+    if not pid:
+        return None
+    flt: dict = {"$or": [{"product_id": pid}, {"produit_id": pid}]}
+    if require_actif:
+        flt = {"$and": [flt, {"actif": True}]}
+    if projection is None:
+        return await db.produits.find_one(flt)
+    return await db.produits.find_one(flt, projection)
 
 
 # ---------------------------------------------------------------------------
@@ -234,6 +273,32 @@ async def _lookup_isbn_google(isbn: str) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=None) -> APIRouter:
     router = APIRouter(prefix="/produits", tags=["produits"])
+
+    # ---- CLASSIFICATION PREVIEW (auto matiere/cycle/niveau/categorie) -----
+    @router.post("/classifier")
+    async def classifier_produit(
+        payload: dict,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Pré-classification à partir du titre (matière / cycle / niveau / catégorie).
+
+        Utilisé par le formulaire produit pour pré-remplir les champs, qui
+        restent librement modifiables par l'utilisateur.
+        """
+        await resolve_user(request, authorization)
+        titre = (payload or {}).get("titre") or ""
+        try:
+            from classification import classify
+            c = classify(titre)
+        except Exception:
+            c = {}
+        return {
+            "matiere": c.get("matiere"),
+            "cycle": c.get("cycle"),
+            "niveau_scolaire": c.get("niveau_scolaire"),
+            "categorie": c.get("categorie"),
+        }
 
     # ---- LIST ------------------------------------------------------------
     @router.get("", response_model=ProductListOut)
@@ -382,6 +447,16 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
             "created_at": _now_iso(),
             "updated_at": _now_iso(),
         }
+        # Classification auto : remplit matiere/cycle/niveau/categorie SI non fournis
+        # (préserve toute valeur saisie manuellement par l'utilisateur)
+        try:
+            from classification import enrich_product
+            enrich_product(doc, override=False)
+        except Exception:
+            pass
+        # Fallback catégorie obligatoire en base
+        if not doc.get("categorie"):
+            doc["categorie"] = "livre_commun"
         await db.produits.insert_one(doc)
         
         # Audit log
@@ -420,6 +495,22 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         # Get old values for audit
         old_product = await db.produits.find_one({"product_id": product_id}, {"_id": 0})
         _ensure(old_product is not None, 404, "Produit introuvable")
+
+        # Si le titre change ET que la classif n'est pas explicitement fournie,
+        # re-suggérer matiere/cycle/niveau pour rester cohérent.
+        if "titre" in updates and not any(
+            k in updates for k in ("matiere", "cycle", "niveau_scolaire", "categorie")
+        ):
+            try:
+                from classification import classify
+                c = classify(updates["titre"])
+                for f in ("matiere", "cycle", "niveau_scolaire"):
+                    if c.get(f):
+                        updates[f] = c[f]
+                if c.get("categorie"):
+                    updates["categorie"] = c["categorie"]
+            except Exception:
+                pass
 
         result = await db.produits.find_one_and_update(
             {"product_id": product_id},

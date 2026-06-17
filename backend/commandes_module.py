@@ -151,6 +151,10 @@ class LigneCommandeOut(BaseModel):
     produit_id: str
     produit_reference: Optional[str] = None
     produit_titre: Optional[str] = None
+    produit_matiere: Optional[str] = None
+    produit_niveau_scolaire: Optional[str] = None
+    produit_cycle: Optional[str] = None
+    produit_categorie: Optional[str] = None
     quantite: int
     prix_unitaire: float
     remise_ligne: float
@@ -253,8 +257,9 @@ async def _get_client_nom(db: AsyncIOMotorDatabase, client_id: str) -> Optional[
 
 async def _get_produit_info(db: AsyncIOMotorDatabase, produit_id: str) -> dict:
     produit = await db.produits.find_one(
-        {"produit_id": produit_id},
-        {"_id": 0, "reference": 1, "titre": 1, "prix_vente": 1}
+        {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+        {"_id": 0, "reference": 1, "titre": 1, "prix_vente": 1,
+         "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
     )
     return produit or {}
 
@@ -296,6 +301,10 @@ async def _get_commande_with_lignes(db: AsyncIOMotorDatabase, commande_id: str) 
         prod_info = await _get_produit_info(db, ligne["produit_id"])
         ligne["produit_reference"] = prod_info.get("reference")
         ligne["produit_titre"] = prod_info.get("titre")
+        ligne["produit_matiere"] = prod_info.get("matiere")
+        ligne["produit_niveau_scolaire"] = prod_info.get("niveau_scolaire")
+        ligne["produit_cycle"] = prod_info.get("cycle")
+        ligne["produit_categorie"] = prod_info.get("categorie")
     
     cmd["lignes"] = lignes
     await _enrich_commande_with_client(db, cmd)
@@ -419,7 +428,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         # Verify all products exist and are active
         for ligne in payload.lignes:
-            prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
+            prod = await db.produits.find_one({"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}], "actif": True}, {"_id": 0})
             _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable ou inactif")
 
         # Calculate totals
@@ -650,7 +659,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             _ensure(len(payload.lignes) > 0, 400, "Au moins une ligne requise")
             # Verify products
             for ligne in payload.lignes:
-                prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
+                prod = await db.produits.find_one({"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}], "actif": True}, {"_id": 0})
                 _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable")
             
             # Delete old lignes
@@ -759,7 +768,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             if not produit_id or qte_demandee <= 0:
                 continue
             produit = await db.produits.find_one(
-                {"produit_id": produit_id},
+                {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
                 {"_id": 0, "stock_actuel": 1, "titre": 1, "reference": 1},
             )
             if produit is None:
@@ -954,12 +963,20 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
                 # Copier les lignes commande dans la facture
                 for l in lignes_fac:
-                    prod = await db.produits.find_one({"produit_id": l.get("produit_id")}, {"_id": 0, "titre": 1})
+                    _pid = l.get("produit_id")
+                    prod = await db.produits.find_one(
+                        {"$or": [{"product_id": _pid}, {"produit_id": _pid}]},
+                        {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
+                    )
                     fac_ligne = {
                         "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
                         "facture_id": fac_id,
-                        "produit_id": l.get("produit_id"),
+                        "produit_id": _pid,
                         "designation": prod["titre"] if prod else l.get("designation", ""),
+                        "matiere": prod.get("matiere") if prod else None,
+                        "niveau_scolaire": prod.get("niveau_scolaire") if prod else None,
+                        "cycle": prod.get("cycle") if prod else None,
+                        "categorie": prod.get("categorie") if prod else None,
                         "quantite": l.get("quantite", 0),
                         "prix_unitaire": l.get("prix_unitaire", 0),
                         "remise_ligne": l.get("remise_ligne", 0),
@@ -1093,7 +1110,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                     continue
                 # Décrémentation atomique avec garde stock >= qte
                 updated_prod = await db.produits.find_one_and_update(
-                    {"produit_id": produit_id, "stock_actuel": {"$gte": qte}},
+                    {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}], "stock_actuel": {"$gte": qte}},
                     {"$inc": {"stock_actuel": -qte}, "$set": {"updated_at": now}},
                     return_document=True,
                     projection={"_id": 0, "stock_actuel": 1},
@@ -1101,7 +1118,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 )
                 if not updated_prod:
                     produit_cur = await db.produits.find_one(
-                        {"produit_id": produit_id}, {"_id": 0, "stock_actuel": 1},
+                        {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]}, {"_id": 0, "stock_actuel": 1},
                         session=session,
                     )
                     stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
@@ -1321,8 +1338,10 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         # Enrich lignes with code_article (reference) + niveau (niveau_scolaire) + cycle
         from pdf_generator import enrich_lignes_for_pdf
         _pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
-        _prods = await db.produits.find({"product_id": {"$in": _pids}}, {"_id": 0}).to_list(1000) if _pids else []
-        enrich_lignes_for_pdf({p["product_id"]: p for p in _prods}, lignes)
+        _prods = await db.produits.find(
+            {"$or": [{"product_id": {"$in": _pids}}, {"produit_id": {"$in": _pids}}]}, {"_id": 0}
+        ).to_list(1000) if _pids else []
+        enrich_lignes_for_pdf({(p.get("product_id") or p.get("produit_id")): p for p in _prods}, lignes)
         for l in lignes:
             l["montant_ht"] = l.get("montant_ligne", l.get("montant_ht", 0))
 

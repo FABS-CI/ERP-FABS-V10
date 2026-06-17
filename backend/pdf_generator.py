@@ -165,7 +165,7 @@ def fmt_date(raw: str) -> str:
         return d
 
 def fmt_heure(raw: str) -> str:
-    if len(raw) > 10:
+    if raw and len(raw) > 10:
         return raw[11:16]
     return datetime.now().strftime("%H:%M")
 
@@ -443,10 +443,10 @@ def _client_rows_facture(facture: Dict, client: Dict) -> List[List[str]]:
 # ═══════════════════════════════════════════════════════════════════
 # TABLEAUX ARTICLES — groupés par cycle, conforme au modèle
 # ═══════════════════════════════════════════════════════════════════
-HDR_PRIX = ["Niveau", "Code Article", "Désignation", "Qté", "Prix Unitaire", "Montant"]
-HDR_NOPX = ["Niveau", "Code Article", "Désignation", "Qté"]
-COL_PRIX = [2.2*cm, 2.5*cm, 5.3*cm, 1.2*cm, 2.7*cm, 3.4*cm]
-COL_NOPX = [2.8*cm, 3.2*cm, 9.3*cm, 1.8*cm]
+HDR_PRIX = ["Niveau", "Matière", "Code Article", "Désignation", "Qté", "Prix Unitaire", "Montant"]
+HDR_NOPX = ["Niveau", "Matière", "Code Article", "Désignation", "Qté"]
+COL_PRIX = [1.9*cm, 2.3*cm, 2.2*cm, 4.0*cm, 1.0*cm, 2.6*cm, 3.3*cm]
+COL_NOPX = [2.4*cm, 2.8*cm, 2.8*cm, 7.5*cm, 1.6*cm]
 
 
 # Libellés lisibles des cycles à partir de la catégorie produit
@@ -475,6 +475,7 @@ def enrich_lignes_for_pdf(produits_by_id: Dict[str, Dict], lignes: List[Dict]) -
         if prod:
             l["code_article"] = prod.get("reference") or l.get("code_article") or ""
             l["niveau"] = prod.get("niveau_scolaire") or l.get("niveau") or ""
+            l["matiere"] = prod.get("matiere") or l.get("matiere") or ""
             cat = prod.get("categorie") or ""
             l["cycle"] = _CYCLE_LABELS.get(cat, cat.replace("_", " ").upper() if cat else "")
             if not l.get("designation"):
@@ -482,6 +483,7 @@ def enrich_lignes_for_pdf(produits_by_id: Dict[str, Dict], lignes: List[Dict]) -
         else:
             l.setdefault("code_article", "")
             l.setdefault("niveau", "")
+            l.setdefault("matiere", "")
             l.setdefault("cycle", "")
     return lignes
 
@@ -520,6 +522,7 @@ def _articles_tables(lignes: List[Dict], include_prix: bool, theme: Dict) -> Lis
             subtotal += m
             row = [
                 Paragraph(str(ligne.get("niveau") or ligne.get("classe") or ""), S_NORMAL),
+                Paragraph(str(ligne.get("matiere") or ""), S_NORMAL),
                 Paragraph(str(ligne.get("code_article") or ligne.get("produit_id", ""))[:16], S_NORMAL),
                 Paragraph(str(ligne.get("designation", "")), S_NORMAL),
                 Paragraph(str(int(ligne.get("quantite", 0))), S_NORMAL),

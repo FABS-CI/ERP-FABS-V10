@@ -102,6 +102,56 @@ def build_analytics_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
     # ------------------------------------------------------------------------
     # VENTES PAR MATIÈRE/CATÉGORIE
     # ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    # Helper : pipeline d'agrégation des ventes (part de facture_lignes)
+    #   - jointure factures (filtre date + exclusion annulées)
+    #   - jointure produits (matiere/niveau/cycle/categorie via product_id)
+    #   - jointure clients (ville)
+    #   group_field = champ de regroupement (ex "$prod.matiere")
+    # ------------------------------------------------------------------------
+    def _ventes_pipeline(group_field: str, date_debut, date_fin) -> list:
+        fac_match: Dict[str, Any] = {"statut": {"$ne": "annulee"}}
+        if date_debut:
+            fac_match.setdefault("date_facture", {})["$gte"] = date_debut
+        if date_fin:
+            fac_match.setdefault("date_facture", {})["$lte"] = date_fin
+        return [
+            {"$lookup": {
+                "from": "factures",
+                "localField": "facture_id",
+                "foreignField": "facture_id",
+                "as": "fac",
+            }},
+            {"$unwind": "$fac"},
+            {"$match": {f"fac.{k}": v for k, v in fac_match.items()}},
+            {"$lookup": {
+                "from": "produits",
+                "let": {"pid": "$produit_id"},
+                "pipeline": [
+                    {"$match": {"$expr": {"$or": [
+                        {"$eq": ["$product_id", "$pid"]},
+                        {"$eq": ["$produit_id", "$pid"]},
+                    ]}}},
+                ],
+                "as": "prod",
+            }},
+            {"$unwind": {"path": "$prod", "preserveNullAndEmptyArrays": True}},
+            {"$lookup": {
+                "from": "clients",
+                "localField": "fac.client_id",
+                "foreignField": "client_id",
+                "as": "cli",
+            }},
+            {"$unwind": {"path": "$cli", "preserveNullAndEmptyArrays": True}},
+            {"$group": {
+                "_id": group_field,
+                "total_ventes": {"$sum": "$montant_ht"},
+                "quantite": {"$sum": "$quantite"},
+                "nb_lignes": {"$sum": 1},
+            }},
+            {"$sort": {"total_ventes": -1}},
+        ]
+
     @router.get("/by-matiere")
     async def get_ventes_by_matiere(
         request: Request,
@@ -109,54 +159,20 @@ def build_analytics_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         date_debut: Optional[str] = None,
         date_fin: Optional[str] = None
     ):
-        """Analyse des ventes par matière/catégorie"""
+        """Analyse des ventes par matière (Français, Maths, Littérature, ...)"""
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
-        
-        # Filtres
-        filters = {}
-        if date_debut:
-            filters["date_facture"] = {"$gte": date_debut}
-        if date_fin:
-            if "date_facture" in filters:
-                filters["date_facture"]["$lte"] = date_fin
-            else:
-                filters["date_facture"] = {"$lte": date_fin}
-        
-        # Agrégation par catégorie de produit
-        pipeline = [
-            {"$match": filters},
-            {"$unwind": "$lignes"},
-            {"$lookup": {
-                "from": "produits",
-                "localField": "lignes.produit_id",
-                "foreignField": "produit_id",
-                "as": "produit"
-            }},
-            {"$unwind": {"path": "$produit", "preserveNullAndEmptyArrays": True}},
-            {"$group": {
-                "_id": "$produit.categorie",
-                "total_ventes": {"$sum": "$lignes.total"},
-                "quantite": {"$sum": "$lignes.quantite"},
-                "nb_factures": {"$sum": 1}
-            }},
-            {"$sort": {"total_ventes": -1}}
-        ]
-        
-        results = await db.factures.aggregate(pipeline).to_list(100)
-        
-        return {
-            "data": [
-                {
-                    "categorie": r["_id"] or "Non catégorisé",
-                    "total_ventes": r["total_ventes"],
-                    "quantite": r["quantite"],
-                    "nb_factures": r["nb_factures"]
-                }
-                for r in results
-            ]
-        }
-    
+        pipeline = _ventes_pipeline("$prod.matiere", date_debut, date_fin)
+        results = await db.facture_lignes.aggregate(pipeline).to_list(200)
+        return {"data": [
+            {
+                "matiere": r["_id"] or "Non défini",
+                "total_ventes": r["total_ventes"],
+                "quantite": r["quantite"],
+                "nb_lignes": r["nb_lignes"],
+            } for r in results
+        ]}
+
     # ------------------------------------------------------------------------
     # VENTES PAR NIVEAU SCOLAIRE
     # ------------------------------------------------------------------------
@@ -167,50 +183,65 @@ def build_analytics_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         date_debut: Optional[str] = None,
         date_fin: Optional[str] = None
     ):
-        """Analyse des ventes par niveau scolaire"""
+        """Analyse des ventes par niveau scolaire (CP1, 6ème, Terminale, ...)"""
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
-        
-        filters = {}
-        if date_debut:
-            filters["date_facture"] = {"$gte": date_debut}
-        if date_fin:
-            if "date_facture" in filters:
-                filters["date_facture"]["$lte"] = date_fin
-            else:
-                filters["date_facture"] = {"$lte": date_fin}
-        
-        # Agrégation par niveau
-        pipeline = [
-            {"$match": filters},
-            {"$unwind": "$lignes"},
-            {"$lookup": {
-                "from": "produits",
-                "localField": "lignes.produit_id",
-                "foreignField": "produit_id",
-                "as": "produit"
-            }},
-            {"$unwind": {"path": "$produit", "preserveNullAndEmptyArrays": True}},
-            {"$group": {
-                "_id": "$produit.niveau_scolaire",
-                "total_ventes": {"$sum": "$lignes.total"},
-                "quantite": {"$sum": "$lignes.quantite"}
-            }},
-            {"$sort": {"total_ventes": -1}}
-        ]
-        
-        results = await db.factures.aggregate(pipeline).to_list(100)
-        
-        return {
-            "data": [
-                {
-                    "niveau": r["_id"] or "Non défini",
-                    "total_ventes": r["total_ventes"],
-                    "quantite": r["quantite"]
-                }
-                for r in results
-            ]
-        }
+        pipeline = _ventes_pipeline("$prod.niveau_scolaire", date_debut, date_fin)
+        results = await db.facture_lignes.aggregate(pipeline).to_list(200)
+        return {"data": [
+            {
+                "niveau": r["_id"] or "Non défini",
+                "total_ventes": r["total_ventes"],
+                "quantite": r["quantite"],
+            } for r in results
+        ]}
+
+    # ------------------------------------------------------------------------
+    # VENTES PAR CYCLE
+    # ------------------------------------------------------------------------
+    @router.get("/by-cycle")
+    async def get_ventes_by_cycle(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        date_debut: Optional[str] = None,
+        date_fin: Optional[str] = None
+    ):
+        """Analyse des ventes par cycle (Maternelle, Primaire, Premier cycle, ...)"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        pipeline = _ventes_pipeline("$prod.cycle", date_debut, date_fin)
+        results = await db.facture_lignes.aggregate(pipeline).to_list(200)
+        return {"data": [
+            {
+                "cycle": r["_id"] or "Non défini",
+                "total_ventes": r["total_ventes"],
+                "quantite": r["quantite"],
+            } for r in results
+        ]}
+
+    # ------------------------------------------------------------------------
+    # VENTES PAR VILLE (ville du client)
+    # ------------------------------------------------------------------------
+    @router.get("/by-ville")
+    async def get_ventes_by_ville(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        date_debut: Optional[str] = None,
+        date_fin: Optional[str] = None
+    ):
+        """Analyse des ventes par ville du client"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        pipeline = _ventes_pipeline("$cli.ville", date_debut, date_fin)
+        results = await db.facture_lignes.aggregate(pipeline).to_list(500)
+        return {"data": [
+            {
+                "ville": r["_id"] or "Non défini",
+                "total_ventes": r["total_ventes"],
+                "quantite": r["quantite"],
+                "nb_lignes": r["nb_lignes"],
+            } for r in results
+        ]}
     
     # ------------------------------------------------------------------------
     # TOP CLIENTS
@@ -436,5 +467,40 @@ def build_analytics_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
             "total_du": max(0, total_du),
             "nb_factures": financial.get("total_factures", 0)
         }
-    
+
+    # ------------------------------------------------------------------------
+    # STOCK PAR CLASSIFICATION (matière / cycle / niveau)
+    # ------------------------------------------------------------------------
+    @router.get("/stock-by-classification")
+    async def get_stock_by_classification(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        group_by: str = Query("matiere", pattern="^(matiere|cycle|niveau_scolaire|categorie)$"),
+    ):
+        """Répartition du stock (quantité + valeur) par matière, cycle ou niveau."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        pipeline = [
+            {"$match": {"actif": True}},
+            {"$group": {
+                "_id": f"${group_by}",
+                "nb_articles": {"$sum": 1},
+                "stock_total": {"$sum": {"$ifNull": ["$stock_actuel", 0]}},
+                "valeur_stock": {"$sum": {"$multiply": [
+                    {"$ifNull": ["$stock_actuel", 0]},
+                    {"$ifNull": ["$prix_vente", 0]},
+                ]}},
+            }},
+            {"$sort": {"stock_total": -1}},
+        ]
+        results = await db.produits.aggregate(pipeline).to_list(200)
+        return {"group_by": group_by, "data": [
+            {
+                group_by: r["_id"] or "Non défini",
+                "nb_articles": r["nb_articles"],
+                "stock_total": r["stock_total"],
+                "valeur_stock": round(r["valeur_stock"], 2),
+            } for r in results
+        ]}
+
     return router

@@ -151,6 +151,8 @@ export default function ProduitDetail() {
                     ["Auteur",          product.auteur || "—"],
                     ["Collection",      product.collection || "—"],
                     ["Catégorie",       cat.label],
+                    ["Matière",         product.matiere || "—"],
+                    ["Cycle",           product.cycle || "—"],
                     ["Niveau scolaire", product.niveau_scolaire || "—"],
                     ["ISBN",            product.isbn || "—"],
                     ["Prix de vente",   formatFCFA(product.prix_vente)],

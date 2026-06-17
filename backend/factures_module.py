@@ -151,6 +151,10 @@ class LigneFactureOut(BaseModel):
     prix_unitaire: float
     remise_ligne: float
     montant_ht: float
+    code_article: Optional[str] = None
+    niveau: Optional[str] = None
+    matiere: Optional[str] = None
+    cycle: Optional[str] = None
 
 
 class FactureIn(BaseModel):
@@ -300,8 +304,10 @@ async def _enrich_lignes_produit(db: AsyncIOMotorDatabase, lignes: list) -> None
     pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
     if not pids:
         return
-    prods = await db.produits.find({"product_id": {"$in": pids}}, {"_id": 0}).to_list(1000)
-    by_id = {p["product_id"]: p for p in prods}
+    prods = await db.produits.find(
+        {"$or": [{"product_id": {"$in": pids}}, {"produit_id": {"$in": pids}}]}, {"_id": 0}
+    ).to_list(1000)
+    by_id = {(p.get("product_id") or p.get("produit_id")): p for p in prods}
     enrich_lignes_for_pdf(by_id, lignes)
 
 
@@ -591,10 +597,14 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         # Get product designations
         lignes_facture = []
         for ligne in cmd_lignes:
-            prod = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0, "titre": 1})
+            pid = ligne["produit_id"]
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": pid}, {"produit_id": pid}]},
+                {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
+            )
             lignes_facture.append(LigneFactureIn(
-                produit_id=ligne["produit_id"],
-                designation=prod["titre"] if prod else ligne["produit_id"],
+                produit_id=pid,
+                designation=prod["titre"] if prod else pid,
                 quantite=ligne["quantite"],
                 prix_unitaire=ligne["prix_unitaire"],
                 remise_ligne=ligne["remise_ligne"],
@@ -1427,12 +1437,20 @@ async def seed_factures(db: AsyncIOMotorDatabase, user_id: str) -> int:
         
         # Insert lignes
         for ligne in cmd_lignes:
-            prod = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0, "titre": 1})
+            pid = ligne["produit_id"]
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": pid}, {"produit_id": pid}]},
+                {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
+            )
             ligne_doc = {
                 "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
                 "facture_id": facture_id,
-                "produit_id": ligne["produit_id"],
+                "produit_id": pid,
                 "designation": prod["titre"] if prod else "Produit",
+                "matiere": prod.get("matiere") if prod else None,
+                "niveau_scolaire": prod.get("niveau_scolaire") if prod else None,
+                "cycle": prod.get("cycle") if prod else None,
+                "categorie": prod.get("categorie") if prod else None,
                 "quantite": ligne["quantite"],
                 "prix_unitaire": ligne["prix_unitaire"],
                 "remise_ligne": ligne["remise_ligne"],

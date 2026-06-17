@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Loader2, X, Save, ScanLine, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { CATEGORIES, createProduct, updateProduct, lookupIsbn } from "../../services/produitsApi";
+import { CATEGORIES, createProduct, updateProduct, lookupIsbn, classifierProduit } from "../../services/produitsApi";
 // import IsbnScannerModal from "./IsbnScannerModal"; // Temporarily disabled due to @zxing/browser dependency
 import { useAuth } from "../../hooks/useAuth";
 
@@ -15,7 +15,9 @@ const Schema = z.object({
   titre: z.string().min(2, "Titre trop court").max(200),
   auteur: z.string().max(120).optional().or(z.literal("")),
   collection: z.string().max(120).optional().or(z.literal("")),
-  categorie: z.enum(["maternelle", "primaire", "premier_cycle", "second_cycle", "litterature"]),
+  categorie: z.enum(["maternelle", "primaire", "premier_cycle", "second_cycle", "litterature", "livre_commun"]),
+  matiere: z.string().max(80).optional().or(z.literal("")),
+  cycle: z.string().max(80).optional().or(z.literal("")),
   niveau_scolaire: z.string().max(80).optional().or(z.literal("")),
   isbn: z.string().max(20).optional().or(z.literal("")),
   prix_achat: z.coerce.number().min(0).default(0),
@@ -40,7 +42,7 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
     resolver: zodResolver(Schema),
     defaultValues: {
       titre: "", auteur: "", collection: "",
-      categorie: "primaire", niveau_scolaire: "",
+      categorie: "primaire", matiere: "", cycle: "", niveau_scolaire: "",
       isbn: "", prix_achat: 0, prix_vente: 1000,
       stock_actuel: 50, stock_minimum: 10,
     },
@@ -53,6 +55,8 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
       auteur: product?.auteur || "",
       collection: product?.collection || "",
       categorie: product?.categorie || "primaire",
+      matiere: product?.matiere || "",
+      cycle: product?.cycle || "",
       niveau_scolaire: product?.niveau_scolaire || "",
       isbn: product?.isbn || "",
       prix_achat: product?.prix_achat ?? 0,
@@ -98,6 +102,29 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
       toast.error(e?.response?.data?.detail || "Recherche ISBN échouée");
     } finally {
       setLooking(false);
+    }
+  };
+
+  const handleAutoClassify = async (opts = {}) => {
+    const titre = (watch("titre") || "").trim();
+    if (titre.length < 3) {
+      if (!opts.silent) toast.error("Saisissez d'abord un titre");
+      return;
+    }
+    try {
+      const c = await classifierProduit(titre);
+      let updates = 0;
+      // En mode auto (onBlur) on ne remplit que les champs vides ; en mode bouton on force
+      const force = !opts.silent;
+      if (c.matiere && (force || !watch("matiere"))) { setValue("matiere", c.matiere); updates++; }
+      if (c.cycle && (force || !watch("cycle"))) { setValue("cycle", c.cycle); updates++; }
+      if (c.niveau_scolaire && (force || !watch("niveau_scolaire"))) { setValue("niveau_scolaire", c.niveau_scolaire); updates++; }
+      if (c.categorie && (force || !watch("categorie"))) { setValue("categorie", c.categorie); updates++; }
+      if (!opts.silent && updates > 0) {
+        toast.success(`Classification auto — ${updates} champ${updates > 1 ? "s" : ""} pré-rempli${updates > 1 ? "s" : ""}`, { icon: "✨" });
+      }
+    } catch (e) {
+      if (!opts.silent) toast.error("Classification échouée");
     }
   };
 
@@ -197,7 +224,11 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
                 <Label>Titre *</Label>
-                <input data-testid="product-form-titre" {...register("titre")} className={inputCls(errors.titre)} />
+                <input
+                  data-testid="product-form-titre"
+                  {...register("titre", { onBlur: () => handleAutoClassify({ silent: true }) })}
+                  className={inputCls(errors.titre)}
+                />
                 {errors.titre && <Err msg={errors.titre.message} />}
               </div>
               <div>
@@ -220,9 +251,35 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
               </div>
             </div>
 
-            <div>
-              <Label>Niveau scolaire</Label>
-              <input data-testid="product-form-niveau" {...register("niveau_scolaire")} placeholder="CP1, 6e, Terminale..." className={inputCls(errors.niveau_scolaire)} />
+            {/* Classification auto — modifiable */}
+            <div className="rounded-lg border border-dashed border-gray-300 p-3 bg-gray-50/60">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-600 inline-flex items-center gap-1">
+                  <Sparkles size={13} className="text-violet-500" /> Classification (auto, modifiable)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleAutoClassify()}
+                  className="text-xs px-2 py-1 rounded-md bg-violet-600 text-white hover:bg-violet-700 inline-flex items-center gap-1"
+                  data-testid="product-form-autoclassify"
+                >
+                  <Sparkles size={12} /> Classer auto
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <Label>Matière</Label>
+                  <input data-testid="product-form-matiere" {...register("matiere")} placeholder="Français, Maths..." className={inputCls(errors.matiere)} />
+                </div>
+                <div>
+                  <Label>Cycle</Label>
+                  <input data-testid="product-form-cycle" {...register("cycle")} placeholder="Primaire, Collège..." className={inputCls(errors.cycle)} />
+                </div>
+                <div>
+                  <Label>Niveau scolaire</Label>
+                  <input data-testid="product-form-niveau" {...register("niveau_scolaire")} placeholder="CP1, 6e, Terminale..." className={inputCls(errors.niveau_scolaire)} />
+                </div>
+              </div>
             </div>
 
             {/* Prices */}
