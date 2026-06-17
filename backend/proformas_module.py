@@ -33,7 +33,7 @@ logger = logging.getLogger("fabsci.proformas")
 # RBAC
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "commercial", "comptable", "secretariat", "assistante_commerciale",
+    "commercial", "comptable", "secretariat", "assistante_commerciale", "assistante",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
