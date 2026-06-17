@@ -16,8 +16,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 0,                         // pas de retry auto — échec = immédiat
+      staleTime: 10 * 60 * 1000,        // 10 min — données considérées fraîches
+      cacheTime: 15 * 60 * 1000,        // 15 min — garde en cache après unmount
     },
   },
 });

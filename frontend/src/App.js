@@ -89,11 +89,23 @@ const FileStorage = lazy(() => import("./pages/FileStorage"));
 const Backup = lazy(() => import("./pages/Backup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Loading fallback for lazy loaded components
+// Loading fallback for lazy loaded components — skeleton animé
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] dark:bg-[#040f1a]">
-      <p className="text-sm text-[#0A2540]/60 dark:text-white/60">Chargement…</p>
+    <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#040f1a] p-6">
+      {/* Topbar skeleton */}
+      <div className="h-14 bg-white dark:bg-[#0b1e30] rounded-xl mb-6 animate-pulse" />
+      {/* Content skeletons */}
+      <div className="space-y-4">
+        <div className="h-8 w-1/3 bg-gray-200 dark:bg-[#0b2a40] rounded-lg animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-white dark:bg-[#0b1e30] rounded-xl animate-pulse" />
+          ))}
+        </div>
+        <div className="h-64 bg-white dark:bg-[#0b1e30] rounded-xl animate-pulse" />
+        <div className="h-40 bg-white dark:bg-[#0b1e30] rounded-xl animate-pulse" />
+      </div>
     </div>
   );
 }
