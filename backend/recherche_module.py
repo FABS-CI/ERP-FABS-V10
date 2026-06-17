@@ -64,17 +64,18 @@ def build_recherche_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         if me["role"] in {"super_admin", "directeur_general", "directeur_commercial", "gestionnaire_stock"}:
             produits = await db.produits.find(
                 {"$or": [{"titre": query_regex}, {"reference": query_regex}], "actif": True},
-                {"_id": 0, "product_id": 1, "reference": 1, "titre": 1, "auteur": 1}
+                {"_id": 0, "produit_id": 1, "reference": 1, "titre": 1, "auteur": 1}
             ).limit(5).to_list(5)
             
             for produit in produits:
+                _pid = produit.get("produit_id") or produit.get("product_id")
                 resultats.append(ResultatRecherche(
                     type="produit",
-                    id=produit["product_id"],
-                    reference=produit["reference"],
-                    titre=produit["titre"],
+                    id=_pid,
+                    reference=produit.get("reference", ""),
+                    titre=produit.get("titre", ""),
                     sous_titre=produit.get("auteur"),
-                    url=f"/produits/{produit['product_id']}"
+                    url=f"/produits/{_pid}"
                 ))
         
         # Search Commandes

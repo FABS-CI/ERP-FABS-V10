@@ -251,7 +251,7 @@ async def _get_client_nom(db: AsyncIOMotorDatabase, client_id: str) -> Optional[
 
 async def _get_produit_info(db: AsyncIOMotorDatabase, produit_id: str) -> dict:
     produit = await db.produits.find_one(
-        {"product_id": produit_id},
+        {"produit_id": produit_id},
         {"_id": 0, "reference": 1, "titre": 1, "prix_vente": 1}
     )
     return produit or {}
@@ -417,7 +417,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         # Verify all products exist and are active
         for ligne in payload.lignes:
-            prod = await db.produits.find_one({"product_id": ligne.produit_id, "actif": True}, {"_id": 0})
+            prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
             _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable ou inactif")
 
         # Calculate totals
@@ -619,7 +619,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             _ensure(len(payload.lignes) > 0, 400, "Au moins une ligne requise")
             # Verify products
             for ligne in payload.lignes:
-                prod = await db.produits.find_one({"product_id": ligne.produit_id, "actif": True}, {"_id": 0})
+                prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
                 _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable")
             
             # Delete old lignes
@@ -728,7 +728,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             if not produit_id or qte_demandee <= 0:
                 continue
             produit = await db.produits.find_one(
-                {"product_id": produit_id},
+                {"produit_id": produit_id},
                 {"_id": 0, "stock_actuel": 1, "titre": 1, "reference": 1},
             )
             if produit is None:
@@ -923,7 +923,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
                 # Copier les lignes commande dans la facture
                 for l in lignes_fac:
-                    prod = await db.produits.find_one({"product_id": l.get("produit_id")}, {"_id": 0, "titre": 1})
+                    prod = await db.produits.find_one({"produit_id": l.get("produit_id")}, {"_id": 0, "titre": 1})
                     fac_ligne = {
                         "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
                         "facture_id": fac_id,
@@ -1062,7 +1062,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                     continue
                 # Décrémentation atomique avec garde stock >= qte
                 updated_prod = await db.produits.find_one_and_update(
-                    {"product_id": produit_id, "stock_actuel": {"$gte": qte}},
+                    {"produit_id": produit_id, "stock_actuel": {"$gte": qte}},
                     {"$inc": {"stock_actuel": -qte}, "$set": {"updated_at": now}},
                     return_document=True,
                     projection={"_id": 0, "stock_actuel": 1},
@@ -1070,7 +1070,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 )
                 if not updated_prod:
                     produit_cur = await db.produits.find_one(
-                        {"product_id": produit_id}, {"_id": 0, "stock_actuel": 1},
+                        {"produit_id": produit_id}, {"_id": 0, "stock_actuel": 1},
                         session=session,
                     )
                     stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
@@ -1289,7 +1289,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         lignes = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(500)
         # Enrich lignes with designation from products
         for l in lignes:
-            prod = await db.produits.find_one({"product_id": l.get("produit_id")}, {"_id": 0, "titre": 1, "classe": 1, "isbn": 1})
+            prod = await db.produits.find_one({"produit_id": l.get("produit_id")}, {"_id": 0, "titre": 1, "classe": 1, "isbn": 1})
             if prod:
                 l["designation"] = prod.get("titre", l.get("designation", ""))
                 l["classe"] = prod.get("classe", "")

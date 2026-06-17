@@ -120,7 +120,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         docs = await cursor.to_list(limit)
         
         for doc in docs:
-            prod = await db.produits.find_one({"product_id": doc["produit_id"]}, {"_id": 0, "reference": 1, "titre": 1})
+            prod = await db.produits.find_one({"produit_id": doc["produit_id"]}, {"_id": 0, "reference": 1, "titre": 1})
             if prod:
                 doc["produit_reference"] = prod.get("reference")
                 doc["produit_titre"] = prod.get("titre")
@@ -137,7 +137,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
 
         # Get product
-        produit = await db.produits.find_one({"product_id": payload.produit_id}, {"_id": 0})
+        produit = await db.produits.find_one({"produit_id": payload.produit_id}, {"_id": 0})
         _ensure(produit is not None, 404, "Produit introuvable")
 
         stock_avant = produit.get("stock_actuel", 0)
@@ -153,7 +153,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
 
         # Update product stock
         await db.produits.update_one(
-            {"product_id": payload.produit_id},
+            {"produit_id": payload.produit_id},
             {"$set": {"stock_actuel": stock_apres, "updated_at": _now_iso()}}
         )
 
@@ -220,7 +220,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         lignes_out = []
         total_ecart = 0
         for ligne in payload.lignes:
-            produit = await db.produits.find_one({"product_id": ligne.produit_id}, {"_id": 0})
+            produit = await db.produits.find_one({"produit_id": ligne.produit_id}, {"_id": 0})
             _ensure(produit is not None, 404, f"Produit {ligne.produit_id} introuvable")
 
             quantite_theorique = produit.get("stock_actuel", 0)
@@ -305,12 +305,12 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
             if ligne["ecart"] != 0:
                 # Create mouvement d'inventaire
                 mouvement_id = f"mvt_{uuid.uuid4().hex[:12]}"
-                produit = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0})
+                produit = await db.produits.find_one({"produit_id": ligne["produit_id"]}, {"_id": 0})
                 stock_avant = produit.get("stock_actuel", 0)
                 stock_apres = ligne["quantite_comptee"]
 
                 await db.produits.update_one(
-                    {"product_id": ligne["produit_id"]},
+                    {"produit_id": ligne["produit_id"]},
                     {"$set": {"stock_actuel": stock_apres, "updated_at": now}}
                 )
 
@@ -359,7 +359,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         # Rebuild lignes with product info
         lignes_out = []
         for ligne in lignes:
-            produit = await db.produits.find_one({"product_id": ligne["produit_id"]}, {"_id": 0})
+            produit = await db.produits.find_one({"produit_id": ligne["produit_id"]}, {"_id": 0})
             ligne_out = {
                 "ligne_id": ligne["ligne_id"],
                 "produit_id": ligne["produit_id"],
@@ -388,7 +388,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         # Find products with stock below threshold
         cursor = db.produits.find(
             {"stock_actuel": {"$lt": seuil}},
-            {"_id": 0, "product_id": 1, "reference": 1, "titre": 1, "stock_actuel": 1, "stock_initial": 1}
+            {"_id": 0, "produit_id": 1, "reference": 1, "titre": 1, "stock_actuel": 1, "stock_initial": 1}
         ).sort("stock_actuel", 1)
         
         produits = await cursor.to_list(200)
@@ -396,7 +396,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         alertes = []
         for prod in produits:
             alertes.append({
-                "product_id": prod["product_id"],
+                "product_id": prod.get("produit_id") or prod.get("product_id"),
                 "reference": prod.get("reference"),
                 "titre": prod.get("titre"),
                 "stock_actuel": prod["stock_actuel"],
