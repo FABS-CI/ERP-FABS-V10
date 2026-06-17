@@ -756,10 +756,11 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         _ensure(cmd["statut"] == "en_attente", 400, f"Commande déjà {cmd['statut']}")
 
         # Check validation threshold
+        # RBAC 2026-06-17: DG retiré de la validation — super_admin uniquement pour >500k
         needs_dg = cmd["montant_total"] > VALIDATION_THRESHOLD
         if needs_dg:
-            _ensure(me["role"] in {"super_admin", "directeur_general"}, 403,
-                   "Validation DG requise pour montant > 500 000 FCFA")
+            _ensure(me["role"] in {"super_admin"}, 403,
+                   "Validation super_admin requise pour montant > 500 000 FCFA")
         else:
             _ensure(me["role"] in VALIDATE_ROLES, 403, "Accès refusé")
 

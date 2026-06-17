@@ -108,6 +108,7 @@ Légende : `0` = refusé · `1` = lecture · `2` = écriture · `—` = 0 implic
 | R10 | rbac_constants.py | file_storage : DG→0, comptable 1→**0**, secretariat 1→**0** |
 | R11 | rbac_constants.py | rapports : dir_com 1→**0** |
 | R12 | commandes_module.py | DG + dir_com retirés de WRITE/VALIDATE/CANCEL/PREPARE/DELIVER |
+| **C2** | commandes_module.py | **BUG LOGIQUE** : seuil 500k FCFA accordait validation DG → corrigé en `super_admin` uniquement |
 | R13 | factures_module.py | DG retiré de READ/WRITE/PAYMENT/RELANCES |
 | **C1** | factures_module.py | **BUG CRITIQUE** : `"DG"` invalide ligne 1365 → corrigé en `{"super_admin","comptable"}` |
 | R14 | proformas_module.py | DG + dir_com retirés de WRITE/SEND/CONVERT |
