@@ -10,6 +10,7 @@ import logging
 import base64
 import hashlib
 import os
+import jwt as pyjwt
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from enum import Enum
@@ -25,7 +26,49 @@ import qrcode
 from io import BytesIO
 import uuid
 
+# Import du mapping paiement DGI (C4)
+try:
+    from fne_dgi_service import map_payment_method
+except ImportError:
+    # Fallback si import échoue (tests unitaires isolés)
+    def map_payment_method(v: str) -> str:
+        _map = {
+            "especes": "cash", "espèces": "cash", "liquide": "cash",
+            "mobile_money": "mobile-money", "mobile-money": "mobile-money",
+            "momo": "mobile-money", "orange_money": "mobile-money",
+            "carte_bancaire": "card", "carte": "card",
+            "cheque": "check", "chèque": "check",
+            "virement": "transfer", "virement_bancaire": "transfer",
+            "credit": "credit", "crédit": "credit", "differe": "credit",
+        }
+        return _map.get((v or "cash").strip().lower(), "cash")
+
 logger = logging.getLogger("fabsci.fne")
+
+
+# ─── Helper RBAC ────────────────────────────────────────────────────────────
+def _get_role_from_request(request: Request) -> Optional[str]:
+    """
+    Extrait le rôle utilisateur depuis le JWT Bearer sans import circulaire.
+    Retourne None si token absent/invalide.
+    """
+    # 1) Via request.state (si middleware JWT upstream)
+    role = getattr(request.state, "user_role", None)
+    if role:
+        return role
+
+    # 2) Décodage manuel du Bearer JWT
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    token = auth.split(" ", 1)[1]
+    try:
+        secret = os.environ.get("JWT_SECRET", "")
+        payload = pyjwt.decode(token, secret, algorithms=["HS256"])
+        return payload.get("role")
+    except Exception:
+        return None
+
 
 # ============================================================================
 # ENUMS
@@ -153,6 +196,38 @@ class FNEResponse(BaseModel):
 # SERVICE FNE - Transformation JSON
 # ============================================================================
 
+async def fne_config_from_db(db: AsyncIOMotorDatabase) -> "FNEConfig":
+    """
+    Charge la config FNE depuis MongoDB (source de vérité) avec fallback env.
+    Utilisé par tous les endpoints qui certifient une facture.
+    """
+    doc = await db.fne_settings.find_one({}, {"_id": 0}) or {}
+
+    def _get(field: str, env_key: str, default: str = "") -> str:
+        return doc.get(field) or os.environ.get(env_key, default)
+
+    api_key  = _get("dgi_api_key",    "DGI_API_KEY",    "")
+    ncc      = _get("company_ncc",    "COMPANY_NCC",    "2302562N")
+    name     = _get("company_name",   "COMPANY_NAME",   "EDITIONS FABS-CI")
+    pos      = _get("point_of_sale",  "POINT_OF_SALE",  "01")
+    estab    = _get("establishment",  "ESTABLISHMENT",  "Siège Social")
+    url_prod = _get("fne_base_url_prod", "FNE_BASE_URL_PROD", "")
+
+    use_prod_db  = doc.get("use_production")
+    use_prod_env = os.environ.get("USE_PRODUCTION", "false").lower() == "true"
+    use_production = use_prod_db if use_prod_db is not None else use_prod_env
+
+    return FNEConfig(
+        dgi_api_key    = api_key,
+        company_ncc    = ncc,
+        company_name   = name,
+        point_of_sale  = pos,
+        establishment  = estab,
+        dgi_api_url_prod = url_prod,
+        use_production = use_production,
+    )
+
+
 class FNEService:
     """Service de transformation et soumission FNE"""
     
@@ -173,7 +248,19 @@ class FNEService:
         # Ajouter les informations de l'entreprise
         fne_data["pointOfSale"] = self.config.point_of_sale
         fne_data["establishment"] = self.config.establishment
-        
+
+        # Corriger le mapping paymentMethod ERP → DGI (C4)
+        fne_data["paymentMethod"] = map_payment_method(fne_data.get("paymentMethod", "cash"))
+
+        # Injecter NCC entreprise depuis config si absent (C1)
+        if not fne_data.get("companyNcc") and self.config.company_ncc:
+            fne_data["companyNcc"] = self.config.company_ncc
+
+        # S'assurer que chaque item a bien un champ taxes (C5)
+        for item in fne_data.get("items", []):
+            if not item.get("taxes"):
+                item["taxes"] = ["TVA"]
+
         return fne_data
     
     async def submit_to_dgi(self, fne_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -526,7 +613,7 @@ async def submit_invoice_fne(
     redis_client: redis.Redis = request.app.state.redis
     
     # Configuration FNE depuis l'environnement
-    config = FNEConfig.from_env()
+    config = await fne_config_from_db(db)
     if not config.is_ready():
         raise HTTPException(
             status_code=400,
@@ -611,11 +698,11 @@ async def refund_invoice_fne(
     redis_client: redis.Redis = request.app.state.redis
     
     # Vérifier les permissions
-    user_role = getattr(request.state, "user_role", None)
+    user_role = _get_role_from_request(request)
     if user_role not in {"super_admin", "directeur_general"}:
         raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
-    config = FNEConfig.from_env()
+    config = await fne_config_from_db(db)
     if not config.is_ready():
         raise HTTPException(
             status_code=400,
@@ -878,29 +965,123 @@ async def list_fne_logs(
     return {"total": total, "items": items}
 
 
+class FNESettingsUpdate(BaseModel):
+    """Payload PUT /fne/settings — mise à jour de la configuration FNE."""
+    company_ncc: Optional[str] = None
+    company_idu: Optional[str] = None
+    company_name: Optional[str] = None
+    company_regime: Optional[str] = None
+    company_secteur: Optional[str] = None
+    company_dran: Optional[str] = None
+    company_centre_impots: Optional[str] = None
+    point_of_sale: Optional[str] = None
+    establishment: Optional[str] = None
+    fne_base_url_prod: Optional[str] = None
+    dgi_api_key: Optional[str] = None
+    use_production: Optional[bool] = None
+
+
 @router.get("/settings")
 async def get_fne_settings(request: Request):
-    """Configuration FNE en cours (lecture seule, secrets masqués)."""
-    api_key = os.environ.get("DGI_API_KEY", "")
+    """Configuration FNE en cours — lit d'abord la DB, puis env en fallback."""
+    db: AsyncIOMotorDatabase = request.app.state.db
+
+    # Lire depuis MongoDB (source de vérité persistante)
+    doc = await db.fne_settings.find_one({}, {"_id": 0})
+
+    def _env(key: str, default: str = "") -> str:
+        return os.environ.get(key, default)
+
+    # Fusions DB > env > défaut
+    ncc = (doc or {}).get("company_ncc") or _env("COMPANY_NCC", "2302562N")
+    idu = (doc or {}).get("company_idu") or _env("COMPANY_IDU", "CI-2023-0052129 E")
+    name = (doc or {}).get("company_name") or _env("COMPANY_NAME", "EDITIONS FABS-CI")
+    regime = (doc or {}).get("company_regime") or _env("COMPANY_REGIME", "TEE")
+    secteur = (doc or {}).get("company_secteur") or _env("COMPANY_SECTEUR", "EDITION")
+    dran = (doc or {}).get("company_dran") or _env("COMPANY_DRAN", "DRAN VI")
+    centre = (doc or {}).get("company_centre_impots") or _env("COMPANY_CENTRE_IMPOTS", "962 Impôts de Bingerville")
+    pos = (doc or {}).get("point_of_sale") or _env("POINT_OF_SALE", "01")
+    estab = (doc or {}).get("establishment") or _env("ESTABLISHMENT", "Siège Social")
+    base_url_prod = (doc or {}).get("fne_base_url_prod") or _env("FNE_BASE_URL_PROD", "")
+    api_key = (doc or {}).get("dgi_api_key") or _env("DGI_API_KEY", "")
+    use_prod_db = (doc or {}).get("use_production")
+    use_production = use_prod_db if use_prod_db is not None else (_env("USE_PRODUCTION", "false").lower() == "true")
+
     return {
         "company": {
-            "ncc": os.environ.get("COMPANY_NCC", ""),
-            "idu": os.environ.get("COMPANY_IDU", ""),
-            "name": os.environ.get("COMPANY_NAME", "EDITIONS FABS-CI"),
-            "regime": os.environ.get("COMPANY_REGIME", "TEE"),
-            "secteur": os.environ.get("COMPANY_SECTEUR", "AUTRE"),
-            "dran": os.environ.get("COMPANY_DRAN", "DRAN VI"),
-            "centre_impots": os.environ.get("COMPANY_CENTRE_IMPOTS", "962 Impôts de Bingerville"),
-            "point_of_sale": os.environ.get("POINT_OF_SALE", "01"),
-            "establishment": os.environ.get("ESTABLISHMENT", "Siège Social"),
+            "ncc": ncc,
+            "idu": idu,
+            "name": name,
+            "regime": regime,
+            "secteur": secteur,
+            "dran": dran,
+            "centre_impots": centre,
+            "point_of_sale": pos,
+            "establishment": estab,
         },
         "api": {
             "base_url_test": "http://54.247.95.108/ws",
-            "base_url_prod": os.environ.get("FNE_BASE_URL_PROD", ""),
-            "use_production": os.environ.get("USE_PRODUCTION", "false").lower() == "true",
+            "base_url_prod": base_url_prod,
+            "use_production": use_production,
             "api_key_configured": bool(api_key),
             "api_key_masked": (api_key[:4] + "…" + api_key[-2:]) if len(api_key) > 6 else "",
         },
+    }
+
+
+@router.put("/settings")
+async def update_fne_settings(payload: FNESettingsUpdate, request: Request):
+    """
+    Met à jour la configuration FNE (API KEY, NCC, URL prod, etc.)
+    Persiste en MongoDB ET met à jour les variables d'environnement en mémoire.
+
+    RBAC: super_admin uniquement.
+    """
+    db: AsyncIOMotorDatabase = request.app.state.db
+
+    # RBAC
+    user_role = _get_role_from_request(request)
+    if user_role not in {"super_admin"}:
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Construire le $set à partir des champs non-None
+    updates: Dict[str, Any] = {"updated_at": now}
+    env_map = {
+        "company_ncc":        "COMPANY_NCC",
+        "company_idu":        "COMPANY_IDU",
+        "company_name":       "COMPANY_NAME",
+        "company_regime":     "COMPANY_REGIME",
+        "company_secteur":    "COMPANY_SECTEUR",
+        "company_dran":       "COMPANY_DRAN",
+        "company_centre_impots": "COMPANY_CENTRE_IMPOTS",
+        "point_of_sale":      "POINT_OF_SALE",
+        "establishment":      "ESTABLISHMENT",
+        "fne_base_url_prod":  "FNE_BASE_URL_PROD",
+        "dgi_api_key":        "DGI_API_KEY",
+        "use_production":     "USE_PRODUCTION",
+    }
+
+    data = payload.model_dump(exclude_none=True)
+    for field, value in data.items():
+        updates[field] = value
+        env_key = env_map.get(field)
+        if env_key:
+            os.environ[env_key] = str(value).lower() if isinstance(value, bool) else str(value)
+
+    await db.fne_settings.update_one({}, {"$set": updates}, upsert=True)
+
+    logger.info("FNE settings updated by %s: %s", getattr(request.state, "user_id", "?"), list(data.keys()))
+
+    # Retourner la config à jour (masquage API key)
+    api_key = updates.get("dgi_api_key") or os.environ.get("DGI_API_KEY", "")
+    return {
+        "success": True,
+        "message": "Configuration FNE mise à jour avec succès",
+        "updated_fields": list(data.keys()),
+        "api_key_configured": bool(api_key),
+        "api_key_masked": (api_key[:4] + "…" + api_key[-2:]) if len(api_key) > 6 else "",
     }
 
 
@@ -968,7 +1149,7 @@ async def fne_worker(redis_client: redis.Redis, db: AsyncIOMotorDatabase):
     fonction reste disponible pour un traitement direct de la queue Redis.
     """
     queue = FNEQueue(redis_client)
-    config = FNEConfig.from_env()
+    config = await fne_config_from_db(db)
     fne_service = FNEService(config, db, redis_client)
 
     logger.info("Worker FNE démarré (ready=%s)", config.is_ready())

@@ -6,6 +6,7 @@ Ce module gère l'intégration avec l'API FNE de la DGI pour la certification
 """
 
 import httpx
+import logging
 import qrcode
 from io import BytesIO
 import base64
@@ -15,6 +16,8 @@ from enum import Enum
 from pydantic import BaseModel, Field
 import os
 from dotenv import load_dotenv
+
+logger = logging.getLogger("fabsci.fne_dgi")
 
 load_dotenv()
 
@@ -156,16 +159,78 @@ class DGIRefundResponse(BaseModel):
 # SERVICE FNE
 # ============================================================================
 
+# ============================================================================
+# MAPPING MÉTHODES DE PAIEMENT ERP → DGI (C4)
+# ============================================================================
+# Valeurs ERP internes → valeurs attendues par l'API DGI
+PAYMENT_METHOD_MAP: Dict[str, str] = {
+    # espèces
+    "especes":          "cash",
+    "espèces":          "cash",
+    "cash":             "cash",
+    "liquide":          "cash",
+    # mobile money
+    "mobile_money":     "mobile-money",
+    "mobile-money":     "mobile-money",
+    "mobilemoney":      "mobile-money",
+    "momo":             "mobile-money",
+    "orange_money":     "mobile-money",
+    "mtn_money":        "mobile-money",
+    "wave":             "mobile-money",
+    # carte bancaire
+    "carte_bancaire":   "card",
+    "carte":            "card",
+    "card":             "card",
+    "visa":             "card",
+    "mastercard":       "card",
+    # chèque
+    "cheque":           "check",
+    "chèque":           "check",
+    "check":            "check",
+    # virement bancaire
+    "virement":         "transfer",
+    "virement_bancaire":"transfer",
+    "transfer":         "transfer",
+    "bank_transfer":    "transfer",
+    # crédit / différé
+    "credit":           "credit",
+    "crédit":           "credit",
+    "a_credit":         "credit",
+    "differe":          "credit",
+    "différé":          "credit",
+    "deferred":         "credit",
+}
+
+
+def map_payment_method(erp_value: str) -> str:
+    """
+    Convertit une méthode de paiement ERP interne en valeur DGI.
+
+    Args:
+        erp_value: valeur stockée dans la facture ERP (ex: "especes", "mobile_money")
+
+    Returns:
+        Valeur DGI valide (ex: "cash", "mobile-money") — défaut "cash" si inconnu.
+    """
+    normalized = (erp_value or "cash").strip().lower().replace(" ", "_")
+    dgi_value = PAYMENT_METHOD_MAP.get(normalized)
+    if dgi_value is None:
+        logger.warning("map_payment_method: valeur inconnue '%s' → défaut 'cash'", erp_value)
+        return "cash"
+    return dgi_value
+
+
 class FNEDGIService:
     """Service pour l'intégration avec l'API FNE de la DGI"""
     
     def __init__(self):
         self.base_url = os.getenv("FNE_BASE_URL", "http://54.247.95.108/ws")
-        self.api_key = os.getenv("FNE_API_KEY", "")
+        # Support DGI_API_KEY (clé principale) ET FNE_API_KEY (alias legacy)
+        self.api_key = os.getenv("DGI_API_KEY") or os.getenv("FNE_API_KEY", "")
         self.http_client = httpx.AsyncClient(timeout=30.0)
         
         if not self.api_key:
-            raise ValueError("FNE_API_KEY non définie dans les variables d'environnement")
+            raise ValueError("DGI_API_KEY non définie dans les variables d'environnement")
     
     async def close(self):
         """Ferme le client HTTP"""
@@ -338,7 +403,7 @@ class FNEDGIService:
         
         return FNESignRequest(
             invoiceType="sale",
-            paymentMethod=invoice_data.get("payment_method", "cash"),
+            paymentMethod=map_payment_method(invoice_data.get("payment_method") or invoice_data.get("mode_paiement") or "cash"),
             template=template.value,
             clientNcc=invoice_data.get("client_ncc"),
             clientCompanyName=invoice_data.get("client_nom", ""),

@@ -859,16 +859,34 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                 "etablissement": "EDITIONS FABS-CI"
             }
             
+            # Déduire le code taxe DGI depuis taux_tva de la facture (C5)
+            taux_tva_facture = facture.get("taux_tva", 18.0)
+            if taux_tva_facture == 0:
+                taxes_dgi = []           # Exonéré
+            elif taux_tva_facture <= 9:
+                taxes_dgi = ["TVAB"]     # TVA réduite 9%
+            else:
+                taxes_dgi = ["TVA"]      # TVA normale 18%
+
             items_data = []
             for ligne in lignes_facture:
+                # Chaque ligne peut avoir son propre taux — on garde la même logique
+                ligne_taux = ligne.get("taux_tva", taux_tva_facture)
+                if ligne_taux == 0:
+                    ligne_taxes = []
+                elif ligne_taux <= 9:
+                    ligne_taxes = ["TVAB"]
+                else:
+                    ligne_taxes = ["TVA"]
+
                 items_data.append({
                     "reference": ligne.get("reference", ""),
                     "description": ligne["designation"],
                     "quantity": ligne["quantite"],
                     "prix_unitaire": ligne["prix_unitaire"],
                     "remise": ligne["remise_ligne"],
-                    "unite": "pcs",
-                    "taxes": ["TVA"],
+                    "unite": ligne.get("unite", "pcs"),
+                    "taxes": ligne_taxes,
                     "custom_taxes": []
                 })
             

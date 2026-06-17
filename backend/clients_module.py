@@ -139,6 +139,12 @@ class ClientIn(BaseModel):
     ville: Optional[str] = Field(default=None, max_length=80)
     plafond_credit: float = 0
     notes: Optional[str] = Field(default=None, max_length=600)
+    # Champs FNE DGI (C3)
+    ncc: Optional[str] = Field(default=None, max_length=20, description="Numéro Compte Contribuable DGI (B2B obligatoire)")
+    type_client_fne: Optional[str] = Field(
+        default=None,
+        description="Template FNE: B2B (entreprise avec NCC), B2C (particulier), B2G (gouvernement), B2F (international)"
+    )
 
     _san_nom = field_validator("nom", mode="before")(sanitize_str)
     _san_representant = field_validator("representant", mode="before")(sanitize_str)
@@ -159,6 +165,9 @@ class ClientPatch(BaseModel):
     plafond_credit: Optional[float] = None
     notes: Optional[str] = Field(default=None, max_length=600)
     actif: Optional[bool] = None
+    # Champs FNE DGI (C3)
+    ncc: Optional[str] = Field(default=None, max_length=20, description="Numéro Compte Contribuable DGI")
+    type_client_fne: Optional[str] = Field(default=None, description="Template FNE: B2B, B2C, B2G, B2F")
 
     _san_nom = field_validator("nom", mode="before")(sanitize_str)
     _san_representant = field_validator("representant", mode="before")(sanitize_str)
@@ -186,6 +195,9 @@ class ClientOut(BaseModel):
     created_by: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    # Champs FNE DGI (C3)
+    ncc: Optional[str] = None
+    type_client_fne: Optional[str] = None
 
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
