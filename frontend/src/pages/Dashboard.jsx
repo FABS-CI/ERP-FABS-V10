@@ -87,8 +87,19 @@ export default function Dashboard() {
         )}
 
         {loading && (
-          <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-10 text-center text-sm text-gray-500 dark:text-white/50">
-            Chargement des statistiques…
+          <div className="space-y-5 animate-pulse">
+            {/* KPI skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-5 h-24" />
+              ))}
+            </div>
+            {/* Chart skeleton */}
+            <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-64" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
+              <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
+            </div>
           </div>
         )}
 

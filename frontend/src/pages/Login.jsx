@@ -229,6 +229,13 @@ export default function Login() {
         setUser(data.user);
         setStep("setup_required");
       } else {
+        // Prefetch des chunks critiques en background avant navigation
+        Promise.allSettled([
+          import("./Dashboard"),
+          import("./Clients"),
+          import("./Commandes"),
+          import("./Factures"),
+        ]);
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
@@ -249,6 +256,7 @@ export default function Login() {
       }
       // Finaliser la session
       setUser(pendingUserData);
+      Promise.allSettled([import("./Dashboard"), import("./Clients"), import("./Commandes"), import("./Factures")]);
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setOtpError(err?.response?.data?.detail || "Code invalide. Vérifiez votre application.");

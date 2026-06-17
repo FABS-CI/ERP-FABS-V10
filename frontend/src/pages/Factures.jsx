@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, FileText, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, FileText, Banknote, TrendingUp, AlertCircle } from 'lucide-react';
 import { getFacturesPaginated } from '../services/facturesApi';
 import { listClients } from '../services/clientsApi';
 import { Button } from '../components/ui/button';
@@ -197,7 +197,7 @@ export default function Factures() {
             <CardTitle className="text-2xl text-blue-600">{stats.emises}</CardTitle>
           </CardHeader>
           <CardContent>
-            <DollarSign className="h-4 w-4 text-blue-500" />
+            <Banknote className="h-4 w-4 text-blue-500" />
           </CardContent>
         </Card>
 
