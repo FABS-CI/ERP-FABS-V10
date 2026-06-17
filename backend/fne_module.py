@@ -52,17 +52,40 @@ class InvoiceType(str, Enum):
 # ============================================================================
 
 class FNEConfig(BaseModel):
-    """Configuration FNE - Spécifications DGI Côte d'Ivoire"""
+    """Configuration FNE - Spécifications DGI Côte d'Ivoire.
+
+    Tous les champs ont un défaut afin que `FNEConfig()` puisse être instancié
+    sans argument (les endpoints lecture seule comme /status et /qr-code n'ont
+    pas besoin des secrets). La factory `FNEConfig.from_env()` charge les vraies
+    valeurs depuis l'environnement pour les opérations de certification.
+    """
     dgi_api_url_test: str = "http://54.247.95.108/ws"
     dgi_api_url_prod: str = ""  # Transmis après validation par la DGI
-    dgi_api_key: str  # API KEY (Bearer Token)
-    company_ncc: str  # Numéro Contribuable Client
+    dgi_api_key: str = ""  # API KEY (Bearer Token)
+    company_ncc: str = ""  # Numéro Compte Contribuable
     company_name: str = "EDITIONS FABS-CI"
     point_of_sale: str = "01"
     establishment: str = "Siège Social"
     use_production: bool = False
     retry_max_attempts: int = 3
     retry_delay_seconds: int = 2
+
+    @classmethod
+    def from_env(cls) -> "FNEConfig":
+        """Construit la config depuis les variables d'environnement."""
+        return cls(
+            dgi_api_url_prod=os.environ.get("FNE_BASE_URL_PROD", ""),
+            dgi_api_key=os.environ.get("DGI_API_KEY", ""),
+            company_ncc=os.environ.get("COMPANY_NCC", ""),
+            company_name=os.environ.get("COMPANY_NAME", "EDITIONS FABS-CI"),
+            point_of_sale=os.environ.get("POINT_OF_SALE", "01"),
+            establishment=os.environ.get("ESTABLISHMENT", "Siège Social"),
+            use_production=os.environ.get("USE_PRODUCTION", "false").lower() == "true",
+        )
+
+    def is_ready(self) -> bool:
+        """True si la config minimale pour certifier est présente."""
+        return bool(self.dgi_api_key and self.company_ncc)
 
 
 class FNEInvoiceItem(BaseModel):
@@ -502,16 +525,14 @@ async def submit_invoice_fne(
     db: AsyncIOMotorDatabase = request.app.state.db
     redis_client: redis.Redis = request.app.state.redis
     
-    # Configuration FNE (à récupérer depuis la base de données ou variables d'environnement)
-    config = FNEConfig(
-        dgi_api_key=os.environ.get("DGI_API_KEY", ""),
-        company_ncc=os.environ.get("COMPANY_NCC", ""),
-        company_name=os.environ.get("COMPANY_NAME", "EDITIONS FABS-CI"),
-        point_of_sale=os.environ.get("POINT_OF_SALE", "01"),
-        establishment=os.environ.get("ESTABLISHMENT", "Siège Social"),
-        use_production=os.environ.get("USE_PRODUCTION", "false").lower() == "true"
-    )
-    
+    # Configuration FNE depuis l'environnement
+    config = FNEConfig.from_env()
+    if not config.is_ready():
+        raise HTTPException(
+            status_code=400,
+            detail="FNE non configurée : DGI_API_KEY et COMPANY_NCC requis. Renseignez les paramètres FNE avant de certifier.",
+        )
+
     fne_service = FNEService(config, db, redis_client)
     
     try:
@@ -594,12 +615,13 @@ async def refund_invoice_fne(
     if user_role not in {"super_admin", "directeur_general"}:
         raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
-    config = FNEConfig(
-        dgi_api_key=os.environ.get("DGI_API_KEY", ""),
-        company_ncc=os.environ.get("COMPANY_NCC", ""),
-        use_production=os.environ.get("USE_PRODUCTION", "false").lower() == "true"
-    )
-    
+    config = FNEConfig.from_env()
+    if not config.is_ready():
+        raise HTTPException(
+            status_code=400,
+            detail="FNE non configurée : DGI_API_KEY et COMPANY_NCC requis.",
+        )
+
     base_url = config.dgi_api_url_prod if config.use_production else config.dgi_api_url_test
     endpoint = f"{base_url}/external/invoices/{invoice_id}/refund"
     
@@ -939,45 +961,38 @@ async def certifier_facture_fne(invoice_id: str, request: Request, background_ta
 
 async def fne_worker(redis_client: redis.Redis, db: AsyncIOMotorDatabase):
     """
-    Worker asynchrone pour traitement des factures FNE
-    
-    Args:
-        redis_client: Client Redis
-        db: Base de données MongoDB
+    Worker asynchrone pour traitement des factures FNE en file.
+
+    Lit la config depuis l'environnement via FNEConfig.from_env(). Le worker
+    réel utilisé en production est `start_fne_worker` (fne_queue.py) ; cette
+    fonction reste disponible pour un traitement direct de la queue Redis.
     """
     queue = FNEQueue(redis_client)
-    config = FNEConfig(
-        dgi_api_url="https://api.dgi.ci/fne/v1",
-        dgi_api_key=os.environ.get("DGI_API_KEY", ""),
-        dgi_username=os.environ.get("DGI_USERNAME", ""),
-        dgi_password=os.environ.get("DGI_PASSWORD", ""),
-        company_tin=os.environ.get("COMPANY_TIN", "")
-    )
+    config = FNEConfig.from_env()
     fne_service = FNEService(config, db, redis_client)
-    
-    logger.info("Worker FNE démarré")
-    
-    while True:
-        try:
-            task = await queue.dequeue()
-            if task:
-                task_id = task["task_id"]
-                invoice_data = task["invoice_data"]
-                
-                logger.info(f"Traitement facture {task_id}")
-                
-                await queue.update_task_status(task_id, "processing")
-                
-                invoice = Invoice(**invoice_data)
-                response = await fne_service.submit_invoice_async(invoice)
-                
-                await queue.update_task_status(task_id, "completed", response.model_dump())
-                
-                logger.info(f"Facture {task_id} traitée: {response.success}")
-            else:
-                await asyncio.sleep(1)
-        except Exception as e:
-            logger.error(f"Erreur worker FNE: {e}")
-            await asyncio.sleep(5)
-    
-    await fne_service.close()
+
+    logger.info("Worker FNE démarré (ready=%s)", config.is_ready())
+
+    try:
+        while True:
+            try:
+                task = await queue.dequeue()
+                if task:
+                    task_id = task["task_id"]
+                    invoice_data = task["invoice_data"]
+
+                    logger.info(f"Traitement facture {task_id}")
+                    await queue.update_task_status(task_id, "processing")
+
+                    invoice = FNEInvoice(**invoice_data)
+                    response = await fne_service.submit_invoice_async(invoice)
+
+                    await queue.update_task_status(task_id, "completed", response.model_dump())
+                    logger.info(f"Facture {task_id} traitée: {response.success}")
+                else:
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.error(f"Erreur worker FNE: {e}")
+                await asyncio.sleep(5)
+    finally:
+        await fne_service.close()
