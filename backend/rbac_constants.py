@@ -52,7 +52,7 @@ MODULE_PERMISSIONS = {
     },
     "clients": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17: DG = dashboard+paiements+rh only
         "comptable": 1,
         "directeur_commercial": 2,
         "gestionnaire_stock": 0,
@@ -63,20 +63,20 @@ MODULE_PERMISSIONS = {
     },
     "produits": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
         "directeur_commercial": 2,
         "gestionnaire_stock": 2,
         "responsable_magasinier": 0,
-        "secretariat": 0,
+        "secretariat": 2,  # RBAC 2026-06-17: secretariat write
         "service_logistique": 0,
-        "assistante": 1,
+        "assistante": 2,  # RBAC 2026-06-17: assistante write
     },
     "commandes": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 2,
-        "directeur_commercial": 2,
+        "directeur_commercial": 1,  # RBAC 2026-06-17: read only
         "gestionnaire_stock": 1,
         "responsable_magasinier": 1,
         "secretariat": 2,
@@ -85,7 +85,7 @@ MODULE_PERMISSIONS = {
     },
     "factures": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17: DG totalement retiré des factures
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -96,7 +96,7 @@ MODULE_PERMISSIONS = {
     },
     "paiements": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 1,  # RBAC 2026-06-17: DG garde lecture paiements
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -107,10 +107,10 @@ MODULE_PERMISSIONS = {
     },
     "livraisons": {
         "super_admin": 2,
-        "directeur_general": 1,
-        "comptable": 2,
-        "directeur_commercial": 2,
-        "gestionnaire_stock": 2,
+        "directeur_general": 0,  # RBAC 2026-06-17
+        "comptable": 0,  # RBAC 2026-06-17: comptable retiré
+        "directeur_commercial": 1,  # RBAC 2026-06-17: read only
+        "gestionnaire_stock": 1,  # RBAC 2026-06-17: read only (était 2)
         "responsable_magasinier": 1,
         "secretariat": 0,
         "service_logistique": 2,
@@ -118,18 +118,18 @@ MODULE_PERMISSIONS = {
     },
     "retours": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
-        "directeur_commercial": 2,
+        "directeur_commercial": 1,  # RBAC 2026-06-17: read only
         "gestionnaire_stock": 2,
-        "responsable_magasinier": 2,
+        "responsable_magasinier": 1,  # RBAC 2026-06-17: read only
         "secretariat": 0,
         "service_logistique": 0,
         "assistante": 0,
     },
     "stock": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 2,
@@ -140,10 +140,10 @@ MODULE_PERMISSIONS = {
     },
     "colis": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
-        "directeur_commercial": 2,
-        "gestionnaire_stock": 2,
+        "directeur_commercial": 0,  # RBAC 2026-06-17: retiré
+        "gestionnaire_stock": 0,  # RBAC 2026-06-17: retiré
         "responsable_magasinier": 2,
         "secretariat": 0,
         "service_logistique": 1,
@@ -151,9 +151,9 @@ MODULE_PERMISSIONS = {
     },
     "expeditions": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
-        "directeur_commercial": 2,
+        "directeur_commercial": 0,  # RBAC 2026-06-17: retiré
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
         "secretariat": 0,
@@ -173,9 +173,9 @@ MODULE_PERMISSIONS = {
     },
     "logistique": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,
-        "directeur_commercial": 2,
+        "directeur_commercial": 0,  # RBAC 2026-06-17: retiré
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
         "secretariat": 0,
@@ -184,7 +184,7 @@ MODULE_PERMISSIONS = {
     },
     "comptabilite_avancee": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG doit pouvoir lire la comptabilité avancée
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -195,7 +195,7 @@ MODULE_PERMISSIONS = {
     },
     "fleet": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -206,7 +206,7 @@ MODULE_PERMISSIONS = {
     },
     "logistics_costs": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG doit voir les coûts logistiques
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 1,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -217,7 +217,7 @@ MODULE_PERMISSIONS = {
     },
     "multi_channel_notifications": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG peut voir les notifications
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -228,9 +228,9 @@ MODULE_PERMISSIONS = {
     },
     "bi_analytics": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG doit avoir accès aux analytics BI
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
-        "directeur_commercial": 1,
+        "directeur_commercial": 0,  # RBAC 2026-06-17: dir_com retiré
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
         "secretariat": 0,
@@ -239,7 +239,7 @@ MODULE_PERMISSIONS = {
     },
     "workflow_approvals": {
         "super_admin": 2,
-        "directeur_general": 2,  # E1 fix: DG doit pouvoir approuver les workflows
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -250,18 +250,18 @@ MODULE_PERMISSIONS = {
     },
     "file_storage": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG doit pouvoir accéder aux fichiers
-        "comptable": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
+        "comptable": 0,  # RBAC 2026-06-17: comptable retiré
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
-        "secretariat": 1,
+        "secretariat": 0,  # RBAC 2026-06-17: secretariat retiré
         "service_logistique": 0,
         "assistante": 0,
     },
     "backup": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG peut voir les backups (lecture seule)
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -272,7 +272,7 @@ MODULE_PERMISSIONS = {
     },
     "comptabilite": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG doit voir la comptabilité de son entreprise
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 2,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -283,9 +283,9 @@ MODULE_PERMISSIONS = {
     },
     "rapports": {
         "super_admin": 2,
-        "directeur_general": 1,
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 2,
-        "directeur_commercial": 1,
+        "directeur_commercial": 0,  # RBAC 2026-06-17: dir_com retiré
         "gestionnaire_stock": 0,
         "responsable_magasinier": 0,
         "secretariat": 0,
@@ -294,7 +294,7 @@ MODULE_PERMISSIONS = {
     },
     "utilisateurs": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG peut voir la liste des utilisateurs
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,
@@ -305,7 +305,7 @@ MODULE_PERMISSIONS = {
     },
     "parametres": {
         "super_admin": 2,
-        "directeur_general": 1,  # E1 fix: DG peut voir les paramètres (lecture)
+        "directeur_general": 0,  # RBAC 2026-06-17: DG retiré
         "comptable": 0,
         "directeur_commercial": 0,
         "gestionnaire_stock": 0,

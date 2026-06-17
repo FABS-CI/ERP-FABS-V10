@@ -35,20 +35,23 @@ logger = logging.getLogger("fabsci.commandes")
 
 # RBAC
 READ_ROLES = {
-    "super_admin", "directeur_general", "directeur_commercial",
+    # RBAC 2026-06-17: DG retiré de commandes
+    "super_admin", "directeur_commercial",
     "secretariat", "comptable", "assistante_commerciale", "assistante",
     "gestionnaire_stock", "responsable_magasinier",
 }
 WRITE_ROLES = {
-    "super_admin", "directeur_general",
-    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
+    # RBAC 2026-06-17: DG + dir_com retirés de WRITE
+    "super_admin", "secretariat", "assistante_commerciale", "assistante", "comptable",
 }
-# Validation interdite à l'assistante_commerciale
-VALIDATE_ROLES = {"super_admin", "directeur_general", "directeur_commercial", "secretariat", "comptable"}
-# Annulation interdite à l'assistante_commerciale
-CANCEL_ROLES = {"super_admin", "directeur_general", "directeur_commercial", "secretariat"}
-PREPARE_ROLES = {"super_admin", "directeur_general", "responsable_magasinier"}
-DELIVER_ROLES = {"super_admin", "directeur_general", "service_logistique"}
+# RBAC 2026-06-17: DG + dir_com retirés de VALIDATE
+VALIDATE_ROLES = {"super_admin", "secretariat", "comptable"}
+# RBAC 2026-06-17: DG + dir_com retirés de CANCEL
+CANCEL_ROLES = {"super_admin", "comptable", "secretariat"}
+# RBAC 2026-06-17: DG retiré de PREPARE
+PREPARE_ROLES = {"super_admin", "responsable_magasinier"}
+# RBAC 2026-06-17: DG retiré de DELIVER
+DELIVER_ROLES = {"super_admin", "service_logistique"}
 
 Statut = Literal["brouillon", "en_attente", "validee", "preparee", "livree", "annulee"]
 STATUT_FLOW = ["brouillon", "en_attente", "validee", "preparee", "livree"]

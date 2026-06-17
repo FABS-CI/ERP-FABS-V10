@@ -32,20 +32,21 @@ logger = logging.getLogger("fabsci.proformas")
 
 # RBAC
 READ_ROLES = {
-    "super_admin", "directeur_general", "directeur_commercial",
-    "commercial", "comptable", "secretariat", "assistante_commerciale", "assistante",
+    # RBAC 2026-06-17: DG + commercial (rôle inexistant) retirés
+    "super_admin", "directeur_commercial",
+    "comptable", "secretariat", "assistante_commerciale", "assistante",
 }
 WRITE_ROLES = {
-    "super_admin", "directeur_general",
-    "directeur_commercial", "commercial", "secretariat",
+    # RBAC 2026-06-17: DG + dir_com + commercial retirés
+    "super_admin", "secretariat", "comptable", "assistante", "assistante_commerciale",
 }
 SEND_ROLES = {
-    "super_admin", "directeur_general",
-    "directeur_commercial", "commercial", "assistante_commerciale",
+    # RBAC 2026-06-17: DG + dir_com retirés
+    "super_admin", "secretariat", "comptable", "assistante", "assistante_commerciale",
 }
 CONVERT_ROLES = {
-    "super_admin", "directeur_general",
-    "directeur_commercial", "comptable",
+    # RBAC 2026-06-17: DG + dir_com retirés
+    "super_admin", "comptable", "secretariat",
 }
 
 StatutProforma = Literal[

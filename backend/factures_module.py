@@ -8,10 +8,10 @@ Module Factures — Sprint 7
 - Gestion paiements (montant_regle, montant_restant)
 - Génération avoirs (credit notes)
 - Génération automatique écritures comptables
-- RBAC : 
-    READ = {super_admin, DG, commercial, comptable, secrétariat}
-    WRITE = {super_admin, DG, commercial, comptable}
-    PAYMENT = {super_admin, DG, comptable}
+- RBAC (2026-06-17) :
+    READ    = {super_admin, comptable}
+    WRITE   = {super_admin, comptable}
+    PAYMENT = {super_admin, comptable}
 """
 from __future__ import annotations
 
@@ -40,14 +40,14 @@ from comptabilite_module import (
 
 # RBAC
 READ_ROLES = {
-    "super_admin", "directeur_general",
-    "comptable",
+    # RBAC 2026-06-17: DG totalement retiré des factures
+    "super_admin", "comptable",
 }
 WRITE_ROLES = {
-    "super_admin", "directeur_general",
-    "comptable",
+    # RBAC 2026-06-17: DG retiré
+    "super_admin", "comptable",
 }
-PAYMENT_ROLES = {"super_admin", "directeur_general", "comptable"}
+PAYMENT_ROLES = {"super_admin", "comptable"}  # RBAC 2026-06-17: DG retiré
 
 TypeFacture = Literal["facture", "avoir"]
 Statut = Literal["brouillon", "emise", "partiellement_payee", "payee", "annulee"]
@@ -1359,10 +1359,11 @@ Cordialement,
     ):
         """
         TICKET-015 — Marque en_retard toutes les factures émises/partiellement_payées
-        dont la date d'échéance est dépassée. Accessible DG / super_admin.
+        dont la date d'échéance est dépassée. Accessible super_admin / comptable.
         """
         me = await resolve_user(request, authorization)
-        _ensure(me["role"] in {"super_admin", "DG", "comptable"}, 403, "Accès refusé")
+        # RBAC 2026-06-17: bug C1 corrigé — "DG" était invalide, DG retiré des factures
+        _ensure(me["role"] in {"super_admin", "comptable"}, 403, "Accès refusé")
         result = await _run_relances_once()
         return {"status": "ok", **result}
 
