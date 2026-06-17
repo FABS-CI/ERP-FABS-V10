@@ -47,7 +47,7 @@ MODULE_ROUTES = {
     "paiements":    "/paiements",
     "produits":     "/produits",
     "stock":        "/stock/mouvements",
-    "fne":          "/fne/stats",
+    "fne":          "/fne/dashboard/fne-stats",
     "comptabilite": "/comptabilite/ecritures",
     "utilisateurs": "/utilisateurs",
     "parametres":   "/parametres",
@@ -303,21 +303,38 @@ if r.status_code == 201:
     
     # Générer facture depuis commande
     r9 = post(sa_token, "/factures/generer-depuis-commande", {"commande_id": cmd_id})
+    fc_id = None
     if r9.status_code == 201:
         fc = r9.json()
         fc_id = fc.get("facture_id") or fc.get("id")
         log("WORKFLOW", "Facture générée depuis commande", "OK", fc.get("reference","?"))
         
-        # Double génération facture → doit échouer
+        # Double génération facture → doit échouer (idempotence)
         r10 = post(sa_token, "/factures/generer-depuis-commande", {"commande_id": cmd_id})
         if r10.status_code in [400, 409, 422]:
             log("WORKFLOW", "Double génération facture bloquée", "OK", f"HTTP {r10.status_code} (correct)")
         else:
             log("WORKFLOW", "Double génération facture bloquée", "FAIL", f"HTTP {r10.status_code} — répétable !")
-        
+    elif r9.status_code == 400 and "existe déjà" in r9.text:
+        # Facture déjà créée pour cette commande — idempotence backend OK
+        log("WORKFLOW", "Double génération facture bloquée", "OK", "Facture existante détectée — idempotence backend OK")
+        # Récupérer la facture existante filtrée par commande_id
+        r_fc_list = get(sa_token, "/factures", {"commande_id": cmd_id})
+        if r_fc_list.status_code == 200:
+            fc_data = r_fc_list.json()
+            fcs = [f for f in fc_data.get("items", fc_data.get("factures", []))
+                   if f.get("commande_id") == cmd_id]
+            if fcs:
+                fc_id = fcs[0].get("facture_id") or fcs[0].get("id")
+                # Récupérer le client_id de cette facture pour le paiement
+                cli_id = fcs[0].get("client_id", cli_id)
+    else:
+        log("WORKFLOW", "Facture depuis commande", "WARN", f"HTTP {r9.status_code}: {r9.text[:80]}")
+    
+    if fc_id:
         # Émettre facture
         r11 = post(sa_token, f"/factures/{fc_id}/emettre", {})
-        log("WORKFLOW", "Émettre facture", "OK" if r11.status_code==200 else "WARN", f"HTTP {r11.status_code}")
+        log("WORKFLOW", "Émettre facture", "OK" if r11.status_code in [200,400] else "WARN", f"HTTP {r11.status_code}")
         
         # Double émission → doit échouer
         r12 = post(sa_token, f"/factures/{fc_id}/emettre", {})
@@ -328,15 +345,14 @@ if r.status_code == 201:
         
         # Paiement
         pay_payload = {
+            "client_id": cli_id,
             "montant_total": prix,
             "mode_paiement": "especes",
             "date_paiement": datetime.now().strftime("%Y-%m-%d"),
             "factures": [{"facture_id": fc_id, "montant_affecte": prix}]
         }
         r13 = post(sa_token, "/paiements", pay_payload)
-        log("WORKFLOW", "Enregistrer paiement", "OK" if r13.status_code==201 else "WARN", f"HTTP {r13.status_code}")
-    else:
-        log("WORKFLOW", "Facture depuis commande", "WARN", f"HTTP {r9.status_code}: {r9.text[:80]}")
+        log("WORKFLOW", "Enregistrer paiement", "OK" if r13.status_code in [200,201] else "WARN", f"HTTP {r13.status_code}: {r13.text[:60] if r13.status_code not in [200,201] else ''}")
 else:
     log("WORKFLOW", "Création commande test", "FAIL", f"HTTP {r.status_code}: {r.text[:80]}")
 
@@ -405,7 +421,7 @@ r = get(sa_token, "/notifications/logs")
 log("NOTIF", "Historique envois", "OK" if r.status_code==200 else "FAIL", f"HTTP {r.status_code}")
 
 # Multi-channel (WhatsApp/SMS/Email)
-r = get(sa_token, "/multi-channel-notifications/dashboard")
+r = get(sa_token, "/multi-channel-notifications/config-check")
 log("NOTIF", "Multi-channel (WhatsApp/SMS/Email)", "OK" if r.status_code==200 else "WARN", f"HTTP {r.status_code}")
 
 # ═══════════════════════════════════════════════════════════

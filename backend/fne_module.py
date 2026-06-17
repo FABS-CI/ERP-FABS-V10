@@ -788,6 +788,8 @@ async def list_fne_invoices(
 # Sprint 2 V10 — DASHBOARD FNE ENTERPRISE
 # ============================================================================
 
+FNE_AUTHORIZED_ROLES = {"super_admin", "directeur_general", "comptable"}
+
 @router.get("/dashboard/fne-stats")
 async def get_fne_dashboard_stats(request: Request):
     """Statistiques FNE pour le Dashboard Enterprise (Sprint 2 V10).
@@ -796,7 +798,13 @@ async def get_fne_dashboard_stats(request: Request):
     - total / certified / pending / submitted / rejected / failed
     - success_rate (en %)
     - avg_processing_seconds (durée moyenne submitted → certified)
+    
+    RBAC : super_admin, directeur_general, comptable uniquement.
     """
+    user_role = _get_role_from_request(request)
+    if user_role not in FNE_AUTHORIZED_ROLES:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Accès FNE non autorisé pour ce rôle")
     db: AsyncIOMotorDatabase = request.app.state.db
 
     pipeline = [
@@ -844,7 +852,12 @@ async def get_fne_balance_sticker(request: Request):
 
     En mode sandbox (sans DGI_API_KEY), renvoie un mock structuré pour
     permettre l'affichage du dashboard.
+    RBAC : super_admin, directeur_general, comptable uniquement.
     """
+    user_role = _get_role_from_request(request)
+    if user_role not in FNE_AUTHORIZED_ROLES:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Accès FNE non autorisé pour ce rôle")
     api_key = os.environ.get("DGI_API_KEY", "")
     ncc = os.environ.get("COMPANY_NCC", "")
     use_prod = os.environ.get("USE_PRODUCTION", "false").lower() == "true"
@@ -880,7 +893,13 @@ async def get_fne_balance_sticker(request: Request):
 
 @router.get("/dashboard/stickers-detail")
 async def get_fne_stickers_detail(request: Request):
-    """Détail stickers/timbres FNE — répartition mensuelle par statut."""
+    """Détail stickers/timbres FNE — répartition mensuelle par statut.
+    RBAC : super_admin, directeur_general, comptable uniquement.
+    """
+    user_role = _get_role_from_request(request)
+    if user_role not in FNE_AUTHORIZED_ROLES:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Accès FNE non autorisé pour ce rôle")
     db: AsyncIOMotorDatabase = request.app.state.db
 
     # Aggregation mensuelle

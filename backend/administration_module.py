@@ -20,8 +20,8 @@ logger = logging.getLogger("fabsci.administration")
 ADMIN_ROLES = {"super_admin"}
 # PRD : seul le super_admin a accès au module Utilisateurs (le DG en est exclu)
 READ_ROLES = {"super_admin"}
-# PRD : le DG conserve l'accès aux Paramètres système
-PARAMETRES_READ_ROLES = {"super_admin", "directeur_general"}
+# PRD : seul super_admin accède aux Paramètres (matrice frontend)
+PARAMETRES_READ_ROLES = {"super_admin"}
 
 ROLES_DISPONIBLES = [
     "super_admin",

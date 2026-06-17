@@ -26,13 +26,13 @@ logger = logging.getLogger("fabsci.produits")
 
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "gestionnaire_stock", "responsable_magasinier",
-    "secretariat", "assistante", "assistante_commerciale",  # lecture pour saisie commandes
+    "gestionnaire_stock",
+    "assistante", "assistante_commerciale",  # lecture pour saisie commandes
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "gestionnaire_stock", "responsable_magasinier",
-}  # secretariat/assistante : lecture seule
+    "gestionnaire_stock",
+}  # responsable_magasinier/secretariat : pas d'accès produits selon matrice
 FINANCIAL_ROLES = {"super_admin", "directeur_general", "comptable"}  # see prix_achat
 
 Categorie = Literal["maternelle", "primaire", "premier_cycle", "second_cycle", "litterature", "livre_commun"]

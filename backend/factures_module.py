@@ -40,12 +40,12 @@ from comptabilite_module import (
 
 # RBAC
 READ_ROLES = {
-    "super_admin", "directeur_general", "directeur_commercial",
-    "comptable", "secretariat",
+    "super_admin", "directeur_general",
+    "comptable",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "comptable",
+    "comptable",
 }
 PAYMENT_ROLES = {"super_admin", "directeur_general", "comptable"}
 

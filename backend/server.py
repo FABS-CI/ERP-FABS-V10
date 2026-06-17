@@ -863,6 +863,11 @@ async def change_password(
 # ============================================================================
 # DASHBOARD ENDPOINT
 # ============================================================================
+DASHBOARD_ROLES = {
+    "super_admin", "directeur_general", "comptable", "directeur_commercial",
+    "gestionnaire_stock", "responsable_magasinier", "secretariat", "service_logistique",
+}  # assistante exclue — matrice frontend
+
 @api_router.get("/dashboard/stats")
 async def dashboard_stats(
     request: Request,
@@ -870,6 +875,8 @@ async def dashboard_stats(
 ):
     """Get dashboard stats for current user role (cached for 5 minutes)"""
     user = await resolve_user(request, authorization)
+    if user["role"] not in DASHBOARD_ROLES:
+        raise HTTPException(status_code=403, detail="Accès au dashboard non autorisé pour ce rôle")
     
     # Try cache first
     cache_key = f"dashboard_stats:{user['role']}"
