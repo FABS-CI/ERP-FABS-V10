@@ -648,6 +648,51 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         await _enrich_commande_with_client(db, updated)
         return CommandeOut(**updated)
 
+    # ---------- SOUMETTRE (brouillon -> en_attente) ----------
+    @router.post("/{commande_id}/soumettre", response_model=CommandeOut)
+    async def soumettre_commande(
+        commande_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+        _ensure(
+            cmd["statut"] == "brouillon",
+            400,
+            f"Seule une commande en brouillon peut être soumise (statut actuel : {cmd['statut']}).",
+        )
+
+        # Au moins une ligne avant soumission
+        nb_lignes = await db.commande_lignes.count_documents({"commande_id": commande_id})
+        _ensure(nb_lignes > 0, 400, "Impossible de soumettre une commande sans ligne.")
+
+        await db.commandes.update_one(
+            {"commande_id": commande_id},
+            {"$set": {"statut": "en_attente", "updated_at": _now_iso()}},
+        )
+
+        updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
+        await _enrich_commande_with_client(db, updated)
+
+        try:
+            _client_nom = updated.get("client_nom", cmd.get("client_id", ""))
+            await notify_vente_event(
+                db, "info", "commande",
+                f"📤 Commande soumise — {cmd['reference']}",
+                f"Commande {cmd['reference']} pour {_client_nom} soumise pour validation "
+                f"({updated.get('montant_total', 0):,.0f} FCFA)",
+                lien=f"/commandes/{commande_id}",
+                exclude_user_id=me["user_id"],
+            )
+        except Exception as _e:  # noqa: BLE001
+            logger.warning("notify soumettre_commande: %s", _e)
+
+        return CommandeOut(**updated)
+
     # ---------- VALIDER ----------
     @router.post("/{commande_id}/valider", response_model=CommandeOut)
     async def valider_commande(
