@@ -273,7 +273,7 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
 
             # TICKET-007 — Mettre à jour quantite_livree dans bl_lignes
             await db.bl_lignes.update_one(
-                {"ligne_bl_id": ligne["ligne_bl_id"]},
+                {"ligne_id": ligne["ligne_id"]},
                 {"$set": {
                     "quantite_livree": _qte,
                     "updated_at": now,
