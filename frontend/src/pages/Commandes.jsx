@@ -165,7 +165,7 @@ export default function Commandes() {
     <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Commandes</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -330,8 +330,8 @@ export default function Commandes() {
               <p className="text-gray-600 dark:text-gray-400">Aucune commande trouvée</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-2">
+              <table className="min-w-[640px] w-full">
                 <thead className="border-b">
                   <tr className="text-left">
                     <th className="pb-3 font-semibold">Référence</th>

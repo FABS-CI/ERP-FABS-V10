@@ -338,8 +338,8 @@ export default function FNE() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm" data-testid="fne-table">
+              <div className="overflow-x-auto -mx-2">
+                <table className="min-w-[640px] w-full text-sm" data-testid="fne-table">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-2">Invoice ID</th>

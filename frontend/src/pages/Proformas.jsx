@@ -92,7 +92,7 @@ export default function Proformas() {
     <DashboardLayout>
       <div className="space-y-6" data-testid="proformas-page">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Proformas</h1>
             <p className="text-muted-foreground mt-1">
@@ -223,8 +223,8 @@ export default function Proformas() {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm" data-testid="proformas-table">
+              <div className="overflow-x-auto -mx-2">
+                <table className="min-w-[600px] w-full text-sm" data-testid="proformas-table">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-2">Référence</th>

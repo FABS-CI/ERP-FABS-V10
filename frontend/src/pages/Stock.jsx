@@ -74,7 +74,7 @@ export default function Stock() {
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="stock-page">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
             <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Stock & Mouvements</h1>
             <p className="text-gray-600 dark:text-white/60 mt-1">
@@ -161,8 +161,8 @@ export default function Stock() {
                 Aucun mouvement
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-2">
+                <table className="min-w-[640px] w-full">
                   <thead className="border-b">
                     <tr className="text-left">
                       <th className="pb-3 font-semibold">Date</th>

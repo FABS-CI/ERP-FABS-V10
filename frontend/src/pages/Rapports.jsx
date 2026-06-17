@@ -285,8 +285,8 @@ function RapportVentes() {
             <div className="p-4 border-b border-gray-200 dark:border-white/10">
               <h3 className="font-semibold text-[#0A2540] dark:text-white">Détails des Ventes</h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-2">
+              <table className="min-w-[640px] w-full">
                 <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Produit</th>
@@ -433,8 +433,8 @@ function RapportStock() {
             <div className="p-4 border-b border-gray-200 dark:border-white/10">
               <h3 className="font-semibold text-[#0A2540] dark:text-white">État du Stock</h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-2">
+              <table className="min-w-[640px] w-full">
                 <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Référence</th>
@@ -479,8 +479,8 @@ function RapportStock() {
               <div className="p-4 border-b border-gray-200 dark:border-white/10">
                 <h3 className="font-semibold text-[#0A2540] dark:text-white">Mouvements Récents</h3>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-2">
+                <table className="min-w-[580px] w-full">
                   <thead className="bg-gray-50 dark:bg-white/5">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Date</th>
