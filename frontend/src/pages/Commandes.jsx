@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, FileText, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
-import { getCommandes } from '../services/commandesApi';
+import { getCommandesPaginated } from '../services/commandesApi';
 import { listClients } from '../services/clientsApi';
 import { createProforma } from '../services/proformasApi';
 import { Button } from '../components/ui/button';
@@ -35,6 +35,8 @@ export default function Commandes() {
   const [commandes, setCommandes] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageData, setPageData] = useState({ total: 0, has_next: false, limit: 50 });
   const [filters, setFilters] = useState({
     statut: 'all',
     client_id: 'all',
@@ -53,17 +55,24 @@ export default function Commandes() {
   const canWrite = user && can(user.role, 'commandes', 'create');
 
   const debouncedQ = useDebouncedValue(filters.q, 350);
+  // ✅ TICKET-003 : debounce sur les dates pour éviter requêtes en rafale
+  const debouncedDateDebut = useDebouncedValue(filters.date_debut, 400);
+  const debouncedDateFin   = useDebouncedValue(filters.date_fin, 400);
 
   useEffect(() => {
     fetchClients();
-    fetchCommandes();
   }, []);
 
-  // Live search sur q (debounced)
+  // ✅ TICKET-003 : tous les filtres déclenchent fetchCommandes automatiquement
+  useEffect(() => {
+    setPage(1); // reset page on filter change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ, filters.statut, filters.client_id, debouncedDateDebut, debouncedDateFin]);
+
   useEffect(() => {
     fetchCommandes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ]);
+  }, [page, debouncedQ, filters.statut, filters.client_id, debouncedDateDebut, debouncedDateFin]);
 
   const fetchClients = async () => {
     try {
@@ -78,17 +87,25 @@ export default function Commandes() {
   const fetchCommandes = async () => {
     setLoading(true);
     try {
-      const data = await getCommandes({ ...filters, limit: 100 });
-      setCommandes(data);
-      
-      // Calculate stats
-      const stats = {
-        total: data.length,
-        en_attente: data.filter(c => c.statut === 'en_attente').length,
-        validees: data.filter(c => c.statut === 'validee').length,
-        ca_total: data.reduce((sum, c) => sum + (c.statut !== 'annulee' ? c.montant_total : 0), 0),
-      };
-      setStats(stats);
+      // TICKET-014 : utilise getCommandesPaginated pour avoir total + pagination
+      const result = await getCommandesPaginated({
+        ...filters,
+        date_debut: debouncedDateDebut,
+        date_fin: debouncedDateFin,
+        limit: 50,
+        page,
+      });
+      const items = result.items || [];
+      setCommandes(items);
+      setPageData({ total: result.total || 0, has_next: result.has_next || false, limit: result.limit || 50 });
+
+      // Calculate stats from current page (total from server for display)
+      setStats({
+        total: result.total || items.length,
+        en_attente: items.filter(c => c.statut === 'en_attente').length,
+        validees: items.filter(c => c.statut === 'validee').length,
+        ca_total: items.reduce((sum, c) => sum + (c.statut !== 'annulee' ? c.montant_total : 0), 0),
+      });
     } catch (error) {
       console.error('Erreur chargement commandes:', error);
       toast.error('Erreur lors du chargement des commandes');
@@ -106,6 +123,7 @@ export default function Commandes() {
   };
 
   const handleReset = () => {
+    // ✅ TICKET-003 : plus de setTimeout — le useEffect réagit au changement de filters
     setFilters({
       statut: 'all',
       client_id: 'all',
@@ -113,7 +131,6 @@ export default function Commandes() {
       date_debut: '',
       date_fin: '',
     });
-    setTimeout(() => fetchCommandes(), 100);
   };
 
   const handleCreateProforma = async (commande) => {
@@ -379,6 +396,32 @@ export default function Commandes() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {/* TICKET-014 — Pagination */}
+          {pageData.total > 0 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <span className="text-sm text-gray-500">
+                Page {page} · {pageData.total} commande{pageData.total > 1 ? 's' : ''} au total
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  ← Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pageData.has_next || loading}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Suivant →
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

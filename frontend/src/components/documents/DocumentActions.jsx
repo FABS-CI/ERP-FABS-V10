@@ -1,33 +1,57 @@
 /**
- * DocumentActions — boutons Aperçu / Imprimer / Envoyer WhatsApp
+ * DocumentActions — boutons Aperçu / Imprimer / Partager WhatsApp
  *
  * Usage :
  *   <DocumentActions
  *     pdfUrl="/api/factures/<id>/pdf"
  *     filename="FABS-FC-26-27-0001.pdf"
- *     phone="+225 07 ..."  // optionnel — pré-rempli pour WhatsApp
  *     message="Bonjour, voici votre facture FABS-FC-26-27-0001"
+ *     documentType="facture"
+ *     documentReference="FABS-FC-26-27-0001"
+ *     clientNom="ALPHA SARL"
+ *     apiShareUrl="/api/factures/<id>/partager-whatsapp"  // optionnel
  *   />
  *
- * Les boutons :
- *  - Aperçu  → ouvre le PDF dans un nouvel onglet (inline)
- *  - Imprimer → ouvre le PDF dans un iframe caché et déclenche window.print()
- *  - WhatsApp → wa.me/<num>?text=<msg> + lien vers le PDF
+ * WhatsApp : Web Share API natif (PDF joint) → fallback download + wa.me sans numéro
  */
 import { useRef } from "react";
 import { Eye, Printer, MessageCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { tokenStore } from "../../hooks/useAuth";
+import { useWhatsAppShare } from "../../hooks/useWhatsAppShare";
 
 export default function DocumentActions({
   pdfUrl,
   filename,
-  phone,
   message,
+  documentType,
+  documentReference,
+  clientNom,
+  montant,
+  apiShareUrl,
   testIdPrefix = "doc",
 }) {
   const iframeRef = useRef(null);
+
+  // Génère le blob PDF depuis l'API (utilisé par le hook de partage)
+  const fetchPdfBlob = async () => {
+    const token = tokenStore.get();
+    const res = await fetch(pdfUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.blob();
+  };
+
+  const { shareViaWhatsApp, sharing: waSharing } = useWhatsAppShare({
+    onGeneratePDF: fetchPdfBlob,
+    documentType,
+    documentReference,
+    clientNom,
+    montant,
+    apiShareUrl,
+  });
 
   const openPdfBlob = async (action) => {
     try {
@@ -66,21 +90,6 @@ export default function DocumentActions({
     }
   };
 
-  const handleWhatsApp = () => {
-    const cleanPhone = (phone || "").replace(/\D/g, "");
-    const num = cleanPhone
-      ? cleanPhone.startsWith("225") ? cleanPhone : `225${cleanPhone}`
-      : "";
-    const text = encodeURIComponent(
-      message ||
-        `Bonjour, vous trouverez ci-joint votre document FABS-CI : ${filename || ""}`
-    );
-    const url = num
-      ? `https://wa.me/${num}?text=${text}`
-      : `https://wa.me/?text=${text}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div className="flex flex-wrap gap-2 items-center" data-testid={`${testIdPrefix}-actions`}>
       <Button
@@ -103,12 +112,13 @@ export default function DocumentActions({
       </Button>
       <Button
         size="sm"
-        onClick={handleWhatsApp}
+        onClick={shareViaWhatsApp}
+        disabled={waSharing}
         className="bg-[#25D366] hover:bg-[#1EBE5D] text-white"
         data-testid={`${testIdPrefix}-whatsapp-btn`}
       >
         <MessageCircle className="h-4 w-4 mr-2" />
-        WhatsApp
+        {waSharing ? 'Partage…' : 'WhatsApp'}
       </Button>
       <iframe
         ref={iframeRef}

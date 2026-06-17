@@ -18,6 +18,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import Pagination from "../components/ui/Pagination";
 
 import { getPaiements, createPaiement } from "../services/paiementsApi";
 import { getFactures } from "../services/facturesApi";
@@ -40,36 +41,65 @@ export default function Paiements() {
   const { user } = useAuth();
   const canWrite = user && ["super_admin", "directeur_general", "comptable"].includes(user.role);
 
+  // TICKET-004 : pagination + filtres date
+  const PAGE_SIZE = 20;
+
   const [paiements, setPaiements] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ mode_paiement: "", client_id: "", q: "" });
+  const [filters, setFilters] = useState({
+    mode_paiement: "",
+    client_id: "",
+    q: "",
+    date_debut: "",
+    date_fin: "",
+  });
   const [showForm, setShowForm] = useState(false);
 
   const debouncedQ = useDebouncedValue(filters.q, 350);
 
   useEffect(() => {
     listClients({ actif: true, limit: 200 }).then((d) => setClients(d.items || d)).catch(() => {});
-    fetchPaiements();
+    fetchPaiements(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Live search (debounced)
+  // Live search (debounced) — reset page 1
   useEffect(() => {
-    fetchPaiements();
+    fetchPaiements(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQ]);
 
-  const fetchPaiements = async () => {
+  const fetchPaiements = async (targetPage = page) => {
     setLoading(true);
     try {
-      const data = await getPaiements({ ...filters });
-      setPaiements(data);
+      const skip = (targetPage - 1) * PAGE_SIZE;
+      const data = await getPaiements({
+        ...filters,
+        skip,
+        limit: PAGE_SIZE,
+      });
+      // Backend retourne { items: [...], total: N }
+      setPaiements(data.items ?? data);
+      setTotal(data.total ?? data.length ?? 0);
+      setPage(targetPage);
     } catch (e) {
       toast.error("Erreur chargement paiements");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchPaiements(newPage);
+  };
+
+  // Réinitialiser tous les filtres
+  const resetFilters = () => {
+    setFilters({ mode_paiement: "", client_id: "", q: "", date_debut: "", date_fin: "" });
+    fetchPaiements(1);
   };
 
   const totals = paiements.reduce(
@@ -132,9 +162,10 @@ export default function Paiements() {
             <CardTitle className="text-lg flex items-center"><Filter className="h-5 w-5 mr-2" /> Filtres</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Ligne 1 : recherche + mode + client */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
               <div>
-                <Label>Référence</Label>
+                <Label>Recherche</Label>
                 <Input
                   placeholder="Client, représentant, ville, téléphone..."
                   value={filters.q}
@@ -143,7 +174,7 @@ export default function Paiements() {
                 />
               </div>
               <div>
-                <Label>Mode</Label>
+                <Label>Mode de paiement</Label>
                 <Select value={filters.mode_paiement || "all"} onValueChange={(v) => setFilters({ ...filters, mode_paiement: v === "all" ? "" : v })}>
                   <SelectTrigger data-testid="select-mode"><SelectValue placeholder="Tous" /></SelectTrigger>
                   <SelectContent>
@@ -166,8 +197,35 @@ export default function Paiements() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
-                <Button onClick={fetchPaiements} data-testid="btn-appliquer">Appliquer</Button>
+            </div>
+
+            {/* Ligne 2 : filtres date + boutons action — TICKET-004 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div>
+                <Label>Date début</Label>
+                <Input
+                  type="date"
+                  value={filters.date_debut}
+                  onChange={(e) => setFilters({ ...filters, date_debut: e.target.value })}
+                  data-testid="input-date-debut"
+                />
+              </div>
+              <div>
+                <Label>Date fin</Label>
+                <Input
+                  type="date"
+                  value={filters.date_fin}
+                  onChange={(e) => setFilters({ ...filters, date_fin: e.target.value })}
+                  data-testid="input-date-fin"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => fetchPaiements(1)} data-testid="btn-appliquer" className="bg-[#FF6200] hover:bg-[#E55900] text-white">
+                  Appliquer
+                </Button>
+                <Button variant="outline" onClick={resetFilters} data-testid="btn-reset">
+                  Réinitialiser
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -176,7 +234,11 @@ export default function Paiements() {
         <Card>
           <CardHeader>
             <CardTitle>Liste des paiements</CardTitle>
-            <CardDescription>{paiements.length} paiement(s)</CardDescription>
+            {/* TICKET-004 : total réel depuis le backend */}
+            <CardDescription>
+              {total} paiement{total > 1 ? "s" : ""} au total
+              {total > PAGE_SIZE && ` — page ${page}/${Math.ceil(total / PAGE_SIZE)}`}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -224,6 +286,18 @@ export default function Paiements() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* TICKET-004 : pagination */}
+            {!loading && total > PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination
+                  total={total}
+                  page={page}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </CardContent>

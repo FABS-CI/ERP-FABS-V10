@@ -5,9 +5,10 @@ FastAPI + Motor (MongoDB) + JWT Auth + RBAC
 
 import os
 import logging
+import asyncio
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Any, Optional
 import jwt
 import bcrypt
 import re
@@ -61,6 +62,7 @@ from fournisseurs_module import router as fournisseurs_router
 from approvisionnement_module import router as approvisionnement_router
 from proformas_module import build_proformas_router
 from paie_module import router as paie_router
+from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
 
 # ============================================================================
 # CONFIGURATION
@@ -372,7 +374,14 @@ class UserProfile(BaseModel):
     actif: bool
     picture: Optional[str] = None
     created_at: str
-    updated_at: str
+    updated_at: Any  # peut être str ou datetime selon le driver
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    def model_post_init(self, __context) -> None:
+        # Normalise updated_at en str ISO si c'est un datetime
+        if hasattr(self.updated_at, 'isoformat'):
+            object.__setattr__(self, 'updated_at', self.updated_at.isoformat())
 
 
 VALID_ROLES = {
@@ -641,6 +650,7 @@ async def get_me(
     return UserProfile(**user)
 
 @api_router.post("/auth/refresh", response_model=LoginResponse)
+@limiter.limit("10/minute")  # P5 — brute-force refresh token
 async def refresh_token(
     payload: RefreshTokenRequest,
     request: Request
@@ -730,6 +740,7 @@ async def refresh_token(
         raise HTTPException(status_code=401, detail="Erreur lors du rafraîchissement du token")
 
 @api_router.post("/auth/logout")
+@limiter.limit("30/minute")  # P5 — anti-flood logout
 async def logout(response: Response, request: Request, authorization: Optional[str] = Header(default=None)):
     """Logout - clears httpOnly cookie"""
     try:
@@ -937,7 +948,8 @@ async def health_details(
 api_router.include_router(build_clients_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_products_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_commandes_router(db, resolve_user, log_audit_event))
-api_router.include_router(build_factures_router(db, resolve_user, log_audit_event))
+_factures_router = build_factures_router(db, resolve_user, log_audit_event)
+api_router.include_router(_factures_router)
 api_router.include_router(build_paiements_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_stock_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_bons_livraison_router(db, resolve_user, log_audit_event))
@@ -948,7 +960,7 @@ api_router.include_router(build_parametres_router(db, resolve_user))
 api_router.include_router(build_recherche_router(db, resolve_user))
 api_router.include_router(build_documents_ai_router(db, resolve_user))
 api_router.include_router(build_analytics_router(db, resolve_user))
-api_router.include_router(build_colisage_router(db, resolve_user))
+api_router.include_router(build_colisage_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_notifications_router(db, resolve_user))
 api_router.include_router(build_logistique_router(db, resolve_user))
 api_router.include_router(build_comptabilite_avancee_router(db, resolve_user))
@@ -1171,8 +1183,14 @@ async def startup_event():
         await db.notifications.create_index([("categorie", 1)])
         await db.notification_logs.create_index([("notification_id", 1)])
         await db.notification_logs.create_index([("user_id", 1), ("ts", -1)])
+        # P6-002 — TTL 90 jours sur notification_logs (purge automatique)
+        await db.notification_logs.create_index(
+            [("ts", 1)],
+            expireAfterSeconds=90 * 24 * 3600,  # 90 jours
+            name="idx_notification_logs_ttl_90d"
+        )
         await db.notification_preferences.create_index([("user_id", 1)], unique=True)
-        logger.info("✅ Notifications indexes ensured")
+        logger.info("✅ Notifications indexes ensured (TTL 90j sur notification_logs)")
     except Exception as exc:
         logger.warning("Notifications indexes failed: %s", exc)
 
@@ -1210,9 +1228,45 @@ async def startup_event():
         await db.commande_lignes.create_index("commande_id", name="idx_commande_lignes_commande_id")
         await db.bl_lignes.create_index("bl_id", name="idx_bl_lignes_bl_id")
         await db.affectations_paiement.create_index("paiement_id", name="idx_affectations_paiement_id")
+        # Colisage v2 indexes
+        await db.ordres_colisage.create_index("ordre_colisage_id", unique=True, name="idx_oc_id_unique")
+        await db.ordres_colisage.create_index("facture_id", name="idx_oc_facture_id")
+        await db.ordres_colisage.create_index([("statut", 1), ("created_at", -1)], name="idx_oc_statut_date")
+        await db.ordres_colisage.create_index("client_id", name="idx_oc_client_id")
+        await db.cartons_colisage.create_index("carton_id", unique=True, name="idx_carton_id_unique")
+        await db.cartons_colisage.create_index("ordre_colisage_id", name="idx_carton_ordre_id")
+        await db.cartons_colisage.create_index("facture_id", name="idx_carton_facture_id")
+        await db.cartons_colisage.create_index([("ordre_colisage_id", 1), ("numero_carton", 1)], name="idx_carton_ordre_num")
+        await db.livraisons_directes.create_index("livraison_id", unique=True, name="idx_liv_id_unique")
+        await db.livraisons_directes.create_index("ordre_colisage_id", name="idx_liv_ordre_id")
+        await db.livraisons_directes.create_index([("statut", 1), ("created_at", -1)], name="idx_liv_statut_date")
+        await db.expeditions_colisage.create_index("expedition_id", unique=True, name="idx_exp_id_unique")
+        await db.expeditions_colisage.create_index("ordre_colisage_id", name="idx_exp_ordre_id")
+        await db.expeditions_colisage.create_index([("statut", 1), ("created_at", -1)], name="idx_exp_statut_date")
         logger.info("✅ Security/performance indexes ensured (M1/M2/E4 fix)")
     except Exception as exc:
         logger.warning("Security/performance indexes failed: %s", exc)
+
+    # TICKET-015 — Job relances factures toutes les 24h
+    async def _relances_job():
+        import asyncio as _asyncio
+        while True:
+            try:
+                result = await _factures_router.run_relances_once()
+                logger.info("TICKET-015 relances job: %s", result)
+            except Exception as _e:
+                logger.error("TICKET-015 relances job error: %s", _e)
+            await _asyncio.sleep(86400)  # 24h
+
+    asyncio.create_task(_relances_job())
+    logger.info("✅ TICKET-015 — job relances factures démarré (24h interval)")
+
+    # Seed journaux comptables + plan SYSCOHADA
+    try:
+        seed_result = await seed_journaux_et_plan_comptable(db)
+        logger.info(f"✅ Comptabilité seed: {seed_result['journaux']} journaux, {seed_result['comptes']} comptes insérés")
+    except Exception as exc:
+        logger.warning("Comptabilité seed failed: %s", exc)
 
     logger.info("✅ ERP EDITIONS FABS-CI backend ready!")
 

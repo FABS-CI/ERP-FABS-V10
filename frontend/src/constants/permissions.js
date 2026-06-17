@@ -27,6 +27,9 @@ export const MODULES = [
   { key: "produits",             path: "/produits",             label: "Produits",               icon: "BookOpen",        group: "Stocks & Logistique" },
   { key: "stock",                path: "/stock",                label: "Stock",                  icon: "Package",         group: "Stocks & Logistique" },
   { key: "logistique",           path: "/logistique",           label: "Logistique",            icon: "Truck",           group: "Stocks & Logistique" },
+  { key: "ordres_colisage",      path: "/ordres-colisage",      label: "Ordres de colisage",     icon: "Package",         group: "Stocks & Logistique" },
+  { key: "livraisons_directes",  path: "/livraisons-directes",  label: "Livraisons directes",    icon: "Truck",           group: "Stocks & Logistique" },
+  { key: "incidents",            path: "/incidents",            label: "Incidents",              icon: "AlertTriangle",   group: "Stocks & Logistique" },
   { key: "fleet",                path: "/fleet",                label: "Flotte",                 icon: "Car",             group: "Stocks & Logistique" },
   { key: "logistics-costs",      path: "/logistics-costs",      label: "Coûts Logistiques",     icon: "DollarSign",      group: "Stocks & Logistique" },
   { key: "fournisseurs",         path: "/fournisseurs",         label: "Fournisseurs",           icon: "Building2",       group: "Stocks & Logistique" },
@@ -86,6 +89,11 @@ export const PERMISSIONS = {
   retours:                    { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 0, assistante_commerciale: 0 },
   colis:                      { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
   expeditions:                { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0 },
+
+  // 📦 STOCKS & LOGISTIQUE — Colisage
+  ordres_colisage:            { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0, preparateur: 1, admin: 1 },
+  livraisons_directes:        { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0, preparateur: 1, admin: 1 },
+  incidents:                  { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1, assistante_commerciale: 0, preparateur: 1, admin: 1 },
 
   // 📦 STOCKS & LOGISTIQUE
   // Note V10 : Assistante voit Produits mais en prix de vente uniquement (👁*)

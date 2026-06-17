@@ -1,14 +1,14 @@
 /**
  * DocumentActionBar — Barre d'actions documents ERP FABS-CI V10
  * Boutons : Aperçu PDF · Imprimer · Télécharger · WhatsApp · Email
- * Modales : WhatsApp (saisie numéro) + Email (To/CC/BCC/Objet/Message)
- * Les boutons WhatsApp et Email sont TOUJOURS actifs — l'utilisateur saisit
- * le contact à la volée si le client n'en a pas en base.
+ * WhatsApp : Web Share API natif (PDF joint) → fallback téléchargement + wa.me sans numéro
+ * Email    : modale To/CC/BCC/Objet/Message
  */
-import React, { useState, useEffect } from 'react';
-import { Eye, Printer, Download, MessageCircle, Mail, X, Send, Phone } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, Printer, Download, MessageCircle, Mail, X, Send } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
+import { useWhatsAppShare } from '../../hooks/useWhatsAppShare';
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 function buildDefaultEmailMessage(documentType, documentReference, clientNom) {
@@ -18,31 +18,20 @@ function buildDefaultEmailMessage(documentType, documentReference, clientNom) {
   return `Bonjour${clientNom ? ' ' + clientNom : ''},\n\nVeuillez trouver ci-joint votre ${typeLabel}${documentReference ? ' N° ' + documentReference : ''}.\n\nNous restons à votre disposition pour toute information complémentaire.\n\nCordialement,\nÉditions FABS-CI`;
 }
 
-function buildDefaultWhatsAppMessage(documentType, documentReference, clientNom, montant) {
-  const typeLabel = documentType
-    ? documentType.charAt(0).toUpperCase() + documentType.slice(1)
-    : 'Document';
-  let msg = `Bonjour${clientNom ? ' ' + clientNom : ''},\n\nVeuillez trouver ci-joint votre ${typeLabel}`;
-  if (documentReference) msg += ` N° ${documentReference}`;
-  if (montant) msg += `\n\nMontant : ${montant}`;
-  msg += `\n\nMerci de votre confiance.\nÉditions FABS-CI`;
-  return msg;
-}
-
 /* ─── composant ───────────────────────────────────────────────── */
 export default function DocumentActionBar({
   documentType,
   documentId,
   documentReference,
   clientNom,
-  clientWhatsApp,
   clientEmail,
   montant,
   onGeneratePDF,
   onPrint,
   onDownload,
-  onSendWhatsApp,   // (payload: { numero }) => Promise<{ whatsapp_url }>
+  onSendWhatsApp,   // legacy — conservé pour compat, non utilisé pour le partage
   onSendEmail,      // (payload: { destinataire, cc, bcc, objet, message }) => Promise
+  apiShareUrl,      // ex: /api/factures/{id}/partager-whatsapp (log serveur, optionnel)
   canPreview    = true,
   canPrint      = true,
   canDownload   = true,
@@ -53,10 +42,15 @@ export default function DocumentActionBar({
   const [pdfUrl, setPdfUrl]             = useState(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
 
-  /* ── modale WhatsApp ── */
-  const [showWaModal, setShowWaModal]   = useState(false);
-  const [waLoading, setWaLoading]       = useState(false);
-  const [waNumero, setWaNumero]         = useState('');
+  /* ── WhatsApp via Web Share API ── */
+  const { shareViaWhatsApp, sharing: waSharing } = useWhatsAppShare({
+    onGeneratePDF,
+    documentType,
+    documentReference,
+    clientNom,
+    montant,
+    apiShareUrl,
+  });
 
   /* ── modale Email ── */
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -69,12 +63,7 @@ export default function DocumentActionBar({
     message: '',
   });
 
-  /* pré-remplissage à l'ouverture des modales */
-  const openWaModal = () => {
-    setWaNumero(clientWhatsApp || '');
-    setShowWaModal(true);
-  };
-
+  /* pré-remplissage email */
   const openEmailModal = () => {
     setEmailForm({
       destinataire: clientEmail || '',
@@ -137,31 +126,6 @@ export default function DocumentActionBar({
     }
   };
 
-  /* ── WhatsApp submit ── */
-  const handleWaSubmit = async () => {
-    const num = waNumero.trim();
-    if (!num) { toast.error('Veuillez saisir un numéro WhatsApp'); return; }
-    try {
-      setWaLoading(true);
-      const result = await onSendWhatsApp({ numero: num });
-      // Construire l'URL si le backend ne la renvoie pas (fallback frontend)
-      const url = result?.whatsapp_url || (() => {
-        const clean = num.replace(/[\s\-\+]/g, '');
-        const msg = encodeURIComponent(
-          buildDefaultWhatsAppMessage(documentType, documentReference, clientNom, montant)
-        );
-        return `https://wa.me/${clean}?text=${msg}`;
-      })();
-      window.open(url, '_blank');
-      toast.success('WhatsApp ouvert');
-      setShowWaModal(false);
-    } catch (e) {
-      toast.error("Erreur envoi WhatsApp");
-    } finally {
-      setWaLoading(false);
-    }
-  };
-
   /* ── Email submit ── */
   const handleEmailSubmit = async () => {
     if (!emailForm.destinataire.trim()) {
@@ -213,12 +177,13 @@ export default function DocumentActionBar({
         )}
         {canSendWhatsApp && (
           <Button
-            onClick={openWaModal}
+            onClick={shareViaWhatsApp}
+            disabled={waSharing || pdfLoading}
             className="bg-green-600 hover:bg-green-700 text-white"
             size="sm"
           >
             <MessageCircle className="h-4 w-4 mr-2" />
-            Envoyer WhatsApp
+            {waSharing ? 'Partage…' : 'Partager WhatsApp'}
           </Button>
         )}
         {canSendEmail && (
@@ -228,73 +193,6 @@ export default function DocumentActionBar({
           </Button>
         )}
       </div>
-
-      {/* ══ Modale WhatsApp ══════════════════════════════════════ */}
-      {showWaModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            {/* header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-green-600" />
-                Envoyer par WhatsApp
-              </h3>
-              <button onClick={() => setShowWaModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* body */}
-            <div className="px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Numéro WhatsApp <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={waNumero}
-                    onChange={e => setWaNumero(e.target.value)}
-                    placeholder="Ex : +225 07 00 00 00 00"
-                    className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500"
-                    autoFocus
-                  />
-                </div>
-                {!clientWhatsApp && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Aucun numéro enregistré pour ce client — saisissez-le manuellement.
-                  </p>
-                )}
-              </div>
-
-              {/* aperçu message */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Aperçu du message</label>
-                <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                  {buildDefaultWhatsAppMessage(documentType, documentReference, clientNom, montant)}
-                </div>
-              </div>
-            </div>
-
-            {/* footer */}
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <Button variant="outline" size="sm" onClick={() => setShowWaModal(false)}>
-                Annuler
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleWaSubmit}
-                disabled={waLoading || !waNumero.trim()}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                {waLoading ? 'Ouverture…' : 'Ouvrir WhatsApp'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ══ Modale Email ═════════════════════════════════════════ */}
       {showEmailModal && (

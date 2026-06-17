@@ -17,6 +17,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from sanitizers import sanitize_str
 
 
 # ---------------------------------------------------------------------------
@@ -24,11 +25,11 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 # ---------------------------------------------------------------------------
 READ_ROLES = {
     "super_admin", "directeur_general", "comptable",
-    "directeur_commercial", "secretariat", "assistante_commerciale",
+    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "secretariat", "assistante_commerciale",
+    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
 }
 # Désactivation client réservée aux rôles de direction (pas assistante_commerciale)
 DISABLE_ROLES = {
@@ -139,10 +140,10 @@ class ClientIn(BaseModel):
     plafond_credit: float = 0
     notes: Optional[str] = Field(default=None, max_length=600)
 
-    @field_validator("nom")
-    @classmethod
-    def _strip_nom(cls, v: str) -> str:
-        return v.strip()
+    _san_nom = field_validator("nom", mode="before")(sanitize_str)
+    _san_representant = field_validator("representant", mode="before")(sanitize_str)
+    _san_adresse = field_validator("adresse", mode="before")(sanitize_str)
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
 
 class ClientPatch(BaseModel):
@@ -158,6 +159,11 @@ class ClientPatch(BaseModel):
     plafond_credit: Optional[float] = None
     notes: Optional[str] = Field(default=None, max_length=600)
     actif: Optional[bool] = None
+
+    _san_nom = field_validator("nom", mode="before")(sanitize_str)
+    _san_representant = field_validator("representant", mode="before")(sanitize_str)
+    _san_adresse = field_validator("adresse", mode="before")(sanitize_str)
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
 
 class ClientOut(BaseModel):
@@ -178,8 +184,17 @@ class ClientOut(BaseModel):
     actif: bool = True
     notes: Optional[str] = None
     created_by: Optional[str] = None
-    created_at: str
-    updated_at: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def coerce_datetime(cls, v):
+        if v is None:
+            return None
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+        return str(v)
 
 
 class ClientListOut(BaseModel):

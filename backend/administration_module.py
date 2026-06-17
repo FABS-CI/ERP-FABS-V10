@@ -12,7 +12,8 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
+from typing import Any
 
 logger = logging.getLogger("fabsci.administration")
 
@@ -61,8 +62,16 @@ class UtilisateurOut(BaseModel):
     role: str
     actif: bool
     picture: Optional[str] = None
-    created_at: str
-    updated_at: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    @validator("updated_at", "created_at", pre=True, always=True)
+    def coerce_datetime_to_str(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return str(v)
 
 
 def build_utilisateurs_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:

@@ -347,7 +347,18 @@ def build_comptabilite_avancee_router(db, resolve_user):
 
         cursor = db.journaux_comptables.find({}, {"_id": 0}).sort("code", 1)
         docs = await cursor.to_list(50)
-        return [JournalComptableOut(**d) for d in docs]
+        result = []
+        for d in docs:
+            # Normalize legacy fields
+            if "journal_id" not in d:
+                d["journal_id"] = f"journal_{d.get('code','?').lower()}_legacy"
+            if "intitule" not in d:
+                d["intitule"] = d.get("libelle", d.get("code", "?"))
+            try:
+                result.append(JournalComptableOut(**d))
+            except Exception:
+                pass
+        return result
 
     @router.post("/journaux", response_model=JournalComptableOut, status_code=201)
     async def create_journal(

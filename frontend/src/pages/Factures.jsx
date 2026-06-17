@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, FileText, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
-import { getFactures } from '../services/facturesApi';
+import { getFacturesPaginated } from '../services/facturesApi';
 import { listClients } from '../services/clientsApi';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -25,7 +25,13 @@ const STATUT_CONFIG = {
   partiellement_payee: { label: 'Partiellement payée', color: 'bg-orange-500' },
   payee: { label: 'Payée', color: 'bg-green-500' },
   annulee: { label: 'Annulée', color: 'bg-red-500' },
+  // ✅ TICKET-001 : clé avoir ajoutée (évite TypeError sur STATUT_CONFIG["avoir"])
+  avoir: { label: 'Avoir', color: 'bg-purple-500' },
 };
+
+// ✅ TICKET-001 : guard défensif — évite tout crash futur sur statut inconnu
+const getStatutConfig = (statut) =>
+  STATUT_CONFIG[statut] ?? { label: statut ?? '—', color: 'bg-gray-400' };
 
 const FNE_STATUS_CONFIG = {
   pending: { label: '⏳ En attente DGI', color: 'bg-orange-500' },
@@ -45,6 +51,8 @@ export default function Factures() {
   const [factures, setFactures] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageData, setPageData] = useState({ total: 0, has_next: false, limit: 50 });
   const [filters, setFilters] = useState({
     type_facture: 'all',
     statut: 'all',
@@ -67,14 +75,18 @@ export default function Factures() {
 
   useEffect(() => {
     fetchClients();
-    fetchFactures();
   }, []);
 
-  // Live search sur q (debounced)
+  // Reset page on filter/search change
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ, filters.statut, filters.type_facture, filters.client_id]);
+
   useEffect(() => {
     fetchFactures();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ]);
+  }, [page, debouncedQ, filters.statut, filters.type_facture, filters.client_id, filters.date_debut, filters.date_fin]);
 
   const fetchClients = async () => {
     try {
@@ -89,19 +101,20 @@ export default function Factures() {
   const fetchFactures = async () => {
     setLoading(true);
     try {
-      const data = await getFactures({ ...filters, limit: 100 });
-      setFactures(data);
-      
-      // Calculate stats
-      const stats = {
-        total: data.length,
-        emises: data.filter(f => f.statut === 'emise').length,
-        impayees: data.filter(f => ['emise', 'partiellement_payee'].includes(f.statut)).length,
-        ca_total: data
+      // TICKET-014 : utilise getFacturesPaginated pour avoir total + pagination
+      const result = await getFacturesPaginated({ ...filters, limit: 50, page });
+      const items = result.items || [];
+      setFactures(items);
+      setPageData({ total: result.total || 0, has_next: result.has_next || false, limit: result.limit || 50 });
+
+      setStats({
+        total: result.total || items.length,
+        emises: items.filter(f => f.statut === 'emise').length,
+        impayees: items.filter(f => ['emise', 'partiellement_payee'].includes(f.statut)).length,
+        ca_total: items
           .filter(f => f.statut !== 'annulee' && f.type_facture === 'facture')
           .reduce((sum, f) => sum + f.montant_ttc, 0),
-      };
-      setStats(stats);
+      });
     } catch (error) {
       console.error('Erreur chargement factures:', error);
       toast.error('Erreur lors du chargement des factures');
@@ -367,8 +380,9 @@ export default function Factures() {
                         </span>
                       </td>
                       <td className="py-3">
-                        <Badge className={`${STATUT_CONFIG[facture.statut].color} text-white`}>
-                          {STATUT_CONFIG[facture.statut].label}
+                        {/* ✅ TICKET-001 : utilise getStatutConfig (guard défensif) */}
+                        <Badge className={`${getStatutConfig(facture.statut).color} text-white`}>
+                          {getStatutConfig(facture.statut).label}
                         </Badge>
                       </td>
                       <td className="py-3">
@@ -397,6 +411,32 @@ export default function Factures() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {/* TICKET-014 — Pagination */}
+          {pageData.total > 0 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <span className="text-sm text-gray-500">
+                Page {page} · {pageData.total} facture{pageData.total > 1 ? 's' : ''} au total
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  ← Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pageData.has_next || loading}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Suivant →
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

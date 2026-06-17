@@ -22,10 +22,12 @@ import re
 import uuid
 import logging
 import os
+import asyncio
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from sanitizers import sanitize_str
 from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.factures")
@@ -67,8 +69,11 @@ async def _send_email_smtp(destinataire: str, sujet: str, corps_html: str, corps
     smtp_from = os.getenv("SMTP_FROM")
     
     if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
-        return {"success": False, "error": "Configuration SMTP manquante"}
-    
+        raise HTTPException(
+            status_code=503,
+            detail="Service email non configuré. Contactez l'administrateur."
+        )
+
     try:
         import smtplib
         from email.mime.multipart import MIMEMultipart
@@ -84,10 +89,19 @@ async def _send_email_smtp(destinataire: str, sujet: str, corps_html: str, corps
         
         with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
             server.starttls()
-            server.login(smtp_user, smtp_password)
+            try:
+                server.login(smtp_user, smtp_password)
+            except smtplib.SMTPAuthenticationError as auth_err:
+                logger.error(f"Erreur authentification SMTP: {auth_err}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Échec d'authentification SMTP. Vérifiez les identifiants SMTP."
+                )
             server.send_message(msg)
         
         return {"success": True, "message_id": f"email_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erreur SMTP: {e}")
         return {"success": False, "error": str(e)}
@@ -148,6 +162,8 @@ class FactureIn(BaseModel):
     taux_tva: float = Field(default=18.0, ge=0, le=100, description="Taux TVA en % (0 pour exonérés)")
     notes: Optional[str] = Field(default=None, max_length=1000)
     lignes: List[LigneFactureIn] = Field(..., min_length=1)
+
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
     @field_validator("date_facture", "date_echeance", mode="before")
     @classmethod
@@ -306,7 +322,7 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
     router = APIRouter(prefix="/factures", tags=["factures"])
 
     # ---------- LIST ----------
-    @router.get("", response_model=List[FactureOut])
+    @router.get("")
     async def list_factures(
         request: Request,
         authorization: Optional[str] = Header(default=None),
@@ -378,14 +394,37 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                 {"client_telephone": {"$regex": safe_q, "$options": "i"}},
                 {"client_representant": {"$regex": safe_q, "$options": "i"}},
             ]}})
+        pipeline_count = [{"$match": filters}]
+        if q:
+            safe_q = re.escape(q)
+            pipeline_count.append({"$match": {"$or": [
+                {"reference": {"$regex": safe_q, "$options": "i"}},
+                {"client_nom": {"$regex": safe_q, "$options": "i"}},
+                {"client_ville": {"$regex": safe_q, "$options": "i"}},
+                {"client_telephone": {"$regex": safe_q, "$options": "i"}},
+                {"client_representant": {"$regex": safe_q, "$options": "i"}},
+            ]}})
+        pipeline_count.append({"$count": "total"})
+
         pipeline += [
             {"$sort": {"date_facture": -1}},
             {"$skip": skip},
             {"$limit": limit}
         ]
-        
-        docs = await db.factures.aggregate(pipeline).to_list(limit)
-        return [FactureOut(**d) for d in docs]
+
+        docs, count_res = await asyncio.gather(
+            db.factures.aggregate(pipeline).to_list(limit),
+            db.factures.aggregate(pipeline_count).to_list(1),
+        )
+        total = count_res[0]["total"] if count_res else 0
+        page = (skip // limit) + 1 if limit else 1
+        return {
+            "items": [FactureOut(**d).model_dump() for d in docs],
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "has_next": skip + limit < total,
+        }
 
     # ---------- CREATE ----------
     @router.post("", response_model=FactureOut, status_code=201)
@@ -758,6 +797,15 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
             except Exception as e:
                 logger.error(f"❌ Erreur génération écritures comptables pour facture {facture['reference']}: {e}")
         
+        # Création automatique de l'ordre de colisage
+        if facture.get("type_facture", "facture") == "facture":
+            try:
+                from colisage_module import _create_ordre_colisage_internal
+                oc = await _create_ordre_colisage_internal(db, facture_id, me["user_id"])
+                logger.info(f"✅ Ordre de colisage créé automatiquement: {oc.get('reference')} pour {facture['reference']}")
+            except Exception as e:
+                logger.error(f"❌ Erreur création ordre de colisage pour facture {facture['reference']}: {e}")
+
         updated = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
         await _enrich_facture_with_client(db, updated)
         return FactureOut(**updated)
@@ -1035,6 +1083,37 @@ Cordialement,
             "pdf_filename": f"{facture['reference']}.pdf"
         }
 
+    # ---------- PARTAGER WHATSAPP (Web Share API — sans numéro) ----------
+    @router.post("/{facture_id}/partager-whatsapp")
+    async def partager_facture_whatsapp(
+        facture_id: str,
+        request: Request = None,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Log a WhatsApp native share event (no phone number required)."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0, "reference": 1})
+        _ensure(facture is not None, 404, "Facture introuvable")
+
+        now = _now_iso()
+        await db.factures.update_one(
+            {"facture_id": facture_id},
+            {"$set": {"date_partage_whatsapp": now, "updated_at": now}}
+        )
+        await db.audit_logs.insert_one({
+            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+            "user_id": me["user_id"],
+            "action": "SHARE_WHATSAPP_NATIVE",
+            "resource_type": "facture",
+            "resource_id": facture_id,
+            "details": {"canal": "whatsapp", "statut": "partage_lance", "methode": "web_share_api"},
+            "ip_address": request.client.host if request.client else None,
+            "timestamp": now,
+        })
+        return {"message": "Partage WhatsApp enregistré", "reference": facture.get("reference")}
+
     # ---------- EMAIL ----------
     @router.post("/{facture_id}/envoyer-email")
     async def envoyer_facture_email(
@@ -1106,7 +1185,10 @@ Cordialement,
             smtp_from = os.getenv("SMTP_FROM")
             
             if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
-                raise HTTPException(status_code=500, detail="Configuration SMTP manquante")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Service email non configuré. Contactez l'administrateur."
+                )
             
             msg = MIMEMultipart("mixed")
             msg["Subject"] = sujet
@@ -1168,6 +1250,70 @@ Cordialement,
                 "timestamp": _now_iso(),
             })
             raise HTTPException(status_code=500, detail=f"Erreur lors de l'envoi de l'email: {str(e)}")
+
+    # ------------------------------------------------------------------
+    # TICKET-015 — Relances automatiques factures en retard
+    # ------------------------------------------------------------------
+
+    async def _run_relances_once() -> dict:
+        """
+        Marque en 'en_retard' les factures émises/partiellement payées dont
+        l'échéance est dépassée. Retourne un résumé {updated, errors}.
+        """
+        today = datetime.now(timezone.utc).date().isoformat()
+        updated = 0
+        errors = 0
+        cursor = db.factures.find(
+            {
+                "statut": {"$in": ["emise", "partiellement_payee"]},
+                "date_echeance": {"$lt": today},
+            },
+            {"_id": 0, "facture_id": 1, "reference": 1, "client_id": 1},
+        )
+        async for facture in cursor:
+            try:
+                now_ts = _now_iso()
+                await db.factures.update_one(
+                    {"facture_id": facture["facture_id"]},
+                    {"$set": {"statut": "en_retard", "updated_at": now_ts}},
+                )
+                if log_audit_event:
+                    await log_audit_event(
+                        user_id="system",
+                        action="RELANCE_FACTURE_EN_RETARD",
+                        resource_type="facture",
+                        resource_id=facture["facture_id"],
+                        details={
+                            "reference": facture.get("reference"),
+                            "client_id": facture.get("client_id"),
+                            "new_statut": "en_retard",
+                            "triggered_by": "auto_relance",
+                        },
+                        ip_address=None,
+                    )
+                updated += 1
+            except Exception as _e:
+                logger.error("relance facture %s failed: %s", facture.get("facture_id"), _e)
+                errors += 1
+        logger.info("TICKET-015 relances: %d updated, %d errors", updated, errors)
+        return {"updated": updated, "errors": errors}
+
+    @router.post("/relances/run", summary="Déclencher manuellement les relances factures en retard")
+    async def run_relances(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """
+        TICKET-015 — Marque en_retard toutes les factures émises/partiellement_payées
+        dont la date d'échéance est dépassée. Accessible DG / super_admin.
+        """
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in {"super_admin", "DG", "comptable"}, 403, "Accès refusé")
+        result = await _run_relances_once()
+        return {"status": "ok", **result}
+
+    # Expose la fonction pour le job startup (server.py)
+    router.run_relances_once = _run_relances_once  # type: ignore[attr-defined]
 
     return router
 

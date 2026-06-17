@@ -1,7 +1,7 @@
 /**
  * Page Détail Paiement — Sprint 8
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import DocumentActionBar from "../components/document/DocumentActionBar";
 
-import { getPaiement, sendPaiementWhatsApp, sendPaiementEmail } from "../services/paiementsApi";
+import { getPaiement, sendPaiementWhatsApp, sendPaiementEmail, getPaiementPDF } from "../services/paiementsApi";
 
 const MODES = {
   especes: { label: "Espèces", color: "bg-green-600" },
@@ -47,6 +47,31 @@ export default function PaiementDetail() {
     await sendPaiementEmail(id, payload);
   };
 
+  // ✅ TICKET-002 : handlers PDF
+  const handleGeneratePDF = useCallback(async () => {
+    const blob = await getPaiementPDF(id);
+    return blob; // DocumentActionBar attend un Blob
+  }, [id]);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const blob = await getPaiementPDF(id);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `recu-${paiement?.reference ?? id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [id, paiement?.reference]);
+
+  const handlePrintPDF = useCallback(async () => {
+    const blob = await getPaiementPDF(id);
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) win.addEventListener("load", () => win.print());
+  }, [id]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -74,6 +99,7 @@ export default function PaiementDetail() {
               </div>
             </div>
           </div>
+          {/* ✅ TICKET-002 : onGeneratePDF / onDownload / onPrint branchés */}
           <DocumentActionBar
             documentType="Reçu de Paiement"
             documentId={paiement.paiement_id}
@@ -84,6 +110,9 @@ export default function PaiementDetail() {
             montant={paiement.montant_total ? `${Number(paiement.montant_total).toLocaleString('fr-FR')} FCFA` : ''}
             onSendWhatsApp={handleSendWhatsApp}
             onSendEmail={handleSendEmail}
+            onGeneratePDF={handleGeneratePDF}
+            onDownload={handleDownloadPDF}
+            onPrint={handlePrintPDF}
           />
         </div>
 

@@ -168,6 +168,39 @@ def build_workflow_approvals_router(db, resolve_user):
         logger.info(f"Workflow créé: {workflow_id} par {user['email']}")
         return ApprovalWorkflowOut(**workflow_doc)
 
+    @router.get("/approvals", response_model=List[ApprovalStepOut])
+    async def list_approval_steps(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        workflow_id: Optional[str] = Query(default=None),
+        skip: int = Query(default=0, ge=0),
+        limit: int = Query(default=50, ge=1, le=200),
+    ):
+        """Liste paginée des étapes d'approbation.
+        - super_admin/DG : toutes les étapes
+        - autres approbateurs : seulement les workflows où ils sont dans `approbateurs`
+        """
+        user = await resolve_user(request, authorization)
+        _ensure(user["role"] in APPROVER_ROLES, 403, "Accès réservé")
+
+        filters = {}
+        if workflow_id:
+            filters["workflow_id"] = workflow_id
+
+        # If not super_admin/DG, filter by workflows where user is an approver
+        if user["role"] not in ["super_admin", "directeur_general"]:
+            # Get workflow IDs where this user is an approbateur
+            wf_cursor = db.approval_workflows.find(
+                {"approbateurs": user["user_id"]},
+                {"workflow_id": 1}
+            )
+            wf_ids = [doc["workflow_id"] async for doc in wf_cursor]
+            filters["workflow_id"] = {"$in": wf_ids}
+
+        cursor = db.approval_steps.find(filters, {"_id": 0}).sort("date_action", -1).skip(skip).limit(limit)
+        steps = await cursor.to_list(length=limit)
+        return [ApprovalStepOut(**s) for s in steps]
+
     @router.post("/approvals", response_model=ApprovalStepOut, status_code=201)
     async def create_approval_step(
         payload: ApprovalStepIn,

@@ -33,11 +33,15 @@ const Fleet = () => {
     chauffeur_id: "",
   });
 
-  const { data: vehicules, isLoading } = useQuery(
+  const { data: vehiculesRaw, isLoading } = useQuery(
     ["vehicules", search],
     () => listVehicules({ q: search }),
     { enabled: !!user && activeTab === "vehicules" }
   );
+  // Déduplication par vehicule_id pour éviter les doublons d'affichage
+  const vehicules = vehiculesRaw
+    ? [...new Map(vehiculesRaw.map((v) => [v.vehicule_id, v])).values()]
+    : vehiculesRaw;
 
   const createMutation = useMutation(createVehicule, {
     onSuccess: () => {

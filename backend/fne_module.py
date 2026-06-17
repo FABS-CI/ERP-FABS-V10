@@ -882,6 +882,7 @@ async def get_fne_settings(request: Request):
     }
 
 
+@router.get("/settings/ping")
 @router.post("/settings/ping")
 async def ping_dgi_api(request: Request):
     """Test de connectivité à l'API DGI (test ou prod selon config)."""

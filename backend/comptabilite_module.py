@@ -469,8 +469,7 @@ def build_comptabilite_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_
             },
             {
                 "$project": {
-                    "client_info": 0,
-                    "_id": 0
+                    "client_info": 0
                 }
             }
         ]

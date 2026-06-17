@@ -54,6 +54,10 @@ const Documents = lazy(() => import("./pages/Documents"));
 const DocumentDetail = lazy(() => import("./pages/DocumentDetail"));
 const Colis = lazy(() => import("./pages/Colis"));
 const Expeditions = lazy(() => import("./pages/Expeditions"));
+const OrdresColisage = lazy(() => import("./pages/OrdresColisage"));
+const OrdreColisageDetail = lazy(() => import("./pages/OrdreColisageDetail"));
+const LivraisonsDirectes = lazy(() => import("./pages/LivraisonsDirectes"));
+const Incidents = lazy(() => import("./pages/Incidents"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Logistique = lazy(() => import("./pages/Logistique"));
 const ComptabiliteAvancee = lazy(() => import("./pages/ComptabiliteAvancee"));
@@ -503,7 +507,39 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+            <Route
+              path="/ordres-colisage"
+              element={
+                <ProtectedRoute>
+                  <OrdresColisage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ordres-colisage/:id"
+              element={
+                <ProtectedRoute>
+                  <OrdreColisageDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/livraisons-directes"
+              element={
+                <ProtectedRoute>
+                  <LivraisonsDirectes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/incidents"
+              element={
+                <ProtectedRoute>
+                  <Incidents />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Notifications */}
             <Route
               path="/notifications"
@@ -534,6 +570,10 @@ function App() {
               }
             />
             
+            {/* Legacy route aliases */}
+            <Route path="/flotte" element={<Navigate to="/fleet" replace />} />
+            <Route path="/administration/utilisateurs" element={<Navigate to="/utilisateurs" replace />} />
+
             {/* Fleet Management */}
             <Route
               path="/fleet"

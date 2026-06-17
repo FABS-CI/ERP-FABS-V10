@@ -28,11 +28,15 @@ export default function AnalyticsReports() {
   const [byNiveau, setByNiveau] = useState([]);
   const [financial, setFinancial] = useState(null);
   
-  // Filtres
-  const [filters, setFilters] = useState({
-    date_debut: "",
-    date_fin: ""
-  });
+  // Filtres — initialisés au mois en cours
+  const _getDefaultDates = () => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fmt = (d) => d.toISOString().split("T")[0];
+    return { date_debut: fmt(firstDay), date_fin: fmt(lastDay) };
+  };
+  const [filters, setFilters] = useState(_getDefaultDates);
 
   useEffect(() => {
     fetchAllData();

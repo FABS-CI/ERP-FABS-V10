@@ -123,6 +123,9 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const { role } = useAuth();
   const canWrite = ["super_admin", "directeur_general", "directeur_commercial", "secretariat"].includes(role);
+  // Bouton commander : tous les rôles ayant accès au module commandes
+  const canCommande = ["super_admin", "directeur_general", "directeur_commercial", "secretariat",
+    "assistante", "assistante_commerciale", "gestionnaire_stock", "responsable_magasinier", "comptable"].includes(role);
 
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -358,16 +361,18 @@ export default function ClientDetail() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
+              {canCommande && client.actif && (
+                <button
+                  onClick={() => navigate(`/commandes/nouvelle?client_id=${client.client_id}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-[#FF6200] hover:bg-[#E55900]"
+                  data-testid="btn-nouvelle-commande"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Commander
+                </button>
+              )}
               {canWrite && client.actif && (
                 <>
-                  <button
-                    onClick={() => navigate(`/commandes/nouvelle?client_id=${client.client_id}`)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-[#FF6200] hover:bg-[#E55900]"
-                    data-testid="btn-nouvelle-commande"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    Commander
-                  </button>
                   <button
                     data-testid="client-detail-edit"
                     onClick={() => setEdit(true)}
@@ -460,7 +465,7 @@ export default function ClientDetail() {
                 loading={tabLoading.commandes}
                 onGo={(id) => navigate(`/commandes/${id}`)}
                 client={client}
-                canWrite={canWrite}
+                canWrite={canCommande}
                 navigate={navigate}
               />
             )}

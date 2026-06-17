@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Send, DollarSign, ShieldCheck, Package, Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { getFacture, emettreFacture, genererAvoir, generateFacturePDF, sendFactureWhatsApp, sendFactureEmail, certifierFNE } from '../services/facturesApi';
-import { getColisByFacture, createColis, updateColisStatut } from '../services/colisageService';
+import { listOrdresColisage, createOrdreColisage, updateOrdreColisageStatut } from '../services/colisageService';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -81,8 +81,8 @@ export default function FactureDetail() {
     if (!factureId) return;
     setLoadingColisage(true);
     try {
-      const data = await getColisByFacture(factureId);
-      setColisageData(data);
+      const ordres = await listOrdresColisage({ facture_id: factureId, limit: 50 });
+      setColisageData(Array.isArray(ordres) ? ordres : ordres?.items || []);
     } catch {
       // Silencieux si module non dispo
     } finally {
@@ -108,33 +108,31 @@ export default function FactureDetail() {
   };
 
   const handleCreerColis = async () => {
-    const lignesValides = colisFormData.lignes.filter((l) => l.quantite_colisee > 0);
-    if (!lignesValides.length) { toast.error('Au moins une ligne requise'); return; }
     setSavingColis(true);
     try {
-      await createColis({
+      await createOrdreColisage({
         facture_id: facture.facture_id,
-        lignes: lignesValides,
-        poids_total: parseFloat(colisFormData.poids_total) || 0,
         notes: colisFormData.notes || null,
+        priorite: "normale",
+        mode_expedition_prevu: "livraison_directe",
       });
-      toast.success('Colis créé avec succès');
+      toast.success('Ordre de colisage créé');
       setShowColisageForm(false);
       fetchColisage(facture.facture_id);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erreur création colis');
+      toast.error(err.response?.data?.detail || 'Erreur création ordre de colisage');
     } finally {
       setSavingColis(false);
     }
   };
 
-  const handleValiderColis = async (colisId) => {
+  const handleValiderColis = async (ordreId) => {
     try {
-      await updateColisStatut(colisId, 'valide');
-      toast.success('Colis validé');
+      await updateOrdreColisageStatut(ordreId, 'colisage_termine');
+      toast.success('Ordre de colisage mis à jour');
       fetchColisage(facture.facture_id);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erreur validation');
+      toast.error(err.response?.data?.detail || 'Erreur mise à jour');
     }
   };
 
@@ -450,24 +448,23 @@ export default function FactureDetail() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Package className="h-5 w-5 text-[#F97316]" />
-                    Colisage
-                    {colisageData && (
+                    Ordres de colisage
+                    {colisageData && Array.isArray(colisageData) && (
                       <span className="text-sm font-normal text-gray-500 ml-2">
-                        {colisageData.nb_colis} colis · {colisageData.nb_colis_valides} validé(s)
+                        {colisageData.length} ordre{colisageData.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </CardTitle>
                   <div className="flex gap-2">
-                    {['super_admin', 'admin', 'gestionnaire', 'preparateur'].includes(user?.role) &&
-                      colisageData && !colisageData.colisage_complet && (
+                    {['super_admin', 'admin', 'gestionnaire', 'preparateur'].includes(user?.role) && (
                       <Button
                         size="sm"
                         className="bg-[#0A2540] hover:bg-[#0A2540]/90"
-                        onClick={() => initColisForm(colisageData)}
+                        onClick={() => { setColisFormData({ lignes: [], poids_total: 0, notes: '' }); setShowColisageForm(true); }}
                         disabled={loadingColisage}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Créer un colis
+                        Créer un OC
                       </Button>
                     )}
                     <Button
@@ -483,98 +480,56 @@ export default function FactureDetail() {
               <CardContent>
                 {loadingColisage && <p className="text-sm text-gray-400">Chargement...</p>}
 
-                {colisageData && (
-                  <div className="space-y-4">
-                    {/* Résumé quantités par ligne */}
-                    <div>
-                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Avancement du colisage</div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="text-xs text-gray-500 border-b">
-                              <th className="text-left pb-1">Produit</th>
-                              <th className="text-center pb-1">Facturé</th>
-                              <th className="text-center pb-1">Colisé</th>
-                              <th className="text-center pb-1">Restant</th>
-                              <th className="text-center pb-1">État</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {colisageData.lignes.map((lg) => (
-                              <tr key={lg.ligne_id} className="border-b last:border-0">
-                                <td className="py-1.5 pr-3 font-medium">{lg.designation}</td>
-                                <td className="text-center py-1.5">{lg.quantite}</td>
-                                <td className="text-center py-1.5 font-semibold text-[#0A2540] dark:text-white">{lg.quantite_colisee}</td>
-                                <td className="text-center py-1.5">
-                                  <span className={lg.quantite_restante === 0 ? 'text-green-600' : 'text-orange-500'}>
-                                    {lg.quantite_restante}
-                                  </span>
-                                </td>
-                                <td className="text-center py-1.5">
-                                  {lg.quantite_restante === 0
-                                    ? <span className="text-xs text-green-600 font-medium">✓ Complet</span>
-                                    : <span className="text-xs text-orange-500">En cours</span>}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                {colisageData && Array.isArray(colisageData) && (
+                  <div className="space-y-2">
+                    {colisageData.length === 0 && (
+                      <div className="text-center py-4 text-gray-400 text-sm">
+                        Aucun ordre de colisage pour cette facture.
                       </div>
-                    </div>
-
-                    {/* Liste des colis */}
-                    {colisageData.colis.length > 0 && (
-                      <div>
-                        <Separator className="my-3" />
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Colis créés</div>
-                        <div className="space-y-2">
-                          {colisageData.colis.map((c) => (
-                            <div
-                              key={c.colis_id}
-                              className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-[#040f1a]/30"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Package className="h-4 w-4 text-gray-400" />
-                                <div>
-                                  <div className="font-mono text-sm font-medium">{c.reference}</div>
-                                  <div className="text-xs text-gray-500">
-                                    {c.lignes?.length || 0} ligne(s) · {c.poids_total} kg
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white ${
-                                  c.statut === 'valide' ? 'bg-green-600' :
-                                  c.statut === 'expedie' ? 'bg-blue-600' :
-                                  c.statut === 'annule' ? 'bg-red-600' : 'bg-gray-500'
-                                }`}>
-                                  {c.statut === 'en_preparation' ? 'En préparation' :
-                                   c.statut === 'valide' ? 'Validé' :
-                                   c.statut === 'expedie' ? 'Expédié' : 'Annulé'}
-                                </span>
-                                {['super_admin', 'admin', 'gestionnaire'].includes(user?.role) &&
-                                  c.statut === 'en_preparation' && (
-                                  <Button
-                                    size="sm" variant="outline"
-                                    className="text-green-600 border-green-300 hover:bg-green-50 text-xs h-7"
-                                    onClick={() => handleValiderColis(c.colis_id)}
-                                  >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Valider
-                                  </Button>
-                                )}
-                              </div>
+                    )}
+                    {colisageData.map((ordre) => (
+                      <div
+                        key={ordre.ordre_id}
+                        className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-[#040f1a]/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Package className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div className="font-mono text-sm font-medium">{ordre.reference || ordre.ordre_id}</div>
+                            <div className="text-xs text-gray-500">
+                              Mode : {ordre.mode_expedition_prevu || "—"} · Priorité : {ordre.priorite || "—"}
                             </div>
-                          ))}
+                            {ordre.notes && <div className="text-xs text-gray-400 italic">{ordre.notes}</div>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white ${
+                            ordre.statut === 'colisage_termine' ? 'bg-green-600' :
+                            ordre.statut === 'livre' || ordre.statut === 'expedie' ? 'bg-blue-600' :
+                            ordre.statut === 'annule' ? 'bg-red-600' :
+                            ordre.statut === 'cloture' ? 'bg-gray-500' : 'bg-yellow-500'
+                          }`}>
+                            {ordre.statut === 'a_coliser' ? 'À coliser' :
+                             ordre.statut === 'en_preparation' ? 'En préparation' :
+                             ordre.statut === 'colisage_termine' ? 'Colisage terminé' :
+                             ordre.statut === 'livre' ? 'Livré' :
+                             ordre.statut === 'expedie' ? 'Expédié' :
+                             ordre.statut === 'cloture' ? 'Clôturé' : ordre.statut}
+                          </span>
+                          {['super_admin', 'admin', 'gestionnaire'].includes(user?.role) &&
+                            ['a_coliser', 'en_preparation'].includes(ordre.statut) && (
+                            <Button
+                              size="sm" variant="outline"
+                              className="text-green-600 border-green-300 hover:bg-green-50 text-xs h-7"
+                              onClick={() => handleValiderColis(ordre.ordre_id)}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Terminer
+                            </Button>
+                          )}
                         </div>
                       </div>
-                    )}
-
-                    {colisageData.colis.length === 0 && (
-                      <div className="text-center py-4 text-gray-400 text-sm">
-                        Aucun colis créé pour cette facture.
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -660,88 +615,20 @@ export default function FactureDetail() {
       </Dialog>
     </div>
 
-      {/* Dialog Création Colis depuis FactureDetail */}
+      {/* Dialog Création Ordre de Colisage depuis FactureDetail */}
       <Dialog open={showColisageForm} onOpenChange={setShowColisageForm}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Créer un colis — {facture?.reference}</DialogTitle>
+            <DialogTitle>Créer un ordre de colisage — {facture?.reference}</DialogTitle>
             <DialogDescription>
-              Saisir les quantités à coliser pour cette facture
+              Un OC sera créé pour cette facture et pris en charge par l'équipe colisage.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            {colisFormData.lignes.length === 0 && (
-              <div className="text-center py-4 text-amber-600 text-sm bg-amber-50 dark:bg-amber-900/20 rounded p-3">
-                Toutes les quantités ont déjà été colisées pour cette facture.
-              </div>
-            )}
-            {colisFormData.lignes.length > 0 && (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-gray-500 border-b">
-                    <th className="text-left pb-2">Produit</th>
-                    <th className="text-center pb-2">Restant</th>
-                    <th className="text-center pb-2 w-24">Qté à coliser</th>
-                    <th className="text-center pb-2 w-24">Poids/u (kg)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {colisFormData.lignes.map((lg, idx) => (
-                    <tr key={lg.ligne_facture_id} className="border-b last:border-0">
-                      <td className="py-2 pr-3">
-                        <div className="font-medium">{lg.designation}</div>
-                        <div className="text-xs text-gray-400">{lg.produit_id}</div>
-                      </td>
-                      <td className="text-center py-2">{lg.quantite_restante}</td>
-                      <td className="py-2 px-2">
-                        <Input
-                          type="number" min={0} max={lg.quantite_restante}
-                          value={lg.quantite_colisee}
-                          onChange={(e) => {
-                            const val = Math.min(parseInt(e.target.value) || 0, lg.quantite_restante);
-                            setColisFormData((prev) => {
-                              const ls = [...prev.lignes];
-                              ls[idx] = { ...ls[idx], quantite_colisee: val };
-                              return { ...prev, lignes: ls };
-                            });
-                          }}
-                          className="w-20 text-center"
-                        />
-                      </td>
-                      <td className="py-2 px-2">
-                        <Input
-                          type="number" min={0} step={0.1}
-                          value={lg.poids_unitaire}
-                          onChange={(e) => {
-                            const pu = parseFloat(e.target.value) || 0;
-                            setColisFormData((prev) => {
-                              const ls = [...prev.lignes];
-                              ls[idx] = { ...ls[idx], poids_unitaire: pu, poids_total: pu * ls[idx].quantite_colisee };
-                              return { ...prev, lignes: ls };
-                            });
-                          }}
-                          className="w-20 text-center"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Poids total (kg)</Label>
-                <Input
-                  type="number" min={0} step={0.1}
-                  value={colisFormData.poids_total}
-                  onChange={(e) => setColisFormData((p) => ({ ...p, poids_total: e.target.value }))}
-                />
-              </div>
-            </div>
+          <div className="space-y-4 py-2">
             <div>
               <Label>Notes (optionnel)</Label>
               <Textarea
-                rows={2} placeholder="Instructions..."
+                rows={3} placeholder="Instructions particulières, priorité, remarques..."
                 value={colisFormData.notes}
                 onChange={(e) => setColisFormData((p) => ({ ...p, notes: e.target.value }))}
               />
@@ -751,10 +638,10 @@ export default function FactureDetail() {
             <Button variant="outline" onClick={() => setShowColisageForm(false)}>Annuler</Button>
             <Button
               onClick={handleCreerColis}
-              disabled={savingColis || colisFormData.lignes.filter(l => l.quantite_colisee > 0).length === 0}
+              disabled={savingColis}
               className="bg-[#0A2540] hover:bg-[#0A2540]/90"
             >
-              {savingColis ? 'Création...' : 'Créer le colis'}
+              {savingColis ? 'Création...' : 'Créer l\'OC'}
             </Button>
           </DialogFooter>
         </DialogContent>

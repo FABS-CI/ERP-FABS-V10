@@ -90,6 +90,7 @@ class ProductIn(BaseModel):
     prix_vente: float = Field(..., gt=0)
     stock_actuel: int = Field(default=0, ge=0)
     stock_minimum: int = Field(default=10, ge=0)
+    conditionnement_carton: Optional[int] = Field(default=None, ge=1, description="Nombre d'unités par carton pour le colisage")
 
     @field_validator("titre", "auteur", "collection", "isbn", "niveau_scolaire", mode="before")
     @classmethod
@@ -109,15 +110,16 @@ class ProductPatch(BaseModel):
     stock_actuel: Optional[int] = Field(default=None, ge=0)
     stock_minimum: Optional[int] = Field(default=None, ge=0)
     actif: Optional[bool] = None
+    conditionnement_carton: Optional[int] = Field(default=None, ge=1, description="Unités par carton")
 
 
 class ProductOut(BaseModel):
     product_id: str
     reference: str
-    titre: str
+    titre: Optional[str] = None
     auteur: Optional[str] = None
     collection: Optional[str] = None
-    categorie: Categorie
+    categorie: Optional[Categorie] = None
     niveau_scolaire: Optional[str] = None
     isbn: Optional[str] = None
     prix_achat: Optional[float] = None  # null if requester is not in FINANCIAL_ROLES
@@ -126,8 +128,16 @@ class ProductOut(BaseModel):
     stock_minimum: int
     statut_stock: str  # ok | alerte | rupture
     actif: bool
+    conditionnement_carton: Optional[int] = None
     created_at: str
     updated_at: str
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def _coerce_datetime(cls, v):
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+        return v
 
 
 class ProductListOut(BaseModel):
@@ -169,16 +179,22 @@ def project_product(doc: dict, *, see_prix_achat: bool) -> dict:
     if "reference" not in d and "code_article" in d:
         d["reference"] = d["code_article"]
     d.setdefault("reference", d.get("product_id", ""))
+    # Compat : titre manquant → fallback sur designation (import legacy)
+    d.setdefault("titre", d.get("designation", ""))
     # Compat : normaliser categorie label → littéral
     cat = d.get("categorie")
     if cat in _CATEGORIE_NORMALIZE:
         d["categorie"] = _CATEGORIE_NORMALIZE[cat]
+    # Compat : categorie None → fallback livre_commun
+    if not d.get("categorie"):
+        d["categorie"] = "livre_commun"
     # Compat : seuil_alerte (legacy) → stock_minimum
     if "stock_minimum" not in d and "seuil_alerte" in d:
         d["stock_minimum"] = d.get("seuil_alerte", 10)
     d.setdefault("stock_minimum", 10)
     d.setdefault("stock_actuel", 0)
     d["statut_stock"] = compute_stock_status(d.get("stock_actuel", 0), d.get("stock_minimum", 0))
+    d.setdefault("conditionnement_carton", None)
     if not see_prix_achat:
         d["prix_achat"] = None
     return d

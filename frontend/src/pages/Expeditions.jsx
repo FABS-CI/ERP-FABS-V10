@@ -1,431 +1,583 @@
-import { useEffect, useState } from "react";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { Plus, Search, Truck, Eye, CheckCircle, MapPin, Calendar } from "lucide-react";
-import { listExpeditions, createExpedition, updateExpeditionStatut } from "@/services/colisageService";
+import {
+  Truck, Search, Plus, CheckCircle, AlertTriangle,
+  MapPin, RefreshCw, Package, RotateCcw, Phone, X
+} from "lucide-react";
+import {
+  listExpeditionsColisage, createExpeditionColisage, updateExpeditionColisageStatut,
+  receptionnerExpedition, recupererExpedition, signalerIncidentExpedition
+} from "@/services/colisageService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/layout/PageHeader";
 
-const Expeditions = () => {
+const STATUT_CONFIG = {
+  en_preparation: { label: "Préparation", color: "bg-yellow-100 text-yellow-800" },
+  expedie: { label: "Expédié", color: "bg-indigo-100 text-indigo-800" },
+  en_transit: { label: "En transit", color: "bg-blue-100 text-blue-800" },
+  arrive_destination: { label: "Arrivé dest.", color: "bg-purple-100 text-purple-800" },
+  receptionne: { label: "Réceptionné", color: "bg-green-100 text-green-800" },
+  recuperation: { label: "Récupération", color: "bg-orange-100 text-orange-800" },
+  recupere: { label: "Récupéré", color: "bg-gray-100 text-gray-800" },
+  incident: { label: "Incident", color: "bg-red-100 text-red-800" },
+  cloture: { label: "Clôturé", color: "bg-gray-100 text-gray-700" },
+};
+
+const STATUT_TRANSITIONS = {
+  en_preparation: ["expedie", "cloture"],
+  expedie: ["en_transit", "arrive_destination", "incident"],
+  en_transit: ["arrive_destination", "incident"],
+  arrive_destination: ["receptionne", "recuperation", "incident"],
+  recuperation: ["recupere"],
+};
+
+const TRANSPORTEURS = [
+  "CTI (Compagnie de Transport Ivoirien)", "STS", "SETV",
+  "SOTRA Fret", "Transit Express CI", "FedEx CI", "DHL CI", "Autre"
+];
+
+const VILLES_CI = [
+  "Bouaké", "Daloa", "Korhogo", "Man", "San-Pédro", "Yamoussoukro",
+  "Divo", "Gagnoa", "Abengourou", "Bondoukou", "Odienné", "Touba",
+  "Ferkessédougou", "Katiola", "Séguéla", "Grand-Bassam", "Jacqueville"
+];
+
+const StatutBadge = ({ statut }) => {
+  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 text-gray-700" };
+  return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>;
+};
+
+export default function Expeditions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 350);
-  const [selectedExpedition, setSelectedExpedition] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showStatut, setShowStatut] = useState(null);
+  const [showReception, setShowReception] = useState(null);
+  const [showRecuperation, setShowRecuperation] = useState(null);
+  const [showIncident, setShowIncident] = useState(null);
+  const [newStatut, setNewStatut] = useState("");
+  const [statutNotes, setStatutNotes] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 350);
+
   const [formData, setFormData] = useState({
-    colis_ids: [],
-    commande_id: "",
-    adresse_livraison: {
-      nom: "",
-      adresse: "",
-      ville: "",
-      pays: "Côte d'Ivoire",
-      telephone: "",
-    },
-    date_expedition: "",
+    ordre_colisage_id: "",
+    transporteur: "",
+    numero_tracking: "",
+    ville_destination: "",
+    adresse_destination: { nom: "", adresse: "", telephone: "" },
+    date_expedition_prevue: "",
     date_livraison_prevue: "",
+    frais_transport: "",
     notes: "",
   });
 
+  const [receptionData, setReceptionData] = useState({ signature: "", commentaire: "" });
+  const [recupData, setRecupData] = useState({ motif: "", responsable: "" });
+  const [incidentData, setIncidentData] = useState({ type_incident: "retard", description: "" });
+
   const { data: expeditionsList, isLoading } = useQuery(
-    ["expeditions", debouncedSearch, statutFilter],
-    () => listExpeditions({ q: debouncedSearch, statut: statutFilter }),
+    ["expeditions-colisage", debouncedSearch, statutFilter],
+    () => listExpeditionsColisage({ q: debouncedSearch, statut: statutFilter, limit: 50 }),
     { enabled: !!user }
   );
 
-  const createMutation = useMutation(createExpedition, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(["expeditions"]);
-      toast.success("Expédition créée avec succès");
+  const createMutation = useMutation(createExpeditionColisage, {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["expeditions-colisage"]);
+      toast.success(`Expédition ${data.reference} créée`);
       setShowCreate(false);
       setFormData({
-        colis_ids: [],
-        commande_id: "",
-        adresse_livraison: {
-          nom: "",
-          adresse: "",
-          ville: "",
-          pays: "Côte d'Ivoire",
-          telephone: "",
-        },
-        date_expedition: "",
-        date_livraison_prevue: "",
-        notes: "",
+        ordre_colisage_id: "", transporteur: "", numero_tracking: "", ville_destination: "",
+        adresse_destination: { nom: "", adresse: "", telephone: "" },
+        date_expedition_prevue: "", date_livraison_prevue: "", frais_transport: "", notes: "",
       });
     },
-    onError: () => {
-      toast.error("Erreur lors de la création");
-    },
+    onError: (err) => toast.error(err?.response?.data?.detail || "Erreur"),
   });
 
-  const updateStatutMutation = useMutation(
-    ({ expeditionId, statut, dateLivraisonReelle }) =>
-      updateExpeditionStatut(expeditionId, statut, dateLivraisonReelle),
+  const statutMutation = useMutation(
+    ({ id, statut, notes }) => updateExpeditionColisageStatut(id, statut, notes),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(["expeditions"]);
+        queryClient.invalidateQueries(["expeditions-colisage"]);
         toast.success("Statut mis à jour");
+        setShowStatut(null);
       },
-      onError: () => {
-        toast.error("Erreur lors de la mise à jour du statut");
-      },
+      onError: (err) => toast.error(err?.response?.data?.detail || "Erreur"),
     }
   );
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    createMutation.mutate(formData);
-  };
+  const receptionMutation = useMutation(
+    ({ id, data }) => receptionnerExpedition(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["expeditions-colisage"]);
+        toast.success("Réception enregistrée");
+        setShowReception(null);
+      },
+      onError: (err) => toast.error(err?.response?.data?.detail || "Erreur"),
+    }
+  );
 
-  const handleStatutChange = (expeditionId, newStatut) => {
-    const dateLivraisonReelle = newStatut === "livre" ? new Date().toISOString().split("T")[0] : null;
-    updateStatutMutation.mutate({ expeditionId, statut: newStatut, dateLivraisonReelle });
-  };
+  const recupMutation = useMutation(
+    ({ id, data }) => recupererExpedition(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["expeditions-colisage"]);
+        toast.success("Récupération enregistrée");
+        setShowRecuperation(null);
+      },
+      onError: (err) => toast.error(err?.response?.data?.detail || "Erreur"),
+    }
+  );
 
-  const getStatutBadge = (statut) => {
-    const variants = {
-      en_preparation: "secondary",
-      pret: "default",
-      en_transit: "warning",
-      livre: "success",
-      annule: "destructive",
-    };
-    const labels = {
-      en_preparation: "En préparation",
-      pret: "Prêt",
-      en_transit: "En transit",
-      livre: "Livré",
-      annule: "Annulé",
-    };
-    return (
-      <Badge variant={variants[statut] || "secondary"}>
-        {labels[statut] || statut}
-      </Badge>
-    );
-  };
+  const incidentMutation = useMutation(
+    ({ id, data }) => signalerIncidentExpedition(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["expeditions-colisage"]);
+        toast.success("Incident signalé");
+        setShowIncident(null);
+      },
+      onError: (err) => toast.error(err?.response?.data?.detail || "Erreur"),
+    }
+  );
 
-  if (isLoading) return <DashboardLayout><div>Chargement...</div></DashboardLayout>;
+  const expeditions = expeditionsList?.items || expeditionsList || [];
+
+  const stats = {
+    en_cours: expeditions.filter((e) => ["expedie", "en_transit"].includes(e.statut)).length,
+    arrives: expeditions.filter((e) => e.statut === "arrive_destination").length,
+    receptionnes: expeditions.filter((e) => e.statut === "receptionne").length,
+    incidents: expeditions.filter((e) => e.statut === "incident").length,
+  };
 
   return (
     <DashboardLayout>
-    <div data-testid="expeditions-page">
-      <PageHeader
-        icon={Truck}
-        title="Gestion des Expéditions"
-        description="Liste des expéditions et livraisons"
-        favoriteKey="expeditions"
-        actions={
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#FF6200] hover:bg-[#E65800]" data-testid="btn-new-expedition">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle Expédition
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Créer une Expédition</DialogTitle>
-                <DialogDescription>
-                  Sélectionnez les colis et définissez l'adresse de livraison
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-commande">Commande ID *</Label>
-                    <Input
-                      id="exp-commande"
-                      value={formData.commande_id}
-                      onChange={(e) => setFormData({ ...formData, commande_id: e.target.value })}
-                      required
-                      data-testid="input-commande-id"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-colis">Colis IDs (séparés par virgule) *</Label>
-                    <Input
-                      id="exp-colis"
-                      value={formData.colis_ids.join(", ")}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          colis_ids: e.target.value.split(",").map((s) => s.trim()),
-                        })
-                      }
-                      required
-                      data-testid="input-colis-ids"
-                    />
-                  </div>
-                </div>
-                <div className="rounded-lg border border-gray-200 dark:border-white/10 p-3 space-y-3 bg-gray-50/50 dark:bg-white/5">
-                  <Label className="text-[#0A2540] dark:text-white font-semibold">Adresse de livraison</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="exp-nom" className="text-xs text-muted-foreground">Nom destinataire *</Label>
-                      <Input
-                        id="exp-nom"
-                        value={formData.adresse_livraison.nom}
-                        onChange={(e) =>
-                          setFormData({ ...formData, adresse_livraison: { ...formData.adresse_livraison, nom: e.target.value } })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="exp-tel" className="text-xs text-muted-foreground">Téléphone *</Label>
-                      <Input
-                        id="exp-tel"
-                        value={formData.adresse_livraison.telephone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, adresse_livraison: { ...formData.adresse_livraison, telephone: e.target.value } })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-adresse" className="text-xs text-muted-foreground">Adresse *</Label>
-                    <Input
-                      id="exp-adresse"
-                      value={formData.adresse_livraison.adresse}
-                      onChange={(e) =>
-                        setFormData({ ...formData, adresse_livraison: { ...formData.adresse_livraison, adresse: e.target.value } })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-ville" className="text-xs text-muted-foreground">Ville *</Label>
-                    <Input
-                      id="exp-ville"
-                      value={formData.adresse_livraison.ville}
-                      onChange={(e) =>
-                        setFormData({ ...formData, adresse_livraison: { ...formData.adresse_livraison, ville: e.target.value } })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-date-dep">Date d'expédition</Label>
-                    <Input
-                      id="exp-date-dep"
-                      type="date"
-                      value={formData.date_expedition}
-                      onChange={(e) => setFormData({ ...formData, date_expedition: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exp-date-liv">Date de livraison prévue</Label>
-                    <Input
-                      id="exp-date-liv"
-                      type="date"
-                      value={formData.date_livraison_prevue}
-                      onChange={(e) => setFormData({ ...formData, date_livraison_prevue: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="exp-notes">Notes</Label>
-                  <Textarea
-                    id="exp-notes"
-                    rows={2}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit" className="bg-[#FF6200] hover:bg-[#E65800]" data-testid="btn-submit-expedition">
-                    Créer l'Expédition
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        }
-      />
+      <div className="space-y-6">
+        <PageHeader
+          title="Expéditions"
+          description="Transport vers villes distantes — suivi, réception et récupération"
+          icon={Truck}
+          accentColor="#6366F1"
+          favoriteKey="expeditions"
+          actions={
+            <Button onClick={() => setShowCreate(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> Nouvelle expédition
+            </Button>
+          }
+        />
 
-      <Card>
-        <CardHeader>
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Client, représentant, ville, téléphone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={statutFilter}
-              onChange={(e) => setStatutFilter(e.target.value)}
-              className="px-4 py-2 border rounded-md bg-white dark:bg-[#040f1a] dark:border-gray-700"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="en_preparation">En préparation</option>
-              <option value="pret">Prêt</option>
-              <option value="en_transit">En transit</option>
-              <option value="livre">Livré</option>
-              <option value="annule">Annulé</option>
-            </select>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "En cours", val: stats.en_cours, color: "text-indigo-600", icon: Truck },
+            { label: "À destination", val: stats.arrives, color: "text-purple-600", icon: MapPin },
+            { label: "Réceptionnés", val: stats.receptionnes, color: "text-green-600", icon: CheckCircle },
+            { label: "Incidents", val: stats.incidents, color: "text-red-600", icon: AlertTriangle },
+          ].map(({ label, val, color, icon: Icon }) => (
+            <Card key={label}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className={`text-xl font-bold ${color}`}>{val}</p>
+                </div>
+                <Icon className="w-5 h-5 text-gray-300" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Filtres */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Référence, transporteur, ville..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Référence</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Client</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Colis</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Adresse</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Statut</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[#0A2540] dark:text-white">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expeditionsList?.map((exp) => (
-                  <tr key={exp.expedition_id} className="border-b hover:bg-gray-50 dark:hover:bg-[#040f1a]/50">
-                    <td className="py-3 px-4 font-medium">{exp.reference}</td>
-                    <td className="py-3 px-4">{exp.client_id}</td>
-                    <td className="py-3 px-4">{exp.colis_ids.length} colis</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{exp.adresse_livraison.ville}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">{getStatutBadge(exp.statut)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedExpedition(exp);
-                            setShowDetail(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {exp.statut === "pret" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatutChange(exp.expedition_id, "en_transit")}
-                          >
-                            <Truck className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {exp.statut === "en_transit" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatutChange(exp.expedition_id, "livre")}
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {expeditionsList?.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                Aucune expédition trouvée
+          <select
+            className="border rounded-md px-3 py-2 text-sm bg-white"
+            value={statutFilter}
+            onChange={(e) => setStatutFilter(e.target.value)}
+          >
+            <option value="">Tous les statuts</option>
+            {Object.entries(STATUT_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+          <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries(["expeditions-colisage"])}>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Tableau */}
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32 text-gray-400">
+                <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Chargement...
+              </div>
+            ) : expeditions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                <Truck className="w-8 h-8 mb-2" />
+                <p className="text-sm">Aucune expédition</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50 text-gray-600">
+                      <th className="text-left px-4 py-3 font-medium">Référence</th>
+                      <th className="text-left px-4 py-3 font-medium">Destination</th>
+                      <th className="text-left px-4 py-3 font-medium">Transporteur</th>
+                      <th className="text-left px-4 py-3 font-medium">Tracking</th>
+                      <th className="text-left px-4 py-3 font-medium">Date prévue</th>
+                      <th className="text-left px-4 py-3 font-medium">Statut</th>
+                      <th className="text-right px-4 py-3 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expeditions.map((exp) => {
+                      const transitions = STATUT_TRANSITIONS[exp.statut] || [];
+                      return (
+                        <tr key={exp._id || exp.expedition_id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-mono text-xs font-medium text-indigo-700">{exp.reference}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-gray-400" />
+                              <span>{exp.ville_destination || exp.adresse_destination?.nom || "—"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs">{exp.transporteur || "—"}</td>
+                          <td className="px-4 py-3 text-xs font-mono text-gray-600">{exp.numero_tracking || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500">
+                            {exp.date_livraison_prevue
+                              ? new Date(exp.date_livraison_prevue).toLocaleDateString("fr-CI")
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3"><StatutBadge statut={exp.statut} /></td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              {transitions.length > 0 && (
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs"
+                                  onClick={() => { setShowStatut(exp); setNewStatut(transitions[0]); }}>
+                                  Avancer
+                                </Button>
+                              )}
+                              {exp.statut === "arrive_destination" && (
+                                <Button size="sm" variant="outline"
+                                  className="h-7 px-2 text-xs text-green-700 border-green-300"
+                                  onClick={() => setShowReception(exp)}>
+                                  <CheckCircle className="w-3 h-3 mr-1" /> Réceptionner
+                                </Button>
+                              )}
+                              {exp.statut === "arrive_destination" && (
+                                <Button size="sm" variant="outline"
+                                  className="h-7 px-2 text-xs text-orange-700 border-orange-300"
+                                  onClick={() => setShowRecuperation(exp)}>
+                                  <RotateCcw className="w-3 h-3 mr-1" /> Récupération
+                                </Button>
+                              )}
+                              {["expedie", "en_transit", "arrive_destination"].includes(exp.statut) && (
+                                <Button size="sm" variant="ghost"
+                                  className="h-7 px-2 text-xs text-red-600"
+                                  onClick={() => setShowIncident(exp)}>
+                                  <AlertTriangle className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Détails de l'Expédition</DialogTitle>
-            <DialogDescription>
-              {selectedExpedition?.reference}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedExpedition && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        {/* Dialog créer */}
+        <Dialog open={showCreate} onOpenChange={setShowCreate}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nouvelle Expédition</DialogTitle>
+              <DialogDescription>Villes hors Abidjan</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>ID Ordre de colisage *</Label>
+                <Input
+                  placeholder="oc_xxxxx"
+                  value={formData.ordre_colisage_id}
+                  onChange={(e) => setFormData({ ...formData, ordre_colisage_id: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Référence</label>
-                  <p className="font-semibold">{selectedExpedition.reference}</p>
+                  <Label>Transporteur *</Label>
+                  <select
+                    className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                    value={formData.transporteur}
+                    onChange={(e) => setFormData({ ...formData, transporteur: e.target.value })}
+                  >
+                    <option value="">Sélectionner</option>
+                    {TRANSPORTEURS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Statut</label>
-                  <div>{getStatutBadge(selectedExpedition.statut)}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Client</label>
-                  <p className="font-semibold">{selectedExpedition.client_id}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Commande</label>
-                  <p className="font-semibold">{selectedExpedition.commande_id}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Date d'expédition</label>
-                  <p className="font-semibold">{selectedExpedition.date_expedition || "Non définie"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Date de livraison prévue</label>
-                  <p className="font-semibold">{selectedExpedition.date_livraison_prevue || "Non définie"}</p>
+                  <Label>N° Tracking</Label>
+                  <Input
+                    value={formData.numero_tracking}
+                    onChange={(e) => setFormData({ ...formData, numero_tracking: e.target.value })}
+                  />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Adresse de livraison</label>
-                <div className="mt-2 p-3 bg-gray-50 dark:bg-[#040f1a] rounded">
-                  <p className="font-semibold">{selectedExpedition.adresse_livraison.nom}</p>
-                  <p>{selectedExpedition.adresse_livraison.adresse}</p>
-                  <p>{selectedExpedition.adresse_livraison.ville}, {selectedExpedition.adresse_livraison.pays}</p>
-                  <p className="text-sm text-gray-500">{selectedExpedition.adresse_livraison.telephone}</p>
+                <Label>Ville destination *</Label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                  value={formData.ville_destination}
+                  onChange={(e) => setFormData({ ...formData, ville_destination: e.target.value })}
+                >
+                  <option value="">Sélectionner</option>
+                  {VILLES_CI.map((v) => <option key={v} value={v}>{v}</option>)}
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+              <hr />
+              <p className="text-sm font-medium">Destinataire</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nom</Label>
+                  <Input
+                    value={formData.adresse_destination.nom}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      adresse_destination: { ...formData.adresse_destination, nom: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Téléphone</Label>
+                  <Input
+                    value={formData.adresse_destination.telephone}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      adresse_destination: { ...formData.adresse_destination, telephone: e.target.value }
+                    })}
+                  />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Colis ({selectedExpedition.colis_ids.length})</label>
-                <div className="mt-2 space-y-1">
-                  {selectedExpedition.colis_ids.map((colisId) => (
-                    <div key={colisId} className="p-2 bg-gray-50 dark:bg-[#040f1a] rounded text-sm font-mono">
-                      {colisId}
-                    </div>
-                  ))}
+                <Label>Adresse</Label>
+                <Input
+                  value={formData.adresse_destination.adresse}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    adresse_destination: { ...formData.adresse_destination, adresse: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Date expédition</Label>
+                  <Input type="date" value={formData.date_expedition_prevue}
+                    onChange={(e) => setFormData({ ...formData, date_expedition_prevue: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Date livraison prévue</Label>
+                  <Input type="date" value={formData.date_livraison_prevue}
+                    onChange={(e) => setFormData({ ...formData, date_livraison_prevue: e.target.value })} />
                 </div>
               </div>
-              {selectedExpedition.notes && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Notes</label>
-                  <p className="mt-1">{selectedExpedition.notes}</p>
-                </div>
-              )}
+              <div>
+                <Label>Frais de transport (FCFA)</Label>
+                <Input
+                  type="number"
+                  value={formData.frais_transport}
+                  onChange={(e) => setFormData({ ...formData, frais_transport: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} />
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
+                <Button
+                  onClick={() => createMutation.mutate({
+                    ...formData,
+                    frais_transport: formData.frais_transport ? parseFloat(formData.frais_transport) : null,
+                  })}
+                  disabled={!formData.ordre_colisage_id || !formData.transporteur || !formData.ville_destination || createMutation.isLoading}
+                >
+                  {createMutation.isLoading ? "Création..." : "Créer"}
+                </Button>
+              </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog statut */}
+        <Dialog open={!!showStatut} onOpenChange={(open) => !open && setShowStatut(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Changer statut</DialogTitle>
+              <DialogDescription>{showStatut?.reference}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Nouveau statut</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                  value={newStatut} onChange={(e) => setNewStatut(e.target.value)}>
+                  {(STATUT_TRANSITIONS[showStatut?.statut] || []).map((s) => (
+                    <option key={s} value={s}>{STATUT_CONFIG[s]?.label || s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea value={statutNotes} onChange={(e) => setStatutNotes(e.target.value)} rows={2} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowStatut(null)}>Annuler</Button>
+                <Button
+                  onClick={() => statutMutation.mutate({
+                    id: showStatut._id || showStatut.expedition_id,
+                    statut: newStatut, notes: statutNotes || null,
+                  })}
+                  disabled={statutMutation.isLoading}
+                >Confirmer</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog réception */}
+        <Dialog open={!!showReception} onOpenChange={(open) => !open && setShowReception(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Réceptionner l'expédition</DialogTitle>
+              <DialogDescription>{showReception?.reference}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Signature / réceptionnaire</Label>
+                <Input value={receptionData.signature}
+                  onChange={(e) => setReceptionData({ ...receptionData, signature: e.target.value })} />
+              </div>
+              <div>
+                <Label>Commentaire</Label>
+                <Textarea value={receptionData.commentaire}
+                  onChange={(e) => setReceptionData({ ...receptionData, commentaire: e.target.value })} rows={2} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowReception(null)}>Annuler</Button>
+                <Button className="bg-green-600 hover:bg-green-700"
+                  onClick={() => receptionMutation.mutate({
+                    id: showReception._id || showReception.expedition_id,
+                    data: receptionData,
+                  })}
+                  disabled={receptionMutation.isLoading}>
+                  <CheckCircle className="w-4 h-4 mr-1" /> Confirmer
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog récupération */}
+        <Dialog open={!!showRecuperation} onOpenChange={(open) => !open && setShowRecuperation(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Récupération marchandise</DialogTitle>
+              <DialogDescription>{showRecuperation?.reference}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Motif *</Label>
+                <Textarea value={recupData.motif}
+                  onChange={(e) => setRecupData({ ...recupData, motif: e.target.value })} rows={2} />
+              </div>
+              <div>
+                <Label>Responsable</Label>
+                <Input value={recupData.responsable}
+                  onChange={(e) => setRecupData({ ...recupData, responsable: e.target.value })} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowRecuperation(null)}>Annuler</Button>
+                <Button variant="outline" className="border-orange-300 text-orange-700"
+                  onClick={() => recupMutation.mutate({
+                    id: showRecuperation._id || showRecuperation.expedition_id,
+                    data: recupData,
+                  })}
+                  disabled={!recupData.motif || recupMutation.isLoading}>
+                  <RotateCcw className="w-4 h-4 mr-1" /> Récupérer
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog incident */}
+        <Dialog open={!!showIncident} onOpenChange={(open) => !open && setShowIncident(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Signaler un incident</DialogTitle>
+              <DialogDescription>{showIncident?.reference}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Type</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                  value={incidentData.type_incident}
+                  onChange={(e) => setIncidentData({ ...incidentData, type_incident: e.target.value })}>
+                  <option value="retard">Retard</option>
+                  <option value="colis_endommage">Colis endommagé</option>
+                  <option value="perte">Perte / vol</option>
+                  <option value="mauvaise_adresse">Mauvaise adresse</option>
+                  <option value="refus">Refus réception</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+              <div>
+                <Label>Description *</Label>
+                <Textarea value={incidentData.description}
+                  onChange={(e) => setIncidentData({ ...incidentData, description: e.target.value })} rows={3} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowIncident(null)}>Annuler</Button>
+                <Button variant="destructive"
+                  onClick={() => incidentMutation.mutate({
+                    id: showIncident._id || showIncident.expedition_id,
+                    data: incidentData,
+                  })}
+                  disabled={!incidentData.description || incidentMutation.isLoading}>
+                  <AlertTriangle className="w-4 h-4 mr-1" /> Signaler
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </DashboardLayout>
   );
-};
-
-export default Expeditions;
+}

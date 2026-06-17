@@ -22,10 +22,13 @@ import re
 import uuid
 import logging
 import os
+import asyncio
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from sanitizers import sanitize_str
+from pymongo.errors import InvalidOperation, OperationFailure
 from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.commandes")
@@ -33,11 +36,11 @@ logger = logging.getLogger("fabsci.commandes")
 # RBAC
 READ_ROLES = {
     "super_admin", "directeur_general", "directeur_commercial",
-    "secretariat", "comptable", "assistante_commerciale",
+    "secretariat", "comptable", "assistante_commerciale", "assistante",
 }
 WRITE_ROLES = {
     "super_admin", "directeur_general",
-    "directeur_commercial", "secretariat", "assistante_commerciale",
+    "directeur_commercial", "secretariat", "assistante_commerciale", "assistante",
 }
 # Validation interdite à l'assistante_commerciale
 VALIDATE_ROLES = {"super_admin", "directeur_general", "directeur_commercial", "secretariat", "comptable"}
@@ -66,8 +69,11 @@ async def _send_email_smtp(destinataire: str, sujet: str, corps_html: str, corps
     smtp_from = os.getenv("SMTP_FROM")
     
     if not all([smtp_host, smtp_user, smtp_password, smtp_from]):
-        return {"success": False, "error": "Configuration SMTP manquante"}
-    
+        raise HTTPException(
+            status_code=503,
+            detail="Service email non configuré. Contactez l'administrateur."
+        )
+
     try:
         import smtplib
         from email.mime.multipart import MIMEMultipart
@@ -90,10 +96,19 @@ async def _send_email_smtp(destinataire: str, sujet: str, corps_html: str, corps
         
         with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
             server.starttls()
-            server.login(smtp_user, smtp_password)
+            try:
+                server.login(smtp_user, smtp_password)
+            except smtplib.SMTPAuthenticationError as auth_err:
+                logger.error(f"Erreur authentification SMTP: {auth_err}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Échec d'authentification SMTP. Vérifiez les identifiants SMTP."
+                )
             server.send_message(msg)
         
         return {"success": True, "message_id": f"email_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erreur SMTP: {e}")
         return {"success": False, "error": str(e)}
@@ -149,6 +164,8 @@ class CommandeIn(BaseModel):
     taux_tva: float = Field(default=18.0, ge=0, le=100, description="Taux TVA en % (0 pour produits exonérés)")
     notes: Optional[str] = Field(default=None, max_length=1000)
     lignes: List[LigneCommandeIn] = Field(..., min_length=1)
+
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
     @field_validator("date_livraison_prevue", mode="before")
     @classmethod
@@ -290,7 +307,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
     router = APIRouter(prefix="/commandes", tags=["commandes"])
 
     # ---------- LIST ----------
-    @router.get("", response_model=List[CommandeOut])
+    @router.get("")
     async def list_commandes(
         request: Request,
         authorization: Optional[str] = Header(default=None),
@@ -351,14 +368,37 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 {"client_representant": {"$regex": safe_q, "$options": "i"}},
             ]}})
 
+        pipeline_count = [{"$match": filters}]
+        if q:
+            safe_q = re.escape(q)
+            pipeline_count.append({"$match": {"$or": [
+                {"reference": {"$regex": safe_q, "$options": "i"}},
+                {"client_nom": {"$regex": safe_q, "$options": "i"}},
+                {"client_ville": {"$regex": safe_q, "$options": "i"}},
+                {"client_telephone": {"$regex": safe_q, "$options": "i"}},
+                {"client_representant": {"$regex": safe_q, "$options": "i"}},
+            ]}})
+        pipeline_count.append({"$count": "total"})
+
         pipeline += [
             {"$sort": {"date_commande": -1}},
             {"$skip": skip},
             {"$limit": limit}
         ]
-        
-        docs = await db.commandes.aggregate(pipeline).to_list(limit)
-        return [CommandeOut(**d) for d in docs]
+
+        docs, count_res = await asyncio.gather(
+            db.commandes.aggregate(pipeline).to_list(limit),
+            db.commandes.aggregate(pipeline_count).to_list(1),
+        )
+        total = count_res[0]["total"] if count_res else 0
+        page = (skip // limit) + 1 if limit else 1
+        return {
+            "items": [CommandeOut(**d).model_dump() for d in docs],
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "has_next": skip + limit < total,
+        }
 
     # ---------- CREATE ----------
     @router.post("", response_model=CommandeOut, status_code=201)
@@ -619,15 +659,91 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         
         cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         _ensure(cmd is not None, 404, "Commande introuvable")
+        if cmd["statut"] == "brouillon":
+            raise HTTPException(
+                status_code=400,
+                detail="Cette commande est en brouillon. Passez-la d'abord en attente via /soumettre avant de la valider."
+            )
         _ensure(cmd["statut"] == "en_attente", 400, f"Commande déjà {cmd['statut']}")
 
         # Check validation threshold
         needs_dg = cmd["montant_total"] > VALIDATION_THRESHOLD
         if needs_dg:
-            _ensure(me["role"] in {"super_admin", "directeur_general"}, 403, 
+            _ensure(me["role"] in {"super_admin", "directeur_general"}, 403,
                    "Validation DG requise pour montant > 500 000 FCFA")
         else:
             _ensure(me["role"] in VALIDATE_ROLES, 403, "Accès refusé")
+
+        # TICKET-006 — Vérification de stock avant validation
+        lignes_verif = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(100)
+        ruptures = []
+        for ligne in lignes_verif:
+            produit_id = ligne.get("produit_id")
+            qte_demandee = int(ligne.get("quantite", 0))
+            if not produit_id or qte_demandee <= 0:
+                continue
+            produit = await db.produits.find_one(
+                {"product_id": produit_id},
+                {"_id": 0, "stock_actuel": 1, "titre": 1, "reference": 1},
+            )
+            if produit is None:
+                continue  # Produit supprimé — on laisse passer, géré à la livraison
+            stock_dispo = produit.get("stock_actuel", 0)
+            if stock_dispo < qte_demandee:
+                ruptures.append({
+                    "produit_id": produit_id,
+                    "designation": produit.get("titre", produit_id),
+                    "stock_disponible": stock_dispo,
+                    "quantite_demandee": qte_demandee,
+                })
+        if ruptures:
+            detail_str = "; ".join(
+                f"{r['designation']} (dispo={r['stock_disponible']}, demandé={r['quantite_demandee']})"
+                for r in ruptures
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Stock insuffisant pour valider la commande : {detail_str}",
+            )
+
+        # TICKET-009 — Vérification plafond de crédit client
+        client_data = await db.clients.find_one({"client_id": cmd["client_id"]}, {"_id": 0})
+        if client_data:
+            plafond = client_data.get("plafond_credit", 0) or 0
+            if plafond > 0:
+                # Calcul encours actuel = somme des montants restants sur factures ouvertes
+                factures_ouvertes = await db.factures.find(
+                    {
+                        "client_id": cmd["client_id"],
+                        "statut": {"$in": ["emise", "partiellement_payee", "en_retard"]},
+                    },
+                    {"_id": 0, "montant_restant": 1, "montant_ttc": 1},
+                ).to_list(None)
+                encours_actuel = sum(
+                    f.get("montant_restant", f.get("montant_ttc", 0))
+                    for f in factures_ouvertes
+                )
+                montant_commande = cmd.get("montant_total", 0)
+                encours_apres = encours_actuel + montant_commande
+                if encours_apres > plafond:
+                    depassement = round(encours_apres - plafond, 2)
+                    raise HTTPException(
+                        status_code=400,
+                        detail={
+                            "code": "PLAFOND_CREDIT_DEPASSE",
+                            "message": (
+                                f"Plafond de crédit dépassé pour {client_data.get('nom', cmd['client_id'])}. "
+                                f"Plafond : {plafond:,.0f} FCFA — Encours actuel : {encours_actuel:,.0f} FCFA — "
+                                f"Cette commande : {montant_commande:,.0f} FCFA — "
+                                f"Dépassement : {depassement:,.0f} FCFA."
+                            ),
+                            "plafond_credit": plafond,
+                            "encours_actuel": round(encours_actuel, 2),
+                            "montant_commande": montant_commande,
+                            "encours_apres_validation": round(encours_apres, 2),
+                            "depassement": depassement,
+                        },
+                    )
 
         now = _now_iso()
 
@@ -720,8 +836,17 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 taux_tva_cmd = cmd.get("taux_tva", 18.0)
                 remise_globale_cmd = cmd.get("remise_globale", 0.0)
 
-                # Calcul des montants depuis la commande directement
-                montant_ht_cmd = cmd.get("montant_ht", 0.0) - cmd.get("montant_remise", 0.0)
+                # TICKET-008 — Calcul HT net depuis les lignes (évite la double déduction
+                # si montant_ht en base est déjà net d'une remise antérieure).
+                # montant_ht (base) = Σ montant_ligne = HT brut après remises lignes.
+                # montant_remise (base) = remise globale FCFA = montant_ht * remise_globale/100.
+                # HT net = montant_ht - montant_remise (calcul unique, sans double soustraction).
+                _montant_ht_brut = cmd.get("montant_ht", 0.0)
+                _montant_remise = cmd.get("montant_remise", 0.0)
+                montant_ht_cmd = round(_montant_ht_brut - _montant_remise, 2)
+                if montant_ht_cmd < 0:
+                    montant_ht_cmd = 0.0
+                    logger.warning(f"[TICKET-008] HT net négatif pour commande {commande_id} — forcé à 0")
                 montant_tva_fac = round(montant_ht_cmd * (taux_tva_cmd / 100), 2)
                 montant_ttc_fac = round(montant_ht_cmd + montant_tva_fac, 2)
 
@@ -848,6 +973,8 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         return CommandeOut(**updated)
 
     # ---------- LIVRER ----------
+    # TICKET-005 : livrer_commande() — bloquer si BL existant (passer par BL),
+    # sinon déduire le stock directement (cas rare sans BL)
     @router.post("/{commande_id}/livrer", response_model=CommandeOut)
     async def livrer_commande(
         commande_id: str,
@@ -861,17 +988,93 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         _ensure(cmd is not None, 404, "Commande introuvable")
         _ensure(cmd["statut"] == "preparee", 400, f"Commande doit être préparée (actuellement {cmd['statut']})")
 
-        now = _now_iso()
-        await db.commandes.update_one(
-            {"commande_id": commande_id},
-            {"$set": {
-                "statut": "livree",
-                "date_livraison": now[:10],
-                "delivered_by": me["user_id"],
-                "updated_at": now,
-            }}
+        # TICKET-005 — Chemin A : si un BL non-livré existe, bloquer et rediriger
+        bl_existant = await db.bons_livraison.find_one(
+            {"commande_id": commande_id, "statut": {"$ne": "livre"}},
+            {"_id": 0, "bl_id": 1, "reference": 1},
         )
-        
+        if bl_existant:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Un bon de livraison ({bl_existant['reference']}) existe pour cette commande. "
+                    f"Veuillez livrer via le BL (POST /bons-livraison/{bl_existant['bl_id']}/livrer) "
+                    "afin de garantir la déduction de stock."
+                ),
+            )
+
+        # TICKET-005 — Chemin B : pas de BL → déduire le stock directement
+        # TICKET-013 — Wrapped dans une transaction MongoDB (fallback sans session si replica non dispo)
+        now = _now_iso()
+        lignes_cmd = await db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0}).to_list(100)
+
+        async def _exec_livraison(session=None):
+            """Déduction stock + mouvements + mise à jour commande — transactionnel ou non."""
+            for ligne in lignes_cmd:
+                produit_id = ligne.get("produit_id")
+                qte = int(ligne.get("quantite", 0))
+                if not produit_id or qte <= 0:
+                    continue
+                # Décrémentation atomique avec garde stock >= qte
+                updated_prod = await db.produits.find_one_and_update(
+                    {"product_id": produit_id, "stock_actuel": {"$gte": qte}},
+                    {"$inc": {"stock_actuel": -qte}, "$set": {"updated_at": now}},
+                    return_document=True,
+                    projection={"_id": 0, "stock_actuel": 1},
+                    session=session,
+                )
+                if not updated_prod:
+                    produit_cur = await db.produits.find_one(
+                        {"product_id": produit_id}, {"_id": 0, "stock_actuel": 1},
+                        session=session,
+                    )
+                    stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Stock insuffisant pour le produit {produit_id}: "
+                            f"disponible={stock_dispo}, demandé={qte}"
+                        ),
+                    )
+                stock_apres = updated_prod.get("stock_actuel", 0)
+                await db.mouvements_stock.insert_one({
+                    "mouvement_id": f"mvt_{uuid.uuid4().hex[:12]}",
+                    "produit_id": produit_id,
+                    "type_mouvement": "sortie",
+                    "quantite": qte,
+                    "stock_avant": stock_apres + qte,
+                    "stock_apres": stock_apres,
+                    "commande_id": commande_id,
+                    "motif": f"Livraison directe commande {cmd['reference']}",
+                    "created_by": me["user_id"],
+                    "created_at": now,
+                }, session=session)
+
+            await db.commandes.update_one(
+                {"commande_id": commande_id},
+                {"$set": {
+                    "statut": "livree",
+                    "date_livraison": now[:10],
+                    "delivered_by": me["user_id"],
+                    "updated_at": now,
+                }},
+                session=session,
+            )
+
+        # Tentative avec session transactionnelle ; fallback sans session (Atlas M0 / standalone)
+        try:
+            async with await db.client.start_session() as _sess:
+                try:
+                    async with _sess.start_transaction():
+                        await _exec_livraison(session=_sess)
+                except (InvalidOperation, OperationFailure) as _tx_err:
+                    logger.warning("TICKET-013 transaction aborted (%s) — fallback sans session", _tx_err)
+                    await _exec_livraison(session=None)
+        except (InvalidOperation, OperationFailure, Exception) as _sess_err:
+            # start_session() lui-même peut échouer sur certains drivers/configs
+            logger.warning("TICKET-013 start_session failed (%s) — fallback sans session", _sess_err)
+            await _exec_livraison(session=None)
+
         # Audit log
         if log_audit_event:
             await log_audit_event(
@@ -883,11 +1086,13 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                     "reference": cmd['reference'],
                     "client_id": cmd["client_id"],
                     "old_statut": cmd["statut"],
-                    "new_statut": "livree"
+                    "new_statut": "livree",
+                    "stock_deduit": True,
+                    "nb_lignes": len(lignes_cmd),
                 },
                 ip_address=request.client.host if request.client else None
             )
-        
+
         updated = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
         await _enrich_commande_with_client(db, updated)
 
@@ -1125,6 +1330,37 @@ Cordialement,
             "message": message,
             "pdf_filename": f"{cmd['reference']}.pdf"
         }
+
+    # ---------- PARTAGER WHATSAPP (Web Share API — sans numéro) ----------
+    @router.post("/{commande_id}/partager-whatsapp")
+    async def partager_commande_whatsapp(
+        commande_id: str,
+        request: Request = None,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Log a WhatsApp native share event for Bon de Commande (no phone required)."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
+
+        cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0, "reference": 1})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+
+        now = _now_iso()
+        await db.commandes.update_one(
+            {"commande_id": commande_id},
+            {"$set": {"date_partage_whatsapp": now, "updated_at": now}}
+        )
+        await db.audit_logs.insert_one({
+            "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{me['user_id'][:8]}",
+            "user_id": me["user_id"],
+            "action": "SHARE_WHATSAPP_NATIVE",
+            "resource_type": "commande",
+            "resource_id": commande_id,
+            "details": {"canal": "whatsapp", "statut": "partage_lance", "methode": "web_share_api"},
+            "ip_address": request.client.host if request.client else None,
+            "timestamp": now,
+        })
+        return {"message": "Partage WhatsApp enregistré", "reference": cmd.get("reference")}
 
     # ---------- EMAIL ----------
     @router.post("/{commande_id}/envoyer-email")

@@ -17,11 +17,21 @@ from datetime import datetime, timezone
 from typing import Literal, Optional, List
 import uuid
 import logging
+import io
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request
+from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 from notifications_module import notify_vente_event
+
+# ReportLab — génération PDF reçu paiement (TICKET-002)
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
 logger = logging.getLogger("fabsci.paiements")
 
@@ -174,7 +184,8 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
     router = APIRouter(prefix="/paiements", tags=["paiements"])
 
     # ---------- LIST ----------
-    @router.get("", response_model=List[PaiementOut])
+    # TICKET-004 : réponse enrichie avec total pour la pagination frontend
+    @router.get("")
     async def list_paiements(
         request: Request,
         authorization: Optional[str] = Header(default=None),
@@ -184,7 +195,7 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         date_fin: Optional[str] = None,
         q: Optional[str] = None,
         skip: int = Query(0, ge=0),
-        limit: int = Query(50, ge=1, le=200),
+        limit: int = Query(20, ge=1, le=200),
     ):
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
@@ -201,9 +212,9 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             if date_fin:
                 date_filter["$lte"] = date_fin
             filters["date_paiement"] = date_filter
-        
-        # Use aggregation with $lookup to avoid N+1 queries
-        pipeline = [
+
+        # Pipeline de base avec $lookup clients pour éviter N+1
+        base_pipeline = [
             {"$match": filters},
             {"$lookup": {
                 "from": "clients",
@@ -223,21 +234,35 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             }},
         ]
         if q:
-            pipeline.append({"$match": {"$or": [
+            base_pipeline.append({"$match": {"$or": [
                 {"reference": {"$regex": q, "$options": "i"}},
                 {"client_nom": {"$regex": q, "$options": "i"}},
                 {"client_ville": {"$regex": q, "$options": "i"}},
                 {"client_telephone": {"$regex": q, "$options": "i"}},
                 {"client_representant": {"$regex": q, "$options": "i"}},
             ]}})
-        pipeline += [
-            {"$sort": {"date_paiement": -1}},
-            {"$skip": skip},
-            {"$limit": limit}
-        ]
-        
-        docs = await db.paiements.aggregate(pipeline).to_list(limit)
-        return [PaiementOut(**d) for d in docs]
+
+        # Pipeline items paginés + pipeline count — exécutés en parallèle via $facet
+        facet_pipeline = base_pipeline + [{
+            "$facet": {
+                "items": [
+                    {"$sort": {"date_paiement": -1}},
+                    {"$skip": skip},
+                    {"$limit": limit},
+                ],
+                "total_count": [{"$count": "n"}],
+            }
+        }]
+
+        result = await db.paiements.aggregate(facet_pipeline).to_list(1)
+        facet = result[0] if result else {"items": [], "total_count": []}
+        docs = facet.get("items", [])
+        total = facet["total_count"][0]["n"] if facet.get("total_count") else 0
+
+        return {
+            "items": [PaiementOut(**d).model_dump() for d in docs],
+            "total": total,
+        }
 
     # ---------- CREATE ----------
     @router.post("", response_model=PaiementOut, status_code=201)
@@ -570,6 +595,214 @@ Cordialement,
         except Exception as e:
             logger.error(f"Email paiement error: {e}")
             raise HTTPException(status_code=500, detail=f"Erreur envoi email : {str(e)}")
+
+    # ---------- PDF REÇU PAIEMENT (TICKET-002) ----------
+    @router.get("/{paiement_id}/pdf")
+    async def generer_pdf_paiement(
+        paiement_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Génère le reçu PDF d'un paiement — TICKET-002"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        paiement = await db.paiements.find_one({"paiement_id": paiement_id}, {"_id": 0})
+        _ensure(paiement is not None, 404, "Paiement introuvable")
+
+        client = await db.clients.find_one({"client_id": paiement.get("client_id")}, {"_id": 0})
+        client_nom = client.get("nom", "N/A") if client else "N/A"
+        client_tel = client.get("telephone", "") if client else ""
+        client_email_val = client.get("email", "") if client else ""
+
+        # Récupérer les affectations factures
+        affectations = await db.affectations_paiement.find(
+            {"paiement_id": paiement_id}, {"_id": 0}
+        ).to_list(100)
+
+        factures_detail = []
+        for aff in affectations:
+            fac = await db.factures.find_one(
+                {"facture_id": aff["facture_id"]}, {"_id": 0, "reference": 1}
+            )
+            factures_detail.append({
+                "reference": fac.get("reference", aff["facture_id"]) if fac else aff["facture_id"],
+                "montant": aff.get("montant_affecte", 0),
+            })
+
+        MODES_LABEL = {
+            "especes": "Espèces",
+            "cheque": "Chèque",
+            "virement": "Virement bancaire",
+            "mobile_money": "Mobile Money",
+        }
+        mode_label = MODES_LABEL.get(paiement.get("mode_paiement", ""), paiement.get("mode_paiement", "N/A"))
+        reference = paiement.get("reference", paiement_id)
+        date_pai = paiement.get("date_paiement", datetime.now(timezone.utc).strftime("%d/%m/%Y"))
+        montant_total = paiement.get("montant_total", 0)
+        montant_affecte = paiement.get("montant_affecte", 0)
+        montant_non_affecte = paiement.get("montant_non_affecte", 0)
+
+        # --- Construction PDF ---
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=2 * cm, rightMargin=2 * cm,
+            topMargin=2 * cm, bottomMargin=2 * cm,
+        )
+        styles = getSampleStyleSheet()
+        story = []
+
+        ORANGE = colors.HexColor("#FF6200")
+        DARK   = colors.HexColor("#0A2540")
+        GRAY   = colors.HexColor("#6B7280")
+
+        style_title = ParagraphStyle("title", parent=styles["Normal"],
+            fontSize=20, textColor=DARK, fontName="Helvetica-Bold", spaceAfter=4)
+        style_sub = ParagraphStyle("sub", parent=styles["Normal"],
+            fontSize=10, textColor=GRAY, spaceAfter=2)
+        style_label = ParagraphStyle("label", parent=styles["Normal"],
+            fontSize=9, textColor=GRAY)
+        style_value = ParagraphStyle("value", parent=styles["Normal"],
+            fontSize=10, fontName="Helvetica-Bold", textColor=DARK)
+        style_center = ParagraphStyle("center", parent=styles["Normal"],
+            fontSize=9, alignment=TA_CENTER, textColor=GRAY)
+        style_total = ParagraphStyle("total", parent=styles["Normal"],
+            fontSize=14, fontName="Helvetica-Bold", textColor=ORANGE, alignment=TA_RIGHT)
+
+        # En-tête
+        story.append(Paragraph("ÉDITIONS FABS-CI", style_title))
+        story.append(Paragraph("ERP FABS-CI V10 — Reçu de Paiement", style_sub))
+        story.append(HRFlowable(width="100%", thickness=2, color=ORANGE, spaceAfter=12))
+
+        # Bloc référence + date
+        header_data = [
+            [Paragraph(f"<b>Référence :</b> {reference}", styles["Normal"]),
+             Paragraph(f"<b>Date :</b> {date_pai}", styles["Normal"])],
+        ]
+        header_table = Table(header_data, colWidths=["50%", "50%"])
+        header_table.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (0, 0), "LEFT"),
+            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ]))
+        story.append(header_table)
+        story.append(Spacer(1, 0.4 * cm))
+
+        # Infos client
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey, spaceAfter=8))
+        client_data = [
+            [Paragraph("CLIENT", style_label), Paragraph("", style_label)],
+            [Paragraph(client_nom, style_value),
+             Paragraph(client_tel or client_email_val or "", style_value)],
+        ]
+        client_table = Table(client_data, colWidths=["60%", "40%"])
+        client_table.setStyle(TableStyle([
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(client_table)
+        story.append(Spacer(1, 0.4 * cm))
+
+        # Mode de paiement
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey, spaceAfter=8))
+        story.append(Paragraph("MODE DE PAIEMENT", style_label))
+        story.append(Paragraph(mode_label, style_value))
+
+        # Détails complémentaires selon le mode
+        extras = []
+        if paiement.get("banque"):
+            extras.append(f"Banque : {paiement['banque']}")
+        if paiement.get("numero_cheque"):
+            extras.append(f"N° chèque : {paiement['numero_cheque']}")
+        if paiement.get("reference_virement"):
+            extras.append(f"Réf. virement : {paiement['reference_virement']}")
+        if paiement.get("operateur"):
+            extras.append(f"Opérateur : {paiement['operateur']}")
+        if paiement.get("numero_transaction"):
+            extras.append(f"N° transaction : {paiement['numero_transaction']}")
+        for ex in extras:
+            story.append(Paragraph(ex, style_sub))
+
+        story.append(Spacer(1, 0.5 * cm))
+
+        # Tableau factures affectées
+        if factures_detail:
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey, spaceAfter=8))
+            story.append(Paragraph("FACTURES AFFECTÉES", style_label))
+            story.append(Spacer(1, 0.2 * cm))
+
+            fac_rows = [["Référence facture", "Montant affecté"]]
+            for fd in factures_detail:
+                fac_rows.append([
+                    fd["reference"],
+                    f"{fd['montant']:,.0f} FCFA".replace(",", " "),
+                ])
+            fac_table = Table(fac_rows, colWidths=["60%", "40%"])
+            fac_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), DARK),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (0, -1), 8),
+                ("RIGHTPADDING", (1, 0), (1, -1), 8),
+            ]))
+            story.append(fac_table)
+            story.append(Spacer(1, 0.5 * cm))
+
+        # Bloc total
+        story.append(HRFlowable(width="100%", thickness=1, color=ORANGE, spaceAfter=8))
+        total_data = [
+            ["Montant total perçu", f"{montant_total:,.0f} FCFA".replace(",", " ")],
+            ["Dont affecté", f"{montant_affecte:,.0f} FCFA".replace(",", " ")],
+            ["Non affecté", f"{montant_non_affecte:,.0f} FCFA".replace(",", " ")],
+        ]
+        total_table = Table(total_data, colWidths=["60%", "40%"])
+        total_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("TEXTCOLOR", (0, 0), (1, 0), ORANGE),
+            ("FONTSIZE", (0, 0), (1, 0), 13),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(total_table)
+
+        # Notes
+        if paiement.get("notes"):
+            story.append(Spacer(1, 0.5 * cm))
+            story.append(Paragraph("NOTES", style_label))
+            story.append(Paragraph(paiement["notes"], styles["Normal"]))
+
+        # Pied de page
+        story.append(Spacer(1, 1.5 * cm))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey, spaceAfter=6))
+        story.append(Paragraph(
+            f"Document généré par ERP FABS-CI V10 le {datetime.now().strftime('%d/%m/%Y à %H:%M')}",
+            style_center
+        ))
+        story.append(Paragraph(
+            "Ce reçu constitue une preuve de paiement officielle.",
+            style_center
+        ))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        filename = f"recu-{reference}.pdf"
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
 
     return router
 

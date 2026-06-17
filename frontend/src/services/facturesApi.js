@@ -8,7 +8,7 @@ import API_BASE_URL from "../config/api";
 const API = API_BASE_URL;
 
 // Get all factures with optional filters
-export const getFactures = async (filters = {}) => {
+const _buildFacturesParams = (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.type_facture && filters.type_facture !== 'all') params.append('type_facture', filters.type_facture);
   if (filters.statut && filters.statut !== 'all') params.append('statut', filters.statut);
@@ -16,11 +16,24 @@ export const getFactures = async (filters = {}) => {
   if (filters.date_debut) params.append('date_debut', filters.date_debut);
   if (filters.date_fin) params.append('date_fin', filters.date_fin);
   if (filters.q) params.append('q', filters.q);
-  if (filters.skip) params.append('skip', filters.skip);
+  if (filters.skip !== undefined) params.append('skip', filters.skip);
   if (filters.limit) params.append('limit', filters.limit);
-  
-  const response = await axios.get(`${API}/factures?${params.toString()}`);
-  return response.data;
+  return params;
+};
+
+// Retourne un tableau (rétrocompatible) — items[] si pagination, sinon data brut
+export const getFactures = async (filters = {}) => {
+  const response = await axios.get(`${API}/factures?${_buildFacturesParams(filters).toString()}`);
+  const data = response.data;
+  return Array.isArray(data) ? data : (data?.items ?? data);
+};
+
+// Retourne l'objet paginé complet { items, total, page, limit, has_next }
+export const getFacturesPaginated = async (filters = {}) => {
+  const response = await axios.get(`${API}/factures?${_buildFacturesParams(filters).toString()}`);
+  const data = response.data;
+  if (data?.items !== undefined) return data;
+  return { items: Array.isArray(data) ? data : [], total: 0, page: 1, limit: filters.limit || 50, has_next: false };
 };
 
 // Get single facture with lignes

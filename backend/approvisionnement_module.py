@@ -22,6 +22,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from sanitizers import sanitize_str
 
 logger = logging.getLogger("fabsci.approvisionnement")
 
@@ -63,6 +64,8 @@ class ApprovisionnementIn(BaseModel):
     depot: str = Field(..., description="Dépôt de destination (principal/secondaire)")
     lignes: List[ApprovisionnementLigneIn] = Field(..., min_length=1, description="Lignes de produits")
     notes: Optional[str] = Field(default=None, max_length=1000, description="Notes additionnelles")
+
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
 
 class ApprovisionnementOut(BaseModel):

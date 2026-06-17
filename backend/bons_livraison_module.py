@@ -15,7 +15,8 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from sanitizers import sanitize_str
 
 logger = logging.getLogger("fabsci.bons_livraison")
 
@@ -56,6 +57,8 @@ class BonLivraisonIn(BaseModel):
     date_livraison_prevue: Optional[str] = None
     notes: Optional[str] = Field(default=None, max_length=500)
     lignes: List[LigneBLIn] = Field(..., min_length=1)
+
+    _san_notes = field_validator("notes", mode="before")(sanitize_str)
 
 
 class BonLivraisonOut(BaseModel):
@@ -268,6 +271,15 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
             stock_apres = updated.get("stock_actuel", 0)
             stock_avant = stock_apres + _qte
 
+            # TICKET-007 — Mettre à jour quantite_livree dans bl_lignes
+            await db.bl_lignes.update_one(
+                {"ligne_bl_id": ligne["ligne_bl_id"]},
+                {"$set": {
+                    "quantite_livree": _qte,
+                    "updated_at": now,
+                }}
+            )
+
             mouvement_doc = {
                 "mouvement_id": f"mvt_{uuid.uuid4().hex[:12]}",
                 "produit_id": ligne["produit_id"],
@@ -334,7 +346,7 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
             if prod:
                 l["designation"] = prod.get("titre", l.get("designation", ""))
                 l["classe"] = prod.get("classe", "")
-                l["code_article"] = prod.get("isbn", l.get("produit_id", ""))[:14]
+                l["code_article"] = (prod.get("isbn") or l.get("produit_id") or "")[:14]
 
         cmd = await db.commandes.find_one({"commande_id": bl["commande_id"]}, {"_id": 0, "reference": 1, "client_id": 1})
         commande_ref = cmd.get("reference") if cmd else None

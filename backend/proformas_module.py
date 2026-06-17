@@ -25,6 +25,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Header, Query, Request, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, field_validator
+from pymongo.errors import DuplicateKeyError as MongoDuplicateKeyError
 from notifications_module import notify_vente_event
 
 logger = logging.getLogger("fabsci.proformas")
@@ -774,9 +775,20 @@ Cordialement,
         proforma = await db.proformas.find_one({"proforma_id": proforma_id})
         _ensure(proforma is not None, 404, "Proforma introuvable")
         
-        # Check if already converted
-        _ensure(proforma.get("statut_proforma") != "convertie_facture", 400, "Proforma déjà convertie")
-        
+        # Check if already converted (statut flag)
+        _ensure(proforma.get("statut_proforma") != "convertie_facture", 400, "Proforma déjà convertie en facture")
+
+        # Check doublons existants en base (proforma_id OU commande_id+type_facture)
+        existing_by_proforma = await db.factures.find_one({"proforma_id": proforma_id, "type_facture": "facture"})
+        if existing_by_proforma:
+            raise HTTPException(status_code=400, detail=f"Une facture existe déjà pour cette proforma : {existing_by_proforma.get('reference', existing_by_proforma['facture_id'])}")
+
+        commande_id = proforma.get("commande_id")
+        if commande_id:
+            existing_by_commande = await db.factures.find_one({"commande_id": commande_id, "type_facture": "facture"})
+            if existing_by_commande:
+                raise HTTPException(status_code=400, detail=f"La commande liée a déjà une facture : {existing_by_commande.get('reference', existing_by_commande['facture_id'])}")
+
         # Import factures module
         from factures_module import next_facture_reference
         
@@ -791,7 +803,7 @@ Cordialement,
             "facture_id": _generate_id("fac"),
             "reference": reference_facture,
             "client_id": proforma["client_id"],
-            "commande_id": proforma.get("commande_id"),
+            "commande_id": commande_id,
             "proforma_id": proforma_id,
             "date_facture": now[:10],
             "type_facture": "facture",
@@ -810,7 +822,11 @@ Cordialement,
             "updated_at": now,
         }
         
-        await db.factures.insert_one(facture_doc)
+        try:
+            await db.factures.insert_one(facture_doc)
+        except MongoDuplicateKeyError as e:
+            logger.warning(f"DuplicateKeyError convertir-facture proforma={proforma_id}: {e}")
+            raise HTTPException(status_code=409, detail="Une facture identique existe déjà (doublon détecté). Opération annulée.")
         
         # Copy lignes
         for ligne in lignes_proforma:
