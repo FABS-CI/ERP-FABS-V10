@@ -95,3 +95,10 @@ frontend/node_modules/.cache/default-development/31.pack
 .env.production
 .env.local
 .git_credentials
+
+# Données sensibles - ne jamais commiter
+backend/data_import/users.json
+backend/data_import/clients.json
+backend/data/clients_real.txt
+backend/data/
+*.json.bak
