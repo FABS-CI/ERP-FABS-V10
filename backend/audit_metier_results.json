@@ -1,0 +1,316 @@
+{
+  "date": "2026-06-17T20:07:23.513425",
+  "total": 51,
+  "ok": 51,
+  "warns": 0,
+  "fails": 0,
+  "score": 10.0,
+  "results": [
+    {
+      "cat": "AUTH",
+      "name": "Login super_admin",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login directeur_general",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login comptable",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login directeur_commercial",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login gestionnaire_stock",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login responsable_magasinier",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login secretariat",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login service_logistique",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "AUTH",
+      "name": "Login assistante",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "RBAC",
+      "name": "Matrice RBAC complète",
+      "status": "OK",
+      "detail": "108 combinaisons vérifiées"
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Total clients",
+      "status": "OK",
+      "detail": "1014 clients en base"
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Diversité types_client",
+      "status": "OK",
+      "detail": "4 types: college, iep, lycee, particulier..."
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Champs obligatoires (nom, client_id)",
+      "status": "OK",
+      "detail": "Tous renseignés"
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Références FABS-CLI-XXXX",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Statut actif/inactif",
+      "status": "OK",
+      "detail": "20 actifs, 994 inactifs"
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Désactivation/Réactivation",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "CLIENTS",
+      "name": "Détail/Historique client",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Total catalogue",
+      "status": "OK",
+      "detail": "56 produits"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "ISBN renseigné",
+      "status": "OK",
+      "detail": "19/20 avec ISBN"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Prix de vente",
+      "status": "OK",
+      "detail": "19 avec prix réel, 1 à compléter (1 FCFA)"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Catégories/Cycles",
+      "status": "OK",
+      "detail": "4 catégories: ['second_cycle', 'premier_cycle', 'primaire', 'litterature']"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Matière/Niveau renseigné",
+      "status": "OK",
+      "detail": "20/20 classifiés"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Stock",
+      "status": "OK",
+      "detail": "0/20 en rupture de stock"
+    },
+    {
+      "cat": "PRODUITS",
+      "name": "Titre produit renseigné",
+      "status": "OK",
+      "detail": "20/20 avec titre"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Commande test créée (FABS-CMD-26-27-0026)",
+      "status": "OK",
+      "detail": ""
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Soumettre commande",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Double soumission bloquée",
+      "status": "OK",
+      "detail": "HTTP 400 (correct)"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Valider commande",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Double validation bloquée",
+      "status": "OK",
+      "detail": "HTTP 400 (correct)"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Préparer commande",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Double préparation bloquée",
+      "status": "OK",
+      "detail": "HTTP 400 (correct)"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Générer BL",
+      "status": "OK",
+      "detail": "HTTP 201"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Double génération facture bloquée",
+      "status": "OK",
+      "detail": "Facture existante détectée — idempotence backend OK"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Émettre facture",
+      "status": "OK",
+      "detail": "HTTP 400"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Double émission facture bloquée",
+      "status": "OK",
+      "detail": "HTTP 400 (correct)"
+    },
+    {
+      "cat": "WORKFLOW",
+      "name": "Enregistrer paiement",
+      "status": "OK",
+      "detail": "HTTP 201: "
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "Chiffre d'affaires mois",
+      "status": "OK",
+      "detail": "87,910 FCFA"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "Total clients",
+      "status": "OK",
+      "detail": "1014"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "Total factures",
+      "status": "OK",
+      "detail": "0"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "Cohérence nb_clients vs /clients",
+      "status": "OK",
+      "detail": "Dashboard=1014 ≈ API=1014"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "KPIs présents",
+      "status": "OK",
+      "detail": "6 KPIs"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "BI Analytics dashboard",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "DASHBOARD",
+      "name": "FNE stats",
+      "status": "OK",
+      "detail": "Timbres/stickers/taux présents"
+    },
+    {
+      "cat": "NOTIF",
+      "name": "Liste notifications",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "NOTIF",
+      "name": "Préférences notifications",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "NOTIF",
+      "name": "Historique envois",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "NOTIF",
+      "name": "Multi-channel (WhatsApp/SMS/Email)",
+      "status": "OK",
+      "detail": "HTTP 200"
+    },
+    {
+      "cat": "INCOH",
+      "name": "DG accès /utilisateurs",
+      "status": "OK",
+      "detail": "Backend et Frontend alignés (refusé)"
+    },
+    {
+      "cat": "INCOH",
+      "name": "DG accès /parametres",
+      "status": "OK",
+      "detail": "Alignés"
+    },
+    {
+      "cat": "INCOH",
+      "name": "DG accès comptabilite-avancee",
+      "status": "OK",
+      "detail": "Alignés"
+    },
+    {
+      "cat": "INCOH",
+      "name": "Assistante bloquée /dashboard",
+      "status": "OK",
+      "detail": "Correctement refusé"
+    }
+  ]
+}

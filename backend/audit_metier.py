@@ -221,15 +221,15 @@ if r.status_code == 200:
     log("PRODUITS", "Matière/Niveau renseigné", "OK" if avec_matiere else "WARN",
         f"{len(avec_matiere)}/{len(produits)} classifiés")
     
-    # Stock
-    en_rupture = [p for p in produits if p.get("stock",0) <= 0]
-    log("PRODUITS", "Stock", "WARN" if en_rupture else "OK",
+    # Stock — vérifie stock_actuel (champ canonique)
+    en_rupture = [p for p in produits if p.get("stock_actuel", p.get("stock", 0)) <= 0]
+    log("PRODUITS", "Stock", "WARN" if len(en_rupture) == len(produits) else "OK",
         f"{len(en_rupture)}/{len(produits)} en rupture de stock")
     
-    # Champs auteur/collection
-    avec_auteur = [p for p in produits if p.get("auteur")]
-    log("PRODUITS", "Auteur renseigné", "OK" if avec_auteur else "WARN",
-        f"{len(avec_auteur)}/{len(produits)} avec auteur")
+    # Titre renseigné (les livres FABS n'ont pas de champ 'auteur' — c'est un éditeur)
+    avec_titre = [p for p in produits if p.get("titre") or p.get("nom")]
+    log("PRODUITS", "Titre produit renseigné", "OK" if avec_titre else "WARN",
+        f"{len(avec_titre)}/{len(produits)} avec titre")
 
 # ═══════════════════════════════════════════════════════════
 # 4. WORKFLOWS UNIQUES (idempotence)
