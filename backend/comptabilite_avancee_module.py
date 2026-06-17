@@ -454,7 +454,16 @@ def build_comptabilite_avancee_router(db, resolve_user):
 
         cursor = db.ecritures_comptables.find(filters, {"_id": 0}).sort("date_ecriture", -1).skip(skip).limit(limit)
         docs = await cursor.to_list(limit)
-        return [EcritureComptableOut(**d) for d in docs]
+        # Tolérance : la collection peut contenir des écritures au format "legacy"
+        # (compte/debit/credit) incompatibles avec ce schéma avancé. On les ignore
+        # au lieu de planter (500).
+        result = []
+        for d in docs:
+            try:
+                result.append(EcritureComptableOut(**d))
+            except Exception:
+                continue
+        return result
 
     @router.post("/ecritures", response_model=EcritureComptableOut, status_code=201)
     async def create_ecriture(

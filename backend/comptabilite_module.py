@@ -394,8 +394,17 @@ def build_comptabilite_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_
 
         cursor = db.ecritures_comptables.find(filters, {"_id": 0}).sort("date_ecriture", -1).limit(limit)
         docs = await cursor.to_list(limit)
-        
-        return [EcritureComptableOut(**d) for d in docs]
+
+        # Tolérance : la collection peut contenir des écritures au format "avancé"
+        # (journal_id/lignes) incompatibles avec ce schéma legacy. On les ignore
+        # au lieu de planter (500).
+        result = []
+        for d in docs:
+            try:
+                result.append(EcritureComptableOut(**d))
+            except Exception:
+                continue
+        return result
 
     @router.post("/ecritures", response_model=EcritureComptableOut, status_code=201)
     async def create_ecriture(
