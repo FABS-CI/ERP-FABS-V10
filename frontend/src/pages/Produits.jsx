@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Plus, Pencil, PowerOff, ChevronLeft, ChevronRight, AlertCircle, RotateCw,
+  Search, Plus, Pencil, PowerOff, ChevronLeft, ChevronRight, AlertCircle, RotateCw, Download, BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,11 +9,13 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/layout/PageHeader";
 import ProductFormDialog from "../components/products/ProductFormDialog";
 import StockBadge from "../components/products/StockBadge";
+import SortTh from "../components/ui/SortTh";
 import { CATEGORIES, CATEGORIES_MAP, listProducts, disableProduct } from "../services/produitsApi";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useSortableData } from "../hooks/useSortableData";
+import { exportCsv } from "../utils/exportCsv";
 import { formatFCFA } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
-import { BookOpen } from "lucide-react";
 
 const WRITE_ROLES = new Set([
   "super_admin", "directeur_general", "directeur_commercial",
@@ -40,6 +42,7 @@ export default function Produits() {
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const dq = useDebouncedValue(q, 300);
   const dniveau = useDebouncedValue(niveau, 300);
@@ -70,6 +73,9 @@ export default function Produits() {
 
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
 
+  // Tri local sur la page courante
+  const { sorted, sortKey, sortDir, requestSort } = useSortableData(data.items, null, "asc");
+
   const handleDisable = async (product) => {
     if (!window.confirm(`Désactiver le produit "${product.titre}" ?`)) return;
     try {
@@ -81,6 +87,45 @@ export default function Produits() {
     }
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const r = await listProducts({
+        q: dq || undefined,
+        categorie: categorie || undefined,
+        niveau_scolaire: dniveau || undefined,
+        statut_stock: statutStock || undefined,
+        actif: actif === "" ? undefined : actif === "true",
+        page: 1,
+        page_size: 500,
+      });
+      const headers = seePrixAchat
+        ? ["Référence", "Titre", "Auteur", "Catégorie", "Niveau", "Prix Achat FCFA", "Prix Vente FCFA", "Stock Actuel", "Stock Min", "Statut Stock"]
+        : ["Référence", "Titre", "Auteur", "Catégorie", "Niveau", "Prix Vente FCFA", "Stock Actuel", "Stock Min", "Statut Stock"];
+      const rows = r.items.map((p) => {
+        const row = [
+          p.reference,
+          p.titre,
+          p.auteur || "",
+          CATEGORIES_MAP[p.categorie]?.label || p.categorie,
+          p.niveau_scolaire || "",
+        ];
+        if (seePrixAchat) row.push(p.prix_achat != null ? String(p.prix_achat) : "");
+        row.push(String(p.prix_vente), String(p.stock_actuel), String(p.stock_minimum), p.statut_stock || "");
+        return row;
+      });
+      const date = new Date().toISOString().slice(0, 10);
+      exportCsv(`produits_fabs_${date}`, headers, rows);
+      toast.success(`${r.items.length} produits exportés`);
+    } catch (e) {
+      toast.error("Échec de l'export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const colSpan = seePrixAchat ? 9 : 8;
+
   return (
     <DashboardLayout>
       <div data-testid="produits-page" className="max-w-7xl mx-auto">
@@ -90,16 +135,26 @@ export default function Produits() {
           description={`${data.total} produit${data.total > 1 ? "s" : ""} dans le catalogue`}
           favoriteKey="produits"
           actions={
-            canWrite && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <button
-                data-testid="produits-new-btn"
-                onClick={() => { setEditing(null); setDialogOpen(true); }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FF6200] hover:bg-[#E65800] text-white text-sm font-semibold shadow-md hover:shadow-lg transition"
+                onClick={handleExport}
+                disabled={exporting || loading}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50"
               >
-                <Plus className="w-4 h-4" />
-                Nouveau produit
+                <Download className="w-4 h-4" />
+                {exporting ? "Export…" : "Export CSV"}
               </button>
-            )
+              {canWrite && (
+                <button
+                  data-testid="produits-new-btn"
+                  onClick={() => { setEditing(null); setDialogOpen(true); }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FF6200] hover:bg-[#E65800] text-white text-sm font-semibold shadow-md hover:shadow-lg transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nouveau produit
+                </button>
+              )}
+            </div>
           }
         />
 
@@ -133,10 +188,9 @@ export default function Produits() {
 
         {error && (
           <div data-testid="produits-error" className="bg-red-50 border border-[#C62828]/30 text-[#C62828] rounded-lg p-4 text-sm mb-5 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {error}
+            <AlertCircle className="w-4 h-4" />{error}
             <button onClick={fetchData} className="ml-auto text-xs font-semibold underline">
-              <RotateCw className="w-3 h-3 inline mr-1" /> Réessayer
+              <RotateCw className="w-3 h-3 inline mr-1" />Réessayer
             </button>
           </div>
         )}
@@ -144,28 +198,28 @@ export default function Produits() {
         {/* Table */}
         <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-[#0A2540]/70 dark:text-white/60">
                   <th className="text-left px-4 py-3 font-semibold">Référence</th>
-                  <th className="text-left px-4 py-3 font-semibold">Titre</th>
-                  <th className="text-left px-4 py-3 font-semibold">Catégorie</th>
-                  <th className="text-left px-4 py-3 font-semibold">Niveau</th>
-                  {seePrixAchat && <th className="text-right px-4 py-3 font-semibold">Prix achat</th>}
-                  <th className="text-right px-4 py-3 font-semibold">Prix vente</th>
-                  <th className="text-right px-4 py-3 font-semibold">Stock</th>
+                  <SortTh label="Titre" sortKey="titre" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
+                  <SortTh label="Catégorie" sortKey="categorie" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
+                  <SortTh label="Niveau" sortKey="niveau_scolaire" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
+                  {seePrixAchat && <SortTh label="Prix achat" sortKey="prix_achat" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-right" />}
+                  <SortTh label="Prix vente" sortKey="prix_vente" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-right" />
+                  <SortTh label="Stock" sortKey="stock_actuel" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-right" />
                   <th className="text-center px-4 py-3 font-semibold">Statut</th>
                   <th className="text-right px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={seePrixAchat ? 9 : 8} className="px-4 py-10 text-center text-gray-500 dark:text-white/50">Chargement…</td></tr>
+                  <tr><td colSpan={colSpan} className="px-4 py-10 text-center text-gray-500 dark:text-white/50">Chargement…</td></tr>
                 )}
-                {!loading && data.items.length === 0 && (
-                  <tr><td colSpan={seePrixAchat ? 9 : 8} className="px-4 py-10 text-center text-gray-500 dark:text-white/50">Aucun produit trouvé.</td></tr>
+                {!loading && sorted.length === 0 && (
+                  <tr><td colSpan={colSpan} className="px-4 py-10 text-center text-gray-500 dark:text-white/50">Aucun produit trouvé.</td></tr>
                 )}
-                {!loading && data.items.map((p) => {
+                {!loading && sorted.map((p) => {
                   const cat = CATEGORIES_MAP[p.categorie] || CATEGORIES[0];
                   return (
                     <tr
@@ -228,11 +282,11 @@ export default function Produits() {
               <div className="flex gap-2">
                 <button data-testid="produits-prev-page" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5">
-                  <ChevronLeft className="w-3 h-3" /> Préc.
+                  <ChevronLeft className="w-3 h-3" />Préc.
                 </button>
                 <button data-testid="produits-next-page" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5">
-                  Suiv. <ChevronRight className="w-3 h-3" />
+                  Suiv.<ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>

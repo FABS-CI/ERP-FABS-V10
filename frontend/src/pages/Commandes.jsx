@@ -5,7 +5,10 @@
 import React, { useState, useEffect } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, FileText, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
+import { Plus, Search, Filter, FileText, Calendar, TrendingUp, MessageCircle, Download } from 'lucide-react';
+import { useSortableData } from '../hooks/useSortableData';
+import SortTh from '../components/ui/SortTh';
+import { exportCsv } from '../utils/exportCsv';
 import { getCommandesPaginated } from '../services/commandesApi';
 import { listClients } from '../services/clientsApi';
 import { createProforma } from '../services/proformasApi';
@@ -53,6 +56,8 @@ export default function Commandes() {
   });
 
   const canWrite = user && can(user.role, 'commandes', 'create');
+  const [exporting, setExporting] = useState(false);
+  const { sorted: sortedCommandes, sortKey, sortDir, requestSort } = useSortableData(commandes, null, 'asc');
 
   const debouncedQ = useDebouncedValue(filters.q, 350);
   // ✅ TICKET-003 : debounce sur les dates pour éviter requêtes en rafale
@@ -149,6 +154,35 @@ export default function Commandes() {
     }
   };
 
+  const handleExportCommandes = async () => {
+    setExporting(true);
+    try {
+      const result = await getCommandesPaginated({
+        ...filters,
+        date_debut: debouncedDateDebut,
+        date_fin: debouncedDateFin,
+        limit: 200,
+        page: 1,
+      });
+      const items = result.items || [];
+      const headers = ['Référence', 'Client', 'Date', 'Montant TTC FCFA', 'Statut'];
+      const rows = items.map((c) => [
+        c.reference,
+        c.client_nom || '',
+        c.date_commande ? new Date(c.date_commande).toLocaleDateString('fr-FR') : '',
+        String(c.montant_total || 0),
+        STATUT_CONFIG[c.statut]?.label || c.statut,
+      ]);
+      const date = new Date().toISOString().slice(0, 10);
+      exportCsv(`commandes_fabs_${date}`, headers, rows);
+      toast.success(`${items.length} commandes exportées`);
+    } catch (e) {
+      toast.error("Échec de l'export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 0,
@@ -172,7 +206,17 @@ export default function Commandes() {
             Gestion du cycle de vie des commandes
           </p>
         </div>
-        {canWrite && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportCommandes}
+            disabled={exporting || loading}
+            data-testid="btn-export-commandes"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? 'Export…' : 'Export CSV'}
+          </Button>
+          {canWrite && (
           <Button
             onClick={() => navigate('/commandes/nouvelle')}
             className="bg-[#FF6200] hover:bg-[#E55900] text-white"
@@ -181,7 +225,8 @@ export default function Commandes() {
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle commande
           </Button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -334,16 +379,16 @@ export default function Commandes() {
               <table className="min-w-[640px] w-full">
                 <thead className="border-b">
                   <tr className="text-left">
-                    <th className="pb-3 font-semibold">Référence</th>
-                    <th className="pb-3 font-semibold">Client</th>
-                    <th className="pb-3 font-semibold">Date</th>
-                    <th className="pb-3 font-semibold text-right">Montant</th>
+                    <SortTh label="Référence" sortKey="reference" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
+                    <SortTh label="Client" sortKey="client_nom" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
+                    <SortTh label="Date" sortKey="date_commande" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
+                    <SortTh label="Montant" sortKey="montant_ttc" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3 text-right" />
                     <th className="pb-3 font-semibold">Statut</th>
                     <th className="pb-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {commandes.map((commande) => (
+                  {sortedCommandes.map((commande) => (
                     <tr
                       key={commande.commande_id}
                       className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"

@@ -5,8 +5,11 @@
 import React, { useState, useEffect } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, FileText, Banknote, TrendingUp, AlertCircle } from 'lucide-react';
-import { getFacturesPaginated } from '../services/facturesApi';
+import { Plus, Search, Filter, FileText, Banknote, TrendingUp, AlertCircle, Download } from 'lucide-react';
+import { getFacturesPaginated, getFactures } from '../services/facturesApi';
+import { useSortableData } from '../hooks/useSortableData';
+import SortTh from '../components/ui/SortTh';
+import { exportCsv } from '../utils/exportCsv';
 import { listClients } from '../services/clientsApi';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -70,6 +73,8 @@ export default function Factures() {
   });
 
   const canWrite = user && can(user.role, 'factures', 'create');
+  const [exporting, setExporting] = useState(false);
+  const { sorted: sortedFactures, sortKey, sortDir, requestSort } = useSortableData(factures, null, 'asc');
 
   const debouncedQ = useDebouncedValue(filters.q, 350);
 
@@ -155,6 +160,30 @@ export default function Factures() {
     return new Date(dateStr).toLocaleDateString('fr-FR');
   };
 
+  const handleExportFactures = async () => {
+    setExporting(true);
+    try {
+      const data = await getFactures({ ...filters, limit: 500 });
+      const rows = (Array.isArray(data) ? data : data?.items ?? []).map(f => ({
+        'Référence': f.reference || '',
+        'Type': f.type_facture || '',
+        'Client': f.client_nom || '',
+        'Date': f.date_facture ? new Date(f.date_facture).toLocaleDateString('fr-FR') : '',
+        'Montant TTC (FCFA)': f.montant_ttc ?? 0,
+        'Restant dû (FCFA)': f.restant_du ?? 0,
+        'Statut': f.statut || '',
+        'FNE': f.fne_status || '',
+      }));
+      exportCsv(rows, `factures_${new Date().toISOString().slice(0, 10)}.csv`);
+      toast.success(`${rows.length} factures exportées`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <DashboardLayout>
     <div className="space-y-6">
@@ -166,17 +195,29 @@ export default function Factures() {
             Gestion et suivi des factures
           </p>
         </div>
-        {canWrite && (
+        <div className="flex items-center gap-2">
           <Button
-            onClick={() => navigate('/commandes')}
-            className="bg-[#FF6200] hover:bg-[#E55900] text-white"
-            data-testid="btn-nouvelle-facture"
-            title="Une facture se génère depuis une commande validée"
+            variant="outline"
+            size="sm"
+            onClick={handleExportFactures}
+            disabled={exporting || factures.length === 0}
+            title="Exporter toutes les factures en CSV"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Générer depuis une commande
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? 'Export...' : 'Export CSV'}
           </Button>
-        )}
+          {canWrite && (
+            <Button
+              onClick={() => navigate('/commandes')}
+              className="bg-[#FF6200] hover:bg-[#E55900] text-white"
+              data-testid="btn-nouvelle-facture"
+              title="Une facture se génère depuis une commande validée"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Générer depuis une commande
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -343,19 +384,19 @@ export default function Factures() {
               <table className="min-w-[680px] w-full">
                 <thead className="border-b">
                   <tr className="text-left">
-                    <th className="pb-3 font-semibold">Référence</th>
+                    <SortTh label="Référence" sortKey="reference" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
                     <th className="pb-3 font-semibold">Type</th>
-                    <th className="pb-3 font-semibold">Client</th>
-                    <th className="pb-3 font-semibold">Date</th>
-                    <th className="pb-3 font-semibold text-right">Montant TTC</th>
-                    <th className="pb-3 font-semibold text-right">Restant</th>
+                    <SortTh label="Client" sortKey="client_nom" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
+                    <SortTh label="Date" sortKey="date_facture" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3" />
+                    <SortTh label="Montant TTC" sortKey="montant_ttc" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3 text-right" />
+                    <SortTh label="Restant" sortKey="restant_du" currentKey={sortKey} dir={sortDir} onSort={requestSort} className="pb-3 text-right" />
                     <th className="pb-3 font-semibold">Statut</th>
                     <th className="pb-3 font-semibold">FNE</th>
                     <th className="pb-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {factures.map((facture) => (
+                  {sortedFactures.map((facture) => (
                     <tr
                       key={facture.facture_id}
                       className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
