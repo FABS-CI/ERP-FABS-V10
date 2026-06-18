@@ -101,7 +101,7 @@ if not JWT_SECRET:
     JWT_SECRET = 'fabsci-secret-key-change-in-development-only'
     logger.warning("⚠️  Using default JWT_SECRET for development. Set JWT_SECRET in production!")
 JWT_ALGORITHM = 'HS256'
-JWT_ACCESS_TOKEN_EXPIRY_MINUTES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRY_MINUTES', '30'))
+JWT_ACCESS_TOKEN_EXPIRY_MINUTES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRY_MINUTES', '480'))
 JWT_REFRESH_TOKEN_EXPIRY_DAYS = int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRY_DAYS', '7'))
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
