@@ -102,7 +102,7 @@ export default function EtatCompteClients() {
     clearTimeout(clientSearchTimeout.current);
     clientSearchTimeout.current = setTimeout(async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("fabs_token");
         const r = await axios.get(`${API}/clients`, {
           params: { q: v, page_size: 8 },
           headers: { Authorization: `Bearer ${token}` },
@@ -128,7 +128,7 @@ export default function EtatCompteClients() {
     setPreviewError(null);
     setPreviewData(null);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
       // On utilise l'endpoint PDF mais on demande JSON en passant format=json
       const r = await axios.get(`${API}/rapports/etat-compte-clients/data?${qs}`, {
@@ -149,7 +149,7 @@ export default function EtatCompteClients() {
   const handleExportPdf = useCallback(async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
       const res = await fetch(`${API}/rapports/etat-compte-clients?${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -178,7 +178,7 @@ export default function EtatCompteClients() {
   const handleExportExcel = useCallback(async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
       const res = await fetch(`${API}/rapports/etat-compte-clients/excel?${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -207,7 +207,7 @@ export default function EtatCompteClients() {
   const handlePrint = useCallback(async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
       const res = await fetch(`${API}/rapports/etat-compte-clients?${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -247,7 +247,7 @@ export default function EtatCompteClients() {
     let phone = "";
     if (selectedClientId) {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("fabs_token");
         const r = await axios.get(`${API}/clients/${selectedClientId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
