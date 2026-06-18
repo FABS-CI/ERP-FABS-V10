@@ -19,8 +19,8 @@ import ClientFormDialog from "../components/clients/ClientFormDialog";
 import { getClient, disableClient, TYPE_COLOR } from "../services/clientsApi";
 import { getCommandes } from "../services/commandesApi";
 import { getFactures } from "../services/facturesApi";
-import { getPaiements } from "../services/paiementsApi";
-import { listProformas } from "../services/proformasApi";
+import { getPaiements, createPaiement } from "../services/paiementsApi";
+import { listProformas, createProforma } from "../services/proformasApi";
 import { getBonsLivraison } from "../services/bonsLivraisonApi";
 import { formatFCFA } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
@@ -132,6 +132,8 @@ export default function ClientDetail() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("info");
   const [edit, setEdit] = useState(false);
+  const [paiementDialog, setPaiementDialog] = useState(false);
+  const [creatingProforma, setCreatingProforma] = useState(false);
 
   // Tab data cache — lazy load, loaded once
   const loaded = useRef({});
@@ -244,6 +246,25 @@ export default function ClientDetail() {
       loadTab("paiements");
     }
   }, [tab, loadTab]);
+
+  const handleNouvelleProforma = async () => {
+    if (creatingProforma) return;
+    setCreatingProforma(true);
+    try {
+      const p = await createProforma({
+        client_id: client.client_id,
+        client_nom: client.nom,
+        statut: "brouillon",
+        lignes: [],
+      });
+      toast.success("Proforma créée — redirection...");
+      navigate(`/proformas/${p.proforma_id}`);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Erreur création proforma");
+    } finally {
+      setCreatingProforma(false);
+    }
+  };
 
   const handleDisable = async () => {
     if (!window.confirm(`Désactiver "${client.nom}" ?`)) return;
@@ -427,9 +448,9 @@ export default function ClientDetail() {
           {/* ── Quick actions ── */}
           {canWrite && client.actif && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
-              <QuickAction icon={ReceiptText} label="Nouvelle proforma" onClick={() => navigate(`/proformas/new?client_id=${client.client_id}`)} />
-              <QuickAction icon={FileText} label="Nouvelle facture" onClick={() => navigate(`/factures/new?client_id=${client.client_id}`)} />
-              <QuickAction icon={CreditCard} label="Enregistrer paiement" onClick={() => navigate(`/paiements?client_id=${client.client_id}&open=1`)} />
+              <QuickAction icon={ReceiptText} label={creatingProforma ? "Création…" : "Nouvelle proforma"} onClick={handleNouvelleProforma} disabled={creatingProforma} />
+              <QuickAction icon={FileText} label="Nouvelle facture" onClick={() => navigate(`/commandes/nouvelle?client_id=${client.client_id}`)} />
+              <QuickAction icon={CreditCard} label="Enregistrer paiement" onClick={() => setPaiementDialog(true)} />
             </div>
           )}
         </div>
@@ -521,6 +542,13 @@ export default function ClientDetail() {
         client={client}
         onSaved={(saved) => { setClient(saved); setEdit(false); }}
       />
+      {paiementDialog && client && (
+        <PaiementQuickDialog
+          client={client}
+          onClose={() => setPaiementDialog(false)}
+          onCreated={() => { setPaiementDialog(false); refresh(); toast.success("Paiement enregistré"); }}
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -542,15 +570,110 @@ function KPI({ icon: Icon, accent, label, value }) {
   );
 }
 
-function QuickAction({ icon: Icon, label, onClick }) {
+function QuickAction({ icon: Icon, label, onClick, disabled }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#FF6200]/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all"
+      disabled={disabled}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#FF6200]/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <Icon className="w-3.5 h-3.5" />
       {label}
     </button>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PAIEMENT QUICK DIALOG
+// ─────────────────────────────────────────────
+function PaiementQuickDialog({ client, onClose, onCreated }) {
+  const [form, setForm] = useState({
+    montant_total: "",
+    mode_paiement: "especes",
+    reference: "",
+    notes: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.montant_total || isNaN(Number(form.montant_total))) {
+      toast.error("Montant invalide"); return;
+    }
+    setLoading(true);
+    try {
+      await createPaiement({
+        client_id: client.client_id,
+        client_nom: client.nom,
+        montant_total: Number(form.montant_total),
+        mode_paiement: form.mode_paiement,
+        reference: form.reference || undefined,
+        notes: form.notes || undefined,
+      });
+      onCreated();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Erreur enregistrement paiement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-[#0A2540] rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 dark:border-white/10">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-[#0A2540] dark:text-white">Enregistrer un paiement</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white text-xl leading-none">×</button>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-white/60 mb-4">Client : <span className="font-semibold text-[#0A2540] dark:text-white">{client.nom}</span></p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/60 mb-1 block">Montant (FCFA) *</label>
+            <input
+              type="number" min="1" required
+              value={form.montant_total}
+              onChange={e => setForm({ ...form, montant_total: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+              placeholder="Ex: 50000"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/60 mb-1 block">Mode de paiement</label>
+            <select
+              value={form.mode_paiement}
+              onChange={e => setForm({ ...form, mode_paiement: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+            >
+              <option value="especes">Espèces</option>
+              <option value="virement">Virement</option>
+              <option value="cheque">Chèque</option>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="carte">Carte bancaire</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/60 mb-1 block">Référence (optionnel)</label>
+            <input
+              type="text"
+              value={form.reference}
+              onChange={e => setForm({ ...form, reference: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+              placeholder="N° chèque, reçu..."
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-sm font-medium text-gray-600 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/5 transition">
+              Annuler
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-2 rounded-lg bg-[#FF6200] hover:bg-[#E65800] text-white text-sm font-semibold transition disabled:opacity-50">
+              {loading ? "Enregistrement…" : "Enregistrer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
