@@ -6,9 +6,9 @@ Couvre : Auth, Commandes, Factures, Colisage, Produits, Clients, Dashboard,
 import pytest
 import requests
 
-BASE = "http://localhost:8001/api"
+BASE = "http://localhost:8000/api"
 ADMIN_EMAIL = "pissken@editionsfabsci.com"
-ADMIN_PASS  = "Fabs@2026"
+ADMIN_PASS  = "Admin@2025"
 
 
 # ---------------------------------------------------------------------------

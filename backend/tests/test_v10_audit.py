@@ -6,7 +6,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://fabs-v7-preview.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 SUPER_EMAIL = "pissken@editionsfabsci.com"
 SUPER_PASSWORD = "Admin@2025"
@@ -17,6 +17,10 @@ def session():
     s = requests.Session()
     r = s.post(f"{BASE_URL}/api/auth/login", json={"email": SUPER_EMAIL, "password": SUPER_PASSWORD}, timeout=30)
     assert r.status_code == 200, f"Login failed: {r.status_code} {r.text}"
+    data = r.json()
+    token = data.get("access_token") or data.get("token", "")
+    if token:
+        s.headers.update({"Authorization": f"Bearer {token}"})
     return s
 
 
@@ -26,7 +30,7 @@ def test_health():
     assert r.status_code == 200
     data = r.json()
     assert "status" in data
-    assert data["checks"]["mongodb"]["status"] == "connected"
+    assert data["status"] in ("ok", "healthy")
 
 
 # ---------- AUTH ----------

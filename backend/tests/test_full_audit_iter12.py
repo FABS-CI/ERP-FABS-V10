@@ -7,7 +7,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 API = f"{BASE_URL}/api"
 
 SUPER = ("pissken@editionsfabsci.com", "Admin@2025")

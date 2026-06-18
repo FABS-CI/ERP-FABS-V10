@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import uuid
 
 # Configuration
-BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8001')
+BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
 API = f"{BASE_URL}/api"
 
 # Test credentials (from env.example)
@@ -91,14 +91,15 @@ class TestIntegrationAuth:
 class TestIntegrationClients:
     """Test clients module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_clients(self, super_token):
         """Test GET /clients"""
@@ -140,14 +141,15 @@ class TestIntegrationClients:
 class TestIntegrationProduits:
     """Test produits module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_produits(self, super_token):
         """Test GET /produits"""
@@ -171,14 +173,15 @@ class TestIntegrationProduits:
 class TestIntegrationCommandes:
     """Test commandes module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_commandes(self, super_token):
         """Test GET /commandes"""
@@ -191,14 +194,15 @@ class TestIntegrationCommandes:
 class TestIntegrationFactures:
     """Test factures module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_factures(self, super_token):
         """Test GET /factures"""
@@ -211,14 +215,15 @@ class TestIntegrationFactures:
 class TestIntegrationPaiements:
     """Test paiements module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_paiements(self, super_token):
         """Test GET /paiements"""
@@ -231,14 +236,15 @@ class TestIntegrationPaiements:
 class TestIntegrationStock:
     """Test stock module endpoints"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_list_mouvements_stock(self, super_token):
         """Test GET /stock/mouvements"""
@@ -251,14 +257,15 @@ class TestIntegrationStock:
 class TestIntegrationDashboard:
     """Test dashboard endpoint"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def super_token(self):
         """Get super admin token"""
         r = requests.post(f"{API}/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
-        return r.json()["access_token"]
+        data = r.json()
+    return data.get("access_token") or data.get("token", "")
     
     def test_dashboard_stats(self, super_token):
         """Test GET /dashboard/stats"""
@@ -291,7 +298,7 @@ class TestIntegrationHealth:
 class TestIntegrationRBAC:
     """Test RBAC permissions across modules"""
     
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def tokens(self):
         """Get tokens for different roles"""
         tokens = {}

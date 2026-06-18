@@ -1,13 +1,13 @@
 """
 P6-003 — Tests e2e workflow complet : commande → valider → préparer → livrer
-Requiert : backend local sur localhost:8001, MongoDB accessible
+Requiert : backend local sur localhost:8000, MongoDB accessible
 """
 import pytest
 import requests
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
-BASE = "http://localhost:8001/api"
+BASE = "http://localhost:8000/api"
 CREDENTIALS = {"email": "pissken@editionsfabsci.com", "password": "Fabs@2026"}
 
 # Données existantes en DB

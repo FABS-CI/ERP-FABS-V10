@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from fne_module import (
     FNEStatus,
     InvoiceType,
-    InvoiceItem,
-    Invoice,
+    FNEInvoiceItem,
+    FNEInvoice,
     FNEMetadata,
     FNEConfig,
     FNEService,
@@ -39,7 +39,7 @@ class TestInvoiceModels:
     
     def test_invoice_item_validation(self):
         """Test validation des articles de facture"""
-        item = InvoiceItem(
+        item = FNEInvoiceItem(
             code_article="LIV001",
             designation="Livre Mathématiques CM1",
             quantite=10,
@@ -56,7 +56,7 @@ class TestInvoiceModels:
     def test_invoice_item_negative_quantity(self):
         """Test que la quantité négative est rejetée"""
         with pytest.raises(Exception):
-            InvoiceItem(
+            FNEInvoiceItem(
                 code_article="LIV001",
                 designation="Livre",
                 quantite=-5,
@@ -69,7 +69,7 @@ class TestInvoiceModels:
     
     def test_invoice_validation(self):
         """Test validation de la facture"""
-        item = InvoiceItem(
+        item = FNEInvoiceItem(
             code_article="LIV001",
             designation="Livre",
             quantite=10,
@@ -80,7 +80,7 @@ class TestInvoiceModels:
             montant_ttc=59000
         )
         
-        invoice = Invoice(
+        invoice = FNEInvoice(
             reference="FAC-2024-001",
             client_nom="École Primaire Bingerville",
             client_tin="CI123456789",

@@ -8,7 +8,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8001"  # tested locally as recommended by review
+BASE_URL = "http://localhost:8000"  # tested locally as recommended by review
 API = f"{BASE_URL}/api"
 
 SUPER = ("pissken@editionsfabsci.com", "Admin@2025")
@@ -22,14 +22,16 @@ DG = ("ali.mamin@editionsfabsci.com", "DG@2025")
 def super_token():
     r = requests.post(f"{API}/auth/login", json={"email": SUPER[0], "password": SUPER[1]}, timeout=10)
     assert r.status_code == 200, r.text
-    return r.json()["access_token"]
+    data = r.json()
+    return data.get("access_token") or data.get("token", "")
 
 
 @pytest.fixture(scope="session")
 def dg_token():
     r = requests.post(f"{API}/auth/login", json={"email": DG[0], "password": DG[1]}, timeout=10)
     assert r.status_code == 200, r.text
-    return r.json()["access_token"]
+    data = r.json()
+    return data.get("access_token") or data.get("token", "")
 
 
 @pytest.fixture(scope="session")

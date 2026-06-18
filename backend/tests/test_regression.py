@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8001')
+BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
 API = f"{BASE_URL}/api"
 
 SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL', 'pissken@editionsfabsci.com')
@@ -18,13 +18,14 @@ def bearer(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def super_token():
     r = requests.post(f"{API}/auth/login", json={
         "email": SUPER_ADMIN_EMAIL,
         "password": SUPER_ADMIN_PASSWORD
     }, timeout=10)
-    return r.json()["access_token"]
+    data = r.json()
+    return data.get("access_token") or data.get("token", "")
 
 
 class TestRegressionAuth:

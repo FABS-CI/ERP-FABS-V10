@@ -3,7 +3,7 @@ Sprints 8-15 verification (Paiements, Stock, BL, BR, Comptabilité, Utilisateurs
 Paramètres, Recherche globale) + super_admin seed sanity.
 
 Strategy:
-- We hit endpoints on the local backend (localhost:8001 because the public URL
+- We hit endpoints on the local backend (localhost:8000 because the public URL
   may be hibernated). All "list" endpoints must return 401 without a token.
 - /api/health returns 200.
 - /api/openapi.json must enumerate all 42 routes.
@@ -23,7 +23,7 @@ import requests
 from pymongo import MongoClient
 
 # Local backend – the public preview URL may be hibernated.
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "test_database")
 
