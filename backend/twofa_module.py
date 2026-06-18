@@ -18,7 +18,7 @@ logger = logging.getLogger("fabsci.2fa")
 
 # Rôles obligés d'activer le 2FA
 # E5 fix: étendre 2FA obligatoire aux rôles avec accès données financières sensibles
-ROLES_2FA_REQUIRED = {"super_admin", "directeur_general", "comptable", "directeur_commercial"}
+ROLES_2FA_REQUIRED = {"directeur_general", "comptable", "directeur_commercial"}
 
 # ============================================================================
 # SCHEMAS
