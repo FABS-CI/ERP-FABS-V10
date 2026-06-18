@@ -112,7 +112,8 @@ docs/
 test_reports/
 memory/
 fne_audit.report/
-scripts/
+backend/scripts/seed_*.py
+backend/scripts/import_*.py
 *.png
 analysis_report.json
 design_guidelines.json
