@@ -157,6 +157,7 @@ export default function ProduitsInventaire() {
               seePrixAchat={seePrixAchat}
               canWrite={canWrite}
               onRefresh={fetchProducts}
+              pageSize={PAGE_SIZE}
             />
           </TabsContent>
 
@@ -196,8 +197,9 @@ function ProduitsTab({
   fournisseurFilter, setFournisseurFilter,
   depotFilter, setDepotFilter,
   fournisseurs, page, setPage, totalPages,
-  seePrixAchat, canWrite, onRefresh
+  seePrixAchat, canWrite, onRefresh, pageSize
 }) {
+  const PAGE_SIZE = pageSize || 20;
   const handleDisable = async (product) => {
     if (!window.confirm(`Désactiver le produit "${product.titre}" ?`)) return;
     try {
