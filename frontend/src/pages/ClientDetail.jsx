@@ -448,8 +448,6 @@ export default function ClientDetail() {
           {/* ── Quick actions ── */}
           {canWrite && client.actif && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
-              <QuickAction icon={ReceiptText} label={creatingProforma ? "Création…" : "Nouvelle proforma"} onClick={handleNouvelleProforma} disabled={creatingProforma} />
-              <QuickAction icon={FileText} label="Nouvelle facture" onClick={() => navigate(`/commandes/nouvelle?client_id=${client.client_id}`)} />
               <QuickAction icon={CreditCard} label="Enregistrer paiement" onClick={() => setPaiementDialog(true)} />
             </div>
           )}
