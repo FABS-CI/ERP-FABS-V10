@@ -11,7 +11,7 @@ import {
   AlertCircle, RotateCw, Building2, Phone, Mail, MapPin, TrendingDown, TrendingUp,
   BookOpen, Layers, Target, Activity, Bell, AlertTriangle, CheckCircle2,
   BookMarked, GraduationCap, Grid3X3, Boxes, MoveRight, Info, ArrowRightLeft,
-  Calendar, User, FileText, Eye, Zap
+  Calendar, User, FileText, Eye, Zap, Download, Printer
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -388,6 +388,29 @@ function DashboardTab({ log }) {
 function InventaireGlobalTab({ log, seePrixAchat }) {
   const d = log.invGlobal;
   const loading = log.loadingMap.global;
+  const [exporting, setExporting] = useState(false);
+
+  const exportPDF = async (categorie = null) => {
+    setExporting(true);
+    try {
+      const params = categorie ? `?categorie=${encodeURIComponent(categorie)}` : "";
+      const resp = await api.get(`/stock/export-etat-stock${params}`, { responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([resp.data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etat_stock_${new Date().toISOString().slice(0,10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error("Échec de l'export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const printStock = () => {
+    window.print();
+  };
 
   if (loading) return <LoadingState />;
   if (!d) return <ErrorState msg={log.errMap.global} onRetry={() => log.refresh("global")} />;
@@ -398,6 +421,28 @@ function InventaireGlobalTab({ log, seePrixAchat }) {
 
   return (
     <div className="space-y-5">
+      {/* Boutons export */}
+      <div className="flex items-center justify-end gap-2 flex-wrap print:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={printStock}
+          className="text-gray-600 border-gray-300"
+        >
+          <Printer className="w-4 h-4 mr-1.5" />
+          Imprimer
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => exportPDF()}
+          disabled={exporting}
+          className="bg-[#FF6200] hover:bg-[#e55800] text-white"
+        >
+          <Download className="w-4 h-4 mr-1.5" />
+          {exporting ? "Export en cours…" : "Exporter PDF"}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Références" value={t.nb_references} icon={Package} />
         <StatCard label="Quantité totale" value={shortNum(t.quantite_totale)} sub="exemplaires" icon={Warehouse} color="#0A2540" bg="#EEF2F8" />
@@ -649,6 +694,24 @@ function InventairePhysiqueTab({ products, canWrite, onRefresh }) {
   const [inventaires, setInventaires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const exportPDF = async () => {
+    setExporting(true);
+    try {
+      const resp = await api.get("/stock/export-etat-stock", { responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([resp.data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etat_stock_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Échec de l'export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchInventaires = useCallback(async () => {
     setLoading(true);
@@ -675,13 +738,34 @@ function InventairePhysiqueTab({ products, canWrite, onRefresh }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-gray-500">{inventaires.length} inventaire{inventaires.length > 1 ? "s" : ""} enregistré{inventaires.length > 1 ? "s" : ""}</p>
-        {canWrite && (
-          <Button onClick={() => setShowCreate(true)} className="bg-[#FF6200] hover:bg-[#E65800] text-white" size="sm">
-            <Plus className="w-4 h-4 mr-1" /> Nouvel inventaire
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            className="text-gray-600 border-gray-300 print:hidden"
+          >
+            <Printer className="w-4 h-4 mr-1.5" />
+            Imprimer
           </Button>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPDF}
+            disabled={exporting}
+            className="text-[#FF6200] border-[#FF6200] hover:bg-[#FFF4EE] print:hidden"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            {exporting ? "Export…" : "PDF stocks"}
+          </Button>
+          {canWrite && (
+            <Button onClick={() => setShowCreate(true)} className="bg-[#FF6200] hover:bg-[#E65800] text-white" size="sm">
+              <Plus className="w-4 h-4 mr-1" /> Nouvel inventaire
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading ? <LoadingState /> : (
