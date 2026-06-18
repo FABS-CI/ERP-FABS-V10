@@ -120,7 +120,7 @@ export default function LogistiqueHub() {
   if (!currentTab) {
     return (
       <DashboardLayout>
-        <PageHeader title="Logistique" subtitle="Accès non autorisé" icon={<Truck />} />
+        <PageHeader title="Logistique" subtitle="Accès non autorisé" icon={Truck} />
         <div className="p-8 text-center text-slate-400">
           Vous n'avez pas accès aux modules logistique.
         </div>
@@ -137,7 +137,7 @@ export default function LogistiqueHub() {
         <PageHeader
           title="Hub Logistique"
           subtitle="Gestion centralisée des opérations logistiques"
-          icon={<Truck className="w-6 h-6" />}
+          icon={Truck}
         />
 
         {/* Onglets */}
