@@ -280,34 +280,103 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen relative flex items-center justify-center px-4 py-8"
+      className="min-h-screen relative flex"
       style={{
         background: "linear-gradient(135deg, #0B1220 0%, #111827 50%, #0B1220 100%)",
-        backgroundImage: "url('/assets/login-bg.png')",
+        backgroundImage: "url('/login-bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
       data-testid="login-page"
     >
-      {/* Overlay */}
+      {/* Overlay global */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "rgba(11,18,32,0.75)" }}
+        style={{ background: "rgba(11,18,32,0.62)" }}
       />
 
-      {/* Déco */}
-      <div aria-hidden className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)", filter: "blur(40px)" }} />
-      <div aria-hidden className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)", filter: "blur(40px)" }} />
+      {/* ── Colonne gauche : branding ── */}
+      <div
+        className="relative z-10 hidden lg:flex flex-col justify-center px-16"
+        style={{ flex: "1 1 55%", maxWidth: "55%" }}
+      >
+        {/* Logo + nom */}
+        <div className="flex items-center gap-4 mb-10">
+          <div
+            style={{
+              width: 64, height: 64, borderRadius: 18,
+              background: "linear-gradient(135deg,#F97316,#FB923C)",
+              boxShadow: "0 8px 32px rgba(249,115,22,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}
+          >
+            <span style={{ fontSize: 28, fontWeight: 800, color: "#fff", fontFamily: "Inter,sans-serif" }}>F</span>
+          </div>
+          <div>
+            <p style={{ fontSize: 26, fontWeight: 800, color: "#E2E8F0", lineHeight: 1.1 }}>EDITIONS FABS-CI</p>
+            <p style={{ fontSize: 13, color: "#F97316", letterSpacing: "0.08em", fontWeight: 600 }}>FABS ERP · v2.0 Enterprise</p>
+          </div>
+        </div>
+
+        {/* Slogan principal */}
+        <h1 style={{ fontSize: 38, fontWeight: 800, color: "#F1F5F9", lineHeight: 1.2, marginBottom: 16, maxWidth: 480 }}>
+          Simplifiez la gestion de votre établissement
+        </h1>
+        <p style={{ fontSize: 16, color: "#94A3B8", lineHeight: 1.7, maxWidth: 440, marginBottom: 48 }}>
+          Une solution moderne, sécurisée et complète pour piloter votre école —
+          commandes, stock, facturation, logistique et bien plus.
+        </p>
+
+        {/* Features */}
+        {[
+          { icon: "📦", label: "Gestion stock & inventaire en temps réel" },
+          { icon: "📋", label: "Commandes, factures & bons de livraison" },
+          { icon: "📊", label: "Tableaux de bord & rapports avancés" },
+          { icon: "🔒", label: "Sécurité renforcée avec authentification 2FA" },
+        ].map(({ icon, label }) => (
+          <div key={label} className="flex items-center gap-3 mb-4">
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: "rgba(249,115,22,0.12)",
+              border: "1px solid rgba(249,115,22,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 18, flexShrink: 0,
+            }}>{icon}</div>
+            <span style={{ fontSize: 14, color: "#CBD5E1", fontWeight: 500 }}>{label}</span>
+          </div>
+        ))}
+
+        {/* Slogan bas */}
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <p style={{ fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
+            « L'innovation pour une école de qualité »
+          </p>
+          <p style={{ fontSize: 12, color: "#475569", marginTop: 4 }}>
+            Bingerville, Ivory Coast · edition693fabs@gmail.com
+          </p>
+        </div>
+      </div>
+
+      {/* ── Colonne droite : carte login ── */}
+      <div
+        className="relative z-10 flex items-center justify-center px-6 py-10 w-full"
+        style={{ flex: "1 1 45%", maxWidth: "45%", minWidth: "360px" }}
+      >
+        {/* Déco glow */}
+        <div aria-hidden style={{
+          position: "absolute", top: "20%", right: "10%",
+          width: 320, height: 320, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)",
+          filter: "blur(40px)", pointerEvents: "none",
+        }} />
 
       {/* Carte */}
       <div
         data-testid="login-card"
         className="relative z-10 w-full max-w-md"
         style={{
-          background: "rgba(30,41,59,0.9)",
+          background: "rgba(30,41,59,0.92)",
           backdropFilter: "blur(20px)",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: "20px",
@@ -474,6 +543,9 @@ export default function Login() {
           />
         )}
       </div>
+      {/* fin carte */}
+      </div>
+      {/* fin colonne droite */}
     </div>
   );
 }
