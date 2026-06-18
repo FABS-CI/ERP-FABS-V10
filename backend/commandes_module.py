@@ -261,7 +261,7 @@ async def _get_client_nom(db: AsyncIOMotorDatabase, client_id: str) -> Optional[
 
 async def _get_produit_info(db: AsyncIOMotorDatabase, produit_id: str) -> dict:
     produit = await db.produits.find_one(
-        {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+        {"produit_id": produit_id},
         {"_id": 0, "reference": 1, "titre": 1, "prix_vente": 1,
          "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
     )
@@ -432,7 +432,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         # Verify all products exist and are active
         for ligne in payload.lignes:
-            prod = await db.produits.find_one({"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}], "actif": True}, {"_id": 0})
+            prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
             _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable ou inactif")
 
         # Calculate totals
@@ -663,7 +663,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             _ensure(len(payload.lignes) > 0, 400, "Au moins une ligne requise")
             # Verify products
             for ligne in payload.lignes:
-                prod = await db.produits.find_one({"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}], "actif": True}, {"_id": 0})
+                prod = await db.produits.find_one({"produit_id": ligne.produit_id, "actif": True}, {"_id": 0})
                 _ensure(prod is not None, 404, f"Produit {ligne.produit_id} introuvable")
             
             # Delete old lignes
@@ -773,7 +773,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             if not produit_id or qte_demandee <= 0:
                 continue
             produit = await db.produits.find_one(
-                {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+                {"produit_id": produit_id},
                 {"_id": 0, "stock_actuel": 1, "titre": 1, "reference": 1},
             )
             if produit is None:
@@ -970,7 +970,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 for l in lignes_fac:
                     _pid = l.get("produit_id")
                     prod = await db.produits.find_one(
-                        {"$or": [{"product_id": _pid}, {"produit_id": _pid}]},
+                        {"produit_id": _pid},
                         {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
                     )
                     fac_ligne = {
@@ -1115,7 +1115,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                     continue
                 # Décrémentation atomique avec garde stock >= qte
                 updated_prod = await db.produits.find_one_and_update(
-                    {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}], "stock_actuel": {"$gte": qte}},
+                    {"produit_id": produit_id, "stock_actuel": {"$gte": qte}},
                     {"$inc": {"stock_actuel": -qte}, "$set": {"updated_at": now}},
                     return_document=True,
                     projection={"_id": 0, "stock_actuel": 1},
@@ -1123,7 +1123,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
                 )
                 if not updated_prod:
                     produit_cur = await db.produits.find_one(
-                        {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]}, {"_id": 0, "stock_actuel": 1},
+                        {"produit_id": produit_id}, {"_id": 0, "stock_actuel": 1},
                         session=session,
                     )
                     stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
@@ -1344,7 +1344,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         from pdf_generator import enrich_lignes_for_pdf
         _pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
         _prods = await db.produits.find(
-            {"$or": [{"product_id": {"$in": _pids}}, {"produit_id": {"$in": _pids}}]}, {"_id": 0}
+            {"produit_id": {"$in": _pids}}, {"_id": 0}
         ).to_list(1000) if _pids else []
         enrich_lignes_for_pdf({(p.get("product_id") or p.get("produit_id")): p for p in _prods}, lignes)
         for l in lignes:

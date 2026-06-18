@@ -311,7 +311,7 @@ async def _calculer_cartons_depuis_ordre(db, ordre_colisage_id: str) -> List[dic
 
         # Récupérer le conditionnement depuis la fiche produit
         produit = await db.produits.find_one(
-            {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+            {"produit_id": produit_id},
             {"_id": 0, "conditionnement_carton": 1, "titre": 1, "designation": 1}
         )
         conditionnement = 1
@@ -629,7 +629,7 @@ def build_colisage_router(db, resolve_user, log_audit_event=None):
             designation = ligne.get("designation", "")
 
             produit = await db.produits.find_one(
-                {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+                {"produit_id": produit_id},
                 {"_id": 0, "conditionnement_carton": 1}
             )
             conditionnement = (produit or {}).get("conditionnement_carton") or 1
@@ -774,7 +774,7 @@ def build_colisage_router(db, resolve_user, log_audit_event=None):
             produit_id = ligne.get("produit_id")
             qte_total = ligne.get("quantite", 0)
             produit = await db.produits.find_one(
-                {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
+                {"produit_id": produit_id},
                 {"_id": 0, "conditionnement_carton": 1}
             )
             conditionnement = (produit or {}).get("conditionnement_carton") or 1
