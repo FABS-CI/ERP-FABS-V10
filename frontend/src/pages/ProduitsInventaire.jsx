@@ -35,6 +35,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatFCFA } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
+import { downloadPdf, printPdf } from "../utils/pdfActions";
 
 // ─────────────────────────────────────────
 const WRITE_ROLES    = new Set(["super_admin", "directeur_general", "gestionnaire_stock", "responsable_magasinier"]);
@@ -1363,14 +1364,38 @@ function StatsTab({ log, seePrixAchat }) {
 // ═══════════════════════════════════════════
 function ProduitsTab({ products, loading, q, setQ, page, setPage, totalPages, seePrixAchat, canWrite, onRefresh, pageSize }) {
   const PAGE_SIZE = pageSize || 20;
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownload = async () => {
+    setPdfLoading(true);
+    await downloadPdf("/stock/export-etat-stock?filtre=produits", `catalogue_produits_fabs_${new Date().toISOString().slice(0,10)}.pdf`);
+    setPdfLoading(false);
+  };
+
+  const handlePrint = async () => {
+    setPdfLoading(true);
+    await printPdf("/stock/export-etat-stock?filtre=produits");
+    setPdfLoading(false);
+  };
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Search className="w-4 h-4" /> Recherche
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Search className="w-4 h-4" /> Recherche
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handlePrint} disabled={pdfLoading}>
+                <Printer className="w-3.5 h-3.5 mr-1.5" /> Imprimer
+              </Button>
+              <Button size="sm" onClick={handleDownload} disabled={pdfLoading}
+                className="bg-[#FF6200] hover:bg-[#e05500] text-white">
+                <Download className="w-3.5 h-3.5 mr-1.5" /> Télécharger PDF
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Input
