@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Plus, Search, MapPin, Truck, Calendar, DollarSign, CheckCircle, PlayCircle, StopCircle } from "lucide-react";
 import { listMissions, createMission, updateMissionStatut } from "@/services/logistiqueService";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/layout/PageHeader";
 
-const Logistique = () => {
+const Logistique = ({ hubMode = false } = {}) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -93,10 +93,11 @@ const Logistique = () => {
     );
   };
 
-  if (isLoading) return <DashboardLayout><div>Chargement...</div></DashboardLayout>;
+  if (isLoading) return hubMode ? <><div>Chargement...</div></> : <DashboardLayout><div>Chargement...</div></DashboardLayout>;
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
     <div data-testid="missions-logistiques-page">
       <PageHeader
         icon={Truck}
@@ -273,7 +274,7 @@ const Logistique = () => {
         </CardContent>
       </Card>
     </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 };
 

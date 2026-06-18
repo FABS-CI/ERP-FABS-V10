@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import {
   Truck, Search, Plus, Eye, CheckCircle, AlertTriangle,
@@ -50,7 +50,7 @@ const ZONES_ABIDJAN = [
   "Marcory", "Koumassi", "Port-Bouët", "Attécoubé", "Bingerville", "Anyama"
 ];
 
-export default function LivraisonsDirectes() {
+export default function LivraisonsDirectes({ hubMode = false } = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -151,8 +151,9 @@ export default function LivraisonsDirectes() {
     incident: livraisons.filter((l) => l.statut === "incident").length,
   };
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
       <div className="space-y-6">
         <PageHeader
           title="Livraisons Directes"
@@ -554,6 +555,6 @@ export default function LivraisonsDirectes() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 }

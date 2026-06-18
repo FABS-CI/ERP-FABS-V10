@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import {
   AlertTriangle, Search, RefreshCw, Truck, Package,
@@ -66,7 +66,7 @@ const ResolutionBadge = ({ statut }) => {
   );
 };
 
-export default function Incidents() {
+export default function Incidents({ hubMode = false } = {}) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
@@ -118,8 +118,9 @@ export default function Incidents() {
     ...Object.entries(TYPE_CONFIG).map(([k, v]) => ({ value: k, label: v.label })),
   ];
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
       <PageHeader
         title="Incidents logistiques"
         description="Vue consolidée de tous les incidents déclarés"
@@ -342,6 +343,6 @@ export default function Incidents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </Wrapper>
   );
 }

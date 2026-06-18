@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -71,7 +71,7 @@ const KPICard = ({ title, value, subtitle, color, Icon }) => (
   </Card>
 );
 
-export default function OrdresColisage() {
+export default function OrdresColisage({ hubMode = false } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -144,8 +144,9 @@ export default function OrdresColisage() {
   const ordres = ordresList?.items || ordresList || [];
   const dash = dashboard || {};
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
       <div className="space-y-6">
         <PageHeader
           title="Ordres de Colisage"
@@ -427,6 +428,6 @@ export default function OrdresColisage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Plus, Search, DollarSign, TrendingUp, TrendingDown, BarChart3, Calendar } from "lucide-react";
 import { listCoutsMissions, createCoutMission, listRentabilite, getRapportCouts, getRentabiliteParVehicule } from "@/services/logisticsCostsService";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/layout/PageHeader";
 
-const LogisticsCosts = () => {
+const LogisticsCosts = ({ hubMode = false } = {}) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("couts"); // couts, rentabilite, rapports, vehicules
@@ -85,10 +85,11 @@ const LogisticsCosts = () => {
     });
   };
 
-  if (loadingCouts || loadingRentabilite || loadingVehicules) return <DashboardLayout><div>Chargement...</div></DashboardLayout>;
+  if (loadingCouts || loadingRentabilite || loadingVehicules) return hubMode ? <><div>Chargement...</div></> : <DashboardLayout><div>Chargement...</div></DashboardLayout>;
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
     <div data-testid="logistics-costs-page">
       <PageHeader
         icon={DollarSign}
@@ -410,7 +411,7 @@ const LogisticsCosts = () => {
         </Card>
       )}
     </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 };
 

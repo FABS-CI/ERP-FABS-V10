@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Plus, Search, Car, Shield, Wrench, UserCheck, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { listVehicules, createVehicule, updateVehiculeStatut, checkVehiculeEligibilite } from "@/services/fleetService";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/layout/PageHeader";
 
-const Fleet = () => {
+const Fleet = ({ hubMode = false } = {}) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("vehicules"); // vehicules, assurances, visites, maintenances, affectations
@@ -139,10 +139,11 @@ const Fleet = () => {
     return labels[type] || type;
   };
 
-  if (isLoading) return <DashboardLayout><div>Chargement...</div></DashboardLayout>;
+  if (isLoading) return hubMode ? <><div>Chargement...</div></> : <DashboardLayout><div>Chargement...</div></DashboardLayout>;
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
     <div data-testid="fleet-page">
       <PageHeader
         icon={Car}
@@ -442,7 +443,7 @@ const Fleet = () => {
         </Card>
       )}
     </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 };
 

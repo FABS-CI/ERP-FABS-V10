@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import {
   Truck, Search, Plus, CheckCircle, AlertTriangle,
@@ -58,7 +58,7 @@ const StatutBadge = ({ statut }) => {
   return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>;
 };
 
-export default function Expeditions() {
+export default function Expeditions({ hubMode = false } = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -165,8 +165,9 @@ export default function Expeditions() {
     incidents: expeditions.filter((e) => e.statut === "incident").length,
   };
 
+  const Wrapper = hubMode ? React.Fragment : DashboardLayout;
   return (
-    <DashboardLayout>
+    <Wrapper>
       <div className="space-y-6">
         <PageHeader
           title="Expéditions"
@@ -578,6 +579,6 @@ export default function Expeditions() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </Wrapper>
   );
 }

@@ -716,6 +716,13 @@ function App() {
               }
             />
             
+            {/* Redirections routes manquantes */}
+            <Route path="/bons-livraison/:id" element={<Navigate to="/livraisons" replace />} />
+            <Route path="/documents/analytics" element={<Navigate to="/documents" replace />} />
+            <Route path="/documents/upload" element={<Navigate to="/documents" replace />} />
+            <Route path="/rh/employes/new" element={<Navigate to="/rh/employes" replace />} />
+            <Route path="/rh/employes/:id/edit" element={<Navigate to="/rh/employes" replace />} />
+
             {/* Documents AI */}
             <Route
               path="/documents"
