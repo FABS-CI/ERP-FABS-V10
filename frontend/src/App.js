@@ -63,6 +63,7 @@ const Logistique = lazy(() => import("./pages/Logistique"));
 const ComptabiliteAvancee = lazy(() => import("./pages/ComptabiliteAvancee"));
 const Fleet = lazy(() => import("./pages/Fleet"));
 const LogisticsCosts = lazy(() => import("./pages/LogisticsCosts"));
+const LogistiqueHub = lazy(() => import("./pages/LogistiqueHub"));
 const MultiChannelNotifications = lazy(() => import("./pages/MultiChannelNotifications"));
 const BIAnalytics = lazy(() => import("./pages/BIAnalytics"));
 const WorkflowApprovals = lazy(() => import("./pages/WorkflowApprovals"));
@@ -568,6 +569,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Logistique />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Hub Logistique (vue centralisée) */}
+            <Route
+              path="/logistique-hub"
+              element={
+                <ProtectedRoute>
+                  <LogistiqueHub />
                 </ProtectedRoute>
               }
             />

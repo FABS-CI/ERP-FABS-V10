@@ -28,6 +28,7 @@ export const MODULES = [
   { key: "produits_inventaire",  path: "/produits-inventaire",  label: "Inventaire",             icon: "ClipboardList",   group: "Stocks & Logistique" },
   { key: "stock",                path: "/stock",                label: "Stock",                  icon: "Package",         group: "Stocks & Logistique" },
   { key: "logistique",           path: "/logistique",           label: "Logistique",            icon: "Truck",           group: "Stocks & Logistique" },
+  { key: "logistique_hub",       path: "/logistique-hub",       label: "Hub Logistique",         icon: "LayoutDashboard", group: "Stocks & Logistique" },
   { key: "ordres_colisage",      path: "/ordres-colisage",      label: "Ordres de colisage",     icon: "Package",         group: "Stocks & Logistique" },
   { key: "livraisons_directes",  path: "/livraisons-directes",  label: "Livraisons directes",    icon: "Truck",           group: "Stocks & Logistique" },
   { key: "incidents",            path: "/incidents",            label: "Incidents",              icon: "AlertTriangle",   group: "Stocks & Logistique" },
@@ -100,6 +101,7 @@ export const PERMISSIONS = {
   ordres_colisage:            { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1 },
   livraisons_directes:        { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1 },
   incidents:                  { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1 },
+  logistique_hub:             { super_admin: 1, directeur_general: 1, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1 },
 
   // 📦 STOCKS & LOGISTIQUE
   // Note V10 : Assistante & Secretariat écrivent les Produits (prix vente uniquement côté backend FINANCIAL_ROLES)
