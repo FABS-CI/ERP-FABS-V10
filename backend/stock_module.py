@@ -1089,6 +1089,64 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
             "valeur_totale_immobilisee": sum(d["valeur_immobilisee_fcfa"] for d in dormants),
         }
 
+    # ──────────────────────────────────────────────
+    # EXPORT PDF — État des stocks
+    # ──────────────────────────────────────────────
+    @router.get("/export-etat-stock")
+    async def export_etat_stock(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+        filtre: Optional[str] = Query(None, description="global|matiere|niveau|cycle — None = tous"),
+        categorie: Optional[str] = Query(None, description="Filtrer par catégorie"),
+        format: Optional[str] = Query("pdf", description="pdf"),
+    ):
+        """Génère un PDF de l'état des stocks (toutes références ou filtré)."""
+        from fastapi.responses import StreamingResponse
+        from stock_pdf_generator import generate_etat_stock_pdf
+
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+
+        # Récupérer tous les produits
+        query: dict = {}
+        if categorie:
+            query["categorie"] = categorie
+        produits = await db.produits.find(query, {"_id": 0}).sort("categorie", 1).to_list(2000)
+
+        # Enrichir avec matière
+        for p in produits:
+            p["matiere"] = _deduire_matiere(p.get("titre", ""))
+
+        # Agrégats globaux
+        total_refs = len(produits)
+        total_qty  = sum(p.get("stock_actuel", 0) for p in produits)
+        total_val  = sum(p.get("stock_actuel", 0) * p.get("prix_achat", p.get("prix_vente", 0)) for p in produits)
+        nb_alertes = sum(1 for p in produits if p.get("stock_actuel", 0) <= p.get("seuil_alerte", 20) and p.get("stock_actuel", 0) > 0)
+        nb_ruptures = sum(1 for p in produits if p.get("stock_actuel", 0) == 0)
+
+        resume = {
+            "nb_references": total_refs,
+            "quantite_totale": total_qty,
+            "valeur_totale_fcfa": total_val,
+            "nb_alertes": nb_alertes,
+            "nb_ruptures": nb_ruptures,
+            "date_edition": datetime.now(timezone.utc).strftime("%d/%m/%Y à %H:%M"),
+            "edite_par": me.get("email", me.get("user_id", "")),
+            "filtre": filtre or "global",
+            "categorie": categorie or "Toutes catégories",
+        }
+
+        buffer = generate_etat_stock_pdf(produits, resume)
+        filename = f"etat_stock_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.pdf"
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{filename}"',
+                "X-Filename": filename,
+            },
+        )
+
     return router
 
 
