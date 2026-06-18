@@ -5,7 +5,7 @@
  */
 import { useState, useCallback, useRef } from "react";
 import {
-  FileText, Download, Printer, Mail, Share2, Search,
+  FileText, Printer, Search,
   Filter, BarChart2, AlertCircle, Loader2, RefreshCw,
   ChevronDown, ChevronRight, User, MapPin, Phone, Tag,
 } from "lucide-react";
@@ -173,34 +173,6 @@ export default function EtatCompteClients() {
   }, [buildParams, filtre, anneeScolaire]);
 
   // ─────────────────────────────────────────────────────────────
-  // Export Excel
-  // ─────────────────────────────────────────────────────────────
-  const handleExportExcel = useCallback(async () => {
-    setExporting(true);
-    try {
-      const token = localStorage.getItem("fabs_token");
-      const qs = buildParams();
-      const res = await fetch(`${API}/rapports/etat-compte-clients/excel?${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Erreur serveur");
-      }
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `etat_compte_clients_${filtre}_${anneeScolaire || new Date().getFullYear()}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast.success("Excel généré avec succès");
-    } catch (e) {
-      toast.error(e.message || "Échec de l'export Excel");
-    } finally {
-      setExporting(false);
-    }
-  }, [buildParams, filtre, anneeScolaire]);
-
   // ─────────────────────────────────────────────────────────────
   // Imprimer
   // ─────────────────────────────────────────────────────────────
@@ -225,49 +197,6 @@ export default function EtatCompteClients() {
       setExporting(false);
     }
   }, [buildParams]);
-
-  // ─────────────────────────────────────────────────────────────
-  // Email
-  // ─────────────────────────────────────────────────────────────
-  const handleEmail = useCallback(() => {
-    // Si un client spécifique est sélectionné, récupérer son email
-    const email = "";
-    const subject = encodeURIComponent("État de compte — ÉDITIONS FABS-CI");
-    const body = encodeURIComponent(
-      "Bonjour,\n\nVeuillez trouver ci-joint votre état de compte.\n\nCordialement,\nÉDITIONS FABS-CI"
-    );
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  }, []);
-
-  // ─────────────────────────────────────────────────────────────
-  // WhatsApp
-  // ─────────────────────────────────────────────────────────────
-  const handleWhatsApp = useCallback(async () => {
-    // Si client sélectionné, récupérer son téléphone
-    let phone = "";
-    if (selectedClientId) {
-      try {
-        const token = localStorage.getItem("fabs_token");
-        const r = await axios.get(`${API}/clients/${selectedClientId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        phone = (r.data.telephone || "").replace(/\D/g, "");
-        // Ajouter l'indicatif CI si nécessaire
-        if (phone && !phone.startsWith("225") && phone.length <= 10) {
-          phone = "225" + phone;
-        }
-      } catch { /* ignore */ }
-    }
-    const msg = encodeURIComponent(
-      "Bonjour, veuillez trouver votre état de compte ÉDITIONS FABS-CI en consultant votre espace client."
-    );
-    if (phone) {
-      window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
-    } else {
-      // Ouvrir WhatsApp sans numéro prédéfini
-      window.open(`https://wa.me/?text=${msg}`, "_blank");
-    }
-  }, [selectedClientId]);
 
   // ─────────────────────────────────────────────────────────────
   // Toggle expansion client dans le tableau preview
@@ -469,19 +398,6 @@ export default function EtatCompteClients() {
             PDF
           </button>
 
-          {/* Excel */}
-          <button
-            onClick={handleExportExcel}
-            disabled={exporting || loadingPreview}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold shadow transition disabled:opacity-50"
-          >
-            {exporting
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Download className="w-4 h-4" />
-            }
-            Excel
-          </button>
-
           {/* Imprimer */}
           <button
             onClick={handlePrint}
@@ -493,26 +409,6 @@ export default function EtatCompteClients() {
               : <Printer className="w-4 h-4" />
             }
             Imprimer
-          </button>
-
-          {/* Email */}
-          <button
-            onClick={handleEmail}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 shadow-sm transition disabled:opacity-50"
-          >
-            <Mail className="w-4 h-4" />
-            Email
-          </button>
-
-          {/* WhatsApp */}
-          <button
-            onClick={handleWhatsApp}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] hover:bg-[#1ebe5c] text-white text-sm font-semibold shadow transition disabled:opacity-50"
-          >
-            <Share2 className="w-4 h-4" />
-            WhatsApp
           </button>
 
           {/* Reset filtres */}
