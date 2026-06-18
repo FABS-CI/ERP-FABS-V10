@@ -90,7 +90,7 @@ export default function Departements() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-sm text-gray-500">Chargement...</div>
+          <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
         </div>
       </DashboardLayout>
     );
@@ -156,7 +156,7 @@ export default function Departements() {
         }
       />
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden" data-testid="departements-table">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden" data-testid="departements-table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -168,7 +168,7 @@ export default function Departements() {
           <TableBody>
             {departements.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={3} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun département trouvé
                 </TableCell>
               </TableRow>
@@ -179,7 +179,7 @@ export default function Departements() {
                     <Building2 className="w-4 h-4 text-gray-400" />
                     {dept.nom}
                   </TableCell>
-                  <TableCell className="text-gray-600">{dept.description || "-"}</TableCell>
+                  <TableCell className="text-gray-600 dark:text-white/70">{dept.description || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button

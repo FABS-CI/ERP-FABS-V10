@@ -112,14 +112,14 @@ export default function Missions() {
       terminee: "bg-green-100 text-green-800",
       annulee: "bg-red-100 text-red-800",
     };
-    return badges[statut] || "bg-gray-100 text-gray-800";
+    return badges[statut] || "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white";
   };
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-sm text-gray-500">Chargement...</div>
+          <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
         </div>
       </DashboardLayout>
     );
@@ -236,7 +236,7 @@ export default function Missions() {
         }
       />
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -254,7 +254,7 @@ export default function Missions() {
           <TableBody>
             {missions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune mission trouvée
                 </TableCell>
               </TableRow>

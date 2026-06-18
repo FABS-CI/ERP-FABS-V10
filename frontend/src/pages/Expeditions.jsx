@@ -29,9 +29,9 @@ const STATUT_CONFIG = {
   arrive_destination: { label: "Arrivé dest.", color: "bg-purple-100 text-purple-800" },
   receptionne: { label: "Réceptionné", color: "bg-green-100 text-green-800" },
   recuperation: { label: "Récupération", color: "bg-orange-100 text-orange-800" },
-  recupere: { label: "Récupéré", color: "bg-gray-100 text-gray-800" },
+  recupere: { label: "Récupéré", color: "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white" },
   incident: { label: "Incident", color: "bg-red-100 text-red-800" },
-  cloture: { label: "Clôturé", color: "bg-gray-100 text-gray-700" },
+  cloture: { label: "Clôturé", color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" },
 };
 
 const STATUT_TRANSITIONS = {
@@ -54,7 +54,7 @@ const VILLES_CI = [
 ];
 
 const StatutBadge = ({ statut }) => {
-  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 text-gray-700" };
+  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" };
   return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>;
 };
 
@@ -192,7 +192,7 @@ export default function Expeditions() {
             <Card key={label}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="text-xs text-gray-500 dark:text-white/50">{label}</p>
                   <p className={`text-xl font-bold ${color}`}>{val}</p>
                 </div>
                 <Icon className="w-5 h-5 text-gray-300" />
@@ -213,7 +213,7 @@ export default function Expeditions() {
             />
           </div>
           <select
-            className="border rounded-md px-3 py-2 text-sm bg-white"
+            className="border rounded-md px-3 py-2 text-sm bg-white dark:bg-[#0b1e30]"
             value={statutFilter}
             onChange={(e) => setStatutFilter(e.target.value)}
           >
@@ -243,7 +243,7 @@ export default function Expeditions() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-gray-600">
+                    <tr className="border-b bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-white/70">
                       <th className="text-left px-4 py-3 font-medium">Référence</th>
                       <th className="text-left px-4 py-3 font-medium">Destination</th>
                       <th className="text-left px-4 py-3 font-medium">Transporteur</th>
@@ -257,7 +257,7 @@ export default function Expeditions() {
                     {expeditions.map((exp) => {
                       const transitions = STATUT_TRANSITIONS[exp.statut] || [];
                       return (
-                        <tr key={exp._id || exp.expedition_id} className="border-b hover:bg-gray-50">
+                        <tr key={exp._id || exp.expedition_id} className="border-b hover:bg-gray-50 dark:bg-white/5">
                           <td className="px-4 py-3 font-mono text-xs font-medium text-indigo-700">{exp.reference}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1">
@@ -266,8 +266,8 @@ export default function Expeditions() {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-xs">{exp.transporteur || "—"}</td>
-                          <td className="px-4 py-3 text-xs font-mono text-gray-600">{exp.numero_tracking || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-500">
+                          <td className="px-4 py-3 text-xs font-mono text-gray-600 dark:text-white/70">{exp.numero_tracking || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">
                             {exp.date_livraison_prevue
                               ? new Date(exp.date_livraison_prevue).toLocaleDateString("fr-CI")
                               : "—"}

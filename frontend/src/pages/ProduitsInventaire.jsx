@@ -53,7 +53,7 @@ function StatCard({ label, value, sub, icon: Icon, color = "#FF6200", bg = "#FFF
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</p>
+            <p className="text-xs text-gray-500 dark:text-white/50 uppercase tracking-wide font-medium">{label}</p>
             <p className="text-2xl font-bold mt-1" style={{ color }}>{value}</p>
             {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
           </div>
@@ -70,7 +70,7 @@ function StatCard({ label, value, sub, icon: Icon, color = "#FF6200", bg = "#FFF
 function ProgressBar({ value, max, color = "#FF6200" }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+    <div className="h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
@@ -351,15 +351,15 @@ function DashboardTab({ log }) {
           <div className="grid grid-cols-3 gap-6">
             <div className="text-center">
               <p className="text-3xl font-bold text-[#0A2540] dark:text-white">{a30.total_mouvements}</p>
-              <p className="text-xs text-gray-500 mt-1">Mouvements totaux</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mt-1">Mouvements totaux</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold text-green-600">{a30.entrees}</p>
-              <p className="text-xs text-gray-500 mt-1">Entrées</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mt-1">Entrées</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold text-[#FF6200]">{a30.sorties}</p>
-              <p className="text-xs text-gray-500 mt-1">Sorties</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mt-1">Sorties</p>
             </div>
           </div>
           {a30.total_mouvements === 0 && (
@@ -428,7 +428,7 @@ function InventaireGlobalTab({ log, seePrixAchat }) {
           variant="outline"
           size="sm"
           onClick={printStock}
-          className="text-gray-600 border-gray-300"
+          className="text-gray-600 dark:text-white/70 border-gray-300 dark:border-white/10"
         >
           <Printer className="w-4 h-4 mr-1.5" />
           Imprimer
@@ -474,7 +474,7 @@ function InventaireGlobalTab({ log, seePrixAchat }) {
               <div key={cat.categorie}>
                 <div className="flex items-center justify-between text-sm mb-1">
                   <span className="font-medium text-[#0A2540] dark:text-white">{cat.categorie}</span>
-                  <div className="flex items-center gap-4 text-gray-500 text-xs">
+                  <div className="flex items-center gap-4 text-gray-500 dark:text-white/50 text-xs">
                     <span>{cat.nb_references} réf.</span>
                     <span className="font-semibold text-[#0A2540] dark:text-white">{cat.quantite_totale.toLocaleString()} ex.</span>
                     {seePrixAchat && <span>{formatFCFA(cat.valeur_fcfa)}</span>}
@@ -509,7 +509,7 @@ function ParMatiereTab({ log }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{d.nb_matieres} matières identifiées dans le catalogue</p>
+        <p className="text-sm text-gray-500 dark:text-white/50">{d.nb_matieres} matières identifiées dans le catalogue</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -527,7 +527,7 @@ function ParMatiereTab({ log }) {
                   <Badge variant="outline" className="text-xs">{m.nb_references} réf.</Badge>
                 </div>
                 <p className="text-2xl font-bold" style={{ color }}>{m.quantite_totale.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-0.5">exemplaires en stock</p>
+                <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">exemplaires en stock</p>
                 <ProgressBar value={m.quantite_totale} max={maxQty} color={color} />
 
                 {isOpen && m.produits?.length > 0 && (
@@ -573,7 +573,7 @@ function ParNiveauTab({ log, seePrixAchat }) {
         <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500">
+              <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                 <th className="text-left px-4 py-3 font-semibold">Niveau</th>
                 <th className="text-left px-4 py-3 font-semibold">Catégorie</th>
                 <th className="text-right px-4 py-3 font-semibold">Références</th>
@@ -586,14 +586,14 @@ function ParNiveauTab({ log, seePrixAchat }) {
               {niveaux.map((n) => {
                 const color = catColor[n.categorie] || "#6B7280";
                 return (
-                  <tr key={n.niveau} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5">
+                  <tr key={n.niveau} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5">
                     <td className="px-4 py-3 font-semibold text-[#0A2540] dark:text-white">{n.niveau}</td>
                     <td className="px-4 py-3">
                       <Badge variant="outline" style={{ borderColor: color, color }}>{n.categorie}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700 dark:text-white/80">{n.nb_references}</td>
                     <td className="px-4 py-3 text-right font-semibold text-[#0A2540] dark:text-white">{n.quantite_totale.toLocaleString()}</td>
-                    {seePrixAchat && <td className="px-4 py-3 text-right text-gray-500">{formatFCFA(n.valeur_fcfa)}</td>}
+                    {seePrixAchat && <td className="px-4 py-3 text-right text-gray-500 dark:text-white/50">{formatFCFA(n.valeur_fcfa)}</td>}
                     <td className="px-4 py-3">
                       <ProgressBar value={n.quantite_totale} max={maxQty} color={color} />
                     </td>
@@ -658,7 +658,7 @@ function ParCycleTab({ log }) {
         <CardContent>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] uppercase tracking-wider text-gray-500 border-b">
+              <tr className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50 border-b">
                 <th className="text-left py-2 font-semibold">Cycle</th>
                 <th className="text-left py-2 font-semibold">Catégories</th>
                 <th className="text-right py-2 font-semibold">Références</th>
@@ -673,10 +673,10 @@ function ParCycleTab({ log }) {
                 return (
                   <tr key={c.cycle} className="border-t border-gray-100 dark:border-white/10">
                     <td className="py-3 font-semibold" style={{ color: cfg.color }}>{c.cycle}</td>
-                    <td className="py-3 text-xs text-gray-500">{(c.categories || []).join(", ")}</td>
+                    <td className="py-3 text-xs text-gray-500 dark:text-white/50">{(c.categories || []).join(", ")}</td>
                     <td className="py-3 text-right">{c.nb_references}</td>
                     <td className="py-3 text-right font-semibold text-[#0A2540] dark:text-white">{c.quantite_totale.toLocaleString()}</td>
-                    <td className="py-3 text-right text-gray-500">{pct}%</td>
+                    <td className="py-3 text-right text-gray-500 dark:text-white/50">{pct}%</td>
                   </tr>
                 );
               })}
@@ -740,13 +740,13 @@ function InventairePhysiqueTab({ products, canWrite, onRefresh }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-sm text-gray-500">{inventaires.length} inventaire{inventaires.length > 1 ? "s" : ""} enregistré{inventaires.length > 1 ? "s" : ""}</p>
+        <p className="text-sm text-gray-500 dark:text-white/50">{inventaires.length} inventaire{inventaires.length > 1 ? "s" : ""} enregistré{inventaires.length > 1 ? "s" : ""}</p>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => window.print()}
-            className="text-gray-600 border-gray-300 print:hidden"
+            className="text-gray-600 dark:text-white/70 border-gray-300 dark:border-white/10 print:hidden"
           >
             <Printer className="w-4 h-4 mr-1.5" />
             Imprimer
@@ -774,7 +774,7 @@ function InventairePhysiqueTab({ products, canWrite, onRefresh }) {
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500">
+                <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                   <th className="text-left px-4 py-3 font-semibold">Référence</th>
                   <th className="text-left px-4 py-3 font-semibold">Date</th>
                   <th className="text-left px-4 py-3 font-semibold">Type</th>
@@ -789,13 +789,13 @@ function InventairePhysiqueTab({ products, canWrite, onRefresh }) {
                   <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">Aucun inventaire physique enregistré.</td></tr>
                 )}
                 {inventaires.map((inv) => (
-                  <tr key={inv.inventaire_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50">
+                  <tr key={inv.inventaire_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:bg-white/5">
                     <td className="px-4 py-3 font-mono text-xs">{inv.reference}</td>
                     <td className="px-4 py-3">{fmt(inv.date_inventaire)}</td>
                     <td className="px-4 py-3">
                       <Badge variant="outline">{inv.type_inventaire || "complet"}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{inv.depot || "principal"}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-white/50 text-xs">{inv.depot || "principal"}</td>
                     <td className="px-4 py-3 text-right font-semibold" style={{ color: inv.total_ecart < 0 ? "#DC2626" : inv.total_ecart > 0 ? "#16a34a" : "#6B7280" }}>
                       {inv.total_ecart > 0 ? "+" : ""}{inv.total_ecart}
                     </td>
@@ -928,7 +928,7 @@ function CreerInventaireDialog({ products, onClose, onCreated }) {
               <Label className="mb-2 block">Quantités comptées ({lignes.length} articles)</Label>
               <div className="max-h-64 overflow-y-auto border rounded-lg">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 sticky top-0">
+                  <thead className="bg-gray-50 dark:bg-white/5 sticky top-0">
                     <tr>
                       <th className="text-left px-3 py-2 font-semibold">Produit</th>
                       <th className="text-right px-3 py-2 font-semibold">Théorique</th>
@@ -939,7 +939,7 @@ function CreerInventaireDialog({ products, onClose, onCreated }) {
                     {lignes.map(l => (
                       <tr key={l.produit_id} className="border-t">
                         <td className="px-3 py-1.5 max-w-[200px] truncate">{l.titre}</td>
-                        <td className="px-3 py-1.5 text-right text-gray-500">{l.stock_theorique}</td>
+                        <td className="px-3 py-1.5 text-right text-gray-500 dark:text-white/50">{l.stock_theorique}</td>
                         <td className="px-3 py-1.5 text-right">
                           <input
                             type="number" min={0}
@@ -991,7 +991,7 @@ function DepotsTab({ log, canWrite }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{d.nb_depots} dépôt{d.nb_depots > 1 ? "s" : ""} actif{d.nb_depots > 1 ? "s" : ""}</p>
+        <p className="text-sm text-gray-500 dark:text-white/50">{d.nb_depots} dépôt{d.nb_depots > 1 ? "s" : ""} actif{d.nb_depots > 1 ? "s" : ""}</p>
         {canWrite && (
           <div className="flex gap-2">
             <Button onClick={() => setShowTransfert(true)} variant="outline" size="sm">
@@ -1018,12 +1018,12 @@ function DepotsTab({ log, canWrite }) {
                 </Badge>
               </div>
               {depot.adresse && (
-                <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
+                <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1 mb-2">
                   <MapPin className="w-3 h-3" /> {depot.adresse}
                 </p>
               )}
               {depot.responsable && (
-                <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
+                <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1 mb-3">
                   <User className="w-3 h-3" /> {depot.responsable}
                 </p>
               )}
@@ -1199,10 +1199,10 @@ function AlertesTab({ log }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {SECTIONS.map(s => (
           <button key={s.id} onClick={() => setSection(s.id)}
-            className={`text-left p-4 rounded-xl border-2 transition-all ${section === s.id ? "border-current shadow-md" : "border-gray-200 hover:border-gray-300"}`}
+            className={`text-left p-4 rounded-xl border-2 transition-all ${section === s.id ? "border-current shadow-md" : "border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-white/10"}`}
             style={section === s.id ? { borderColor: s.color } : {}}>
             <p className="text-2xl font-bold" style={{ color: s.color }}>{s.count}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{s.label}</p>
           </button>
         ))}
       </div>
@@ -1223,7 +1223,7 @@ function AlertesTab({ log }) {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500">
+                <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                   <th className="text-left px-4 py-3 font-semibold">Produit</th>
                   <th className="text-left px-4 py-3 font-semibold">Catégorie</th>
                   <th className="text-right px-4 py-3 font-semibold">Stock</th>
@@ -1233,7 +1233,7 @@ function AlertesTab({ log }) {
               </thead>
               <tbody>
                 {current.data.map((a) => (
-                  <tr key={a.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50">
+                  <tr key={a.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:bg-white/5">
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#0A2540] dark:text-white text-xs leading-tight">{a.titre}</p>
                       <p className="text-[10px] text-gray-400">{a.niveau_scolaire}</p>
@@ -1241,7 +1241,7 @@ function AlertesTab({ log }) {
                     <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">{a.categorie}</Badge></td>
                     <td className="px-4 py-3 text-right font-bold" style={{ color: current.color }}>{a.stock_actuel}</td>
                     <td className="px-4 py-3 text-right text-gray-400">{a.seuil_alerte ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{a.message}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">{a.message}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1276,7 +1276,7 @@ function StatsTab({ log, seePrixAchat }) {
             topVentes?.top_ventes?.length > 0 ? (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                     <th className="text-left px-4 py-3">#</th>
                     <th className="text-left px-4 py-3">Produit</th>
                     <th className="text-left px-4 py-3">Matière</th>
@@ -1287,7 +1287,7 @@ function StatsTab({ log, seePrixAchat }) {
                 </thead>
                 <tbody>
                   {topVentes.top_ventes.map((p, i) => (
-                    <tr key={p.produit_id} className="border-t border-gray-100 hover:bg-gray-50">
+                    <tr key={p.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:bg-white/5">
                       <td className="px-4 py-3 text-gray-400 font-bold">{i + 1}</td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-[#0A2540] dark:text-white text-xs">{p.titre}</p>
@@ -1295,8 +1295,8 @@ function StatsTab({ log, seePrixAchat }) {
                       </td>
                       <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">{p.matiere}</Badge></td>
                       <td className="px-4 py-3 text-right font-bold text-green-600">{p.quantite_sortie}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{p.stock_actuel}</td>
-                      {seePrixAchat && <td className="px-4 py-3 text-right text-gray-500">{formatFCFA(p.chiffre_affaires_potentiel)}</td>}
+                      <td className="px-4 py-3 text-right text-gray-700 dark:text-white/90">{p.stock_actuel}</td>
+                      {seePrixAchat && <td className="px-4 py-3 text-right text-gray-500 dark:text-white/50">{formatFCFA(p.chiffre_affaires_potentiel)}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -1312,7 +1312,7 @@ function StatsTab({ log, seePrixAchat }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-gray-500" /> Produits dormants — {dormants?.nb_dormants ?? "—"} références sans mouvement (90j)
+            <TrendingDown className="w-4 h-4 text-gray-500 dark:text-white/50" /> Produits dormants — {dormants?.nb_dormants ?? "—"} références sans mouvement (90j)
           </CardTitle>
           {dormants?.valeur_totale_immobilisee > 0 && (
             <CardDescription className="text-[#DC2626] font-semibold">
@@ -1325,7 +1325,7 @@ function StatsTab({ log, seePrixAchat }) {
             dormants?.produits_dormants?.length > 0 ? (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-500">
+                  <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                     <th className="text-left px-4 py-3">Produit</th>
                     <th className="text-left px-4 py-3">Matière</th>
                     <th className="text-right px-4 py-3">Stock</th>
@@ -1334,13 +1334,13 @@ function StatsTab({ log, seePrixAchat }) {
                 </thead>
                 <tbody>
                   {dormants.produits_dormants.map(p => (
-                    <tr key={p.produit_id} className="border-t border-gray-100 hover:bg-gray-50">
+                    <tr key={p.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:bg-white/5">
                       <td className="px-4 py-3">
                         <p className="font-medium text-[#0A2540] dark:text-white text-xs">{p.titre}</p>
                         <p className="text-[10px] text-gray-400">{p.niveau_scolaire}</p>
                       </td>
                       <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">{p.matiere}</Badge></td>
-                      <td className="px-4 py-3 text-right text-gray-700">{p.stock_actuel}</td>
+                      <td className="px-4 py-3 text-right text-gray-700 dark:text-white/90">{p.stock_actuel}</td>
                       {seePrixAchat && <td className="px-4 py-3 text-right text-[#DC2626] font-semibold">{formatFCFA(p.valeur_immobilisee_fcfa)}</td>}
                     </tr>
                   ))}
@@ -1412,7 +1412,7 @@ function ProduitsTab({ products, loading, q, setQ, page, setPage, totalPages, se
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-gray-500">
+                <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white/50">
                   <th className="text-left px-4 py-3">Réf.</th>
                   <th className="text-left px-4 py-3">Titre</th>
                   <th className="text-left px-4 py-3">Catégorie</th>
@@ -1435,20 +1435,20 @@ function ProduitsTab({ products, loading, q, setQ, page, setPage, totalPages, se
                   const stockOk = (p.stock_actuel || 0) > (p.stock_minimum || p.seuil_alerte || 20);
                   const stockBas = !stockOk && (p.stock_actuel || 0) > 0;
                   return (
-                    <tr key={p.product_id || p.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.reference || "—"}</td>
+                    <tr key={p.product_id || p.produit_id} className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-white/50">{p.reference || "—"}</td>
                       <td className="px-4 py-3">
                         <p className="font-semibold text-[#0A2540] dark:text-white text-xs leading-snug">{p.titre}</p>
                       </td>
                       <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">{p.categorie || "—"}</Badge></td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{p.niveau_scolaire || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">{p.niveau_scolaire || "—"}</td>
                       <td className="px-4 py-3 text-right">
                         <span className={`font-bold text-sm ${stockBas ? "text-orange-500" : (p.stock_actuel || 0) === 0 ? "text-red-600" : "text-[#0A2540] dark:text-white"}`}>
                           {p.stock_actuel || 0}
                         </span>
                       </td>
                       {seePrixAchat && (
-                        <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                        <td className="px-4 py-3 text-right text-gray-500 dark:text-white/50 text-xs">
                           {p.prix_achat != null ? formatFCFA(p.prix_achat) : "—"}
                         </td>
                       )}
@@ -1473,7 +1473,7 @@ function ProduitsTab({ products, loading, q, setQ, page, setPage, totalPages, se
           </div>
 
           {products.total > PAGE_SIZE && (
-            <div className="border-t border-gray-100 dark:border-white/10 px-4 py-3 flex items-center justify-between text-xs text-gray-500">
+            <div className="border-t border-gray-100 dark:border-white/10 px-4 py-3 flex items-center justify-between text-xs text-gray-500 dark:text-white/50">
               <span>Page {page}/{totalPages} — {products.total} produit{products.total > 1 ? "s" : ""}</span>
               <div className="flex gap-2">
                 <Button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))} variant="outline" size="sm">
@@ -1598,7 +1598,7 @@ function FournisseursTab({ fournisseurs, onRefresh, canWrite }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? "s" : ""}</p>
+        <p className="text-sm text-gray-500 dark:text-white/50">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? "s" : ""}</p>
         {canWrite && (
           <Button onClick={() => setShowCreate(true)} className="bg-[#FF6200] hover:bg-[#E65800] text-white" size="sm">
             <Plus className="w-4 h-4 mr-1" /> Nouveau fournisseur
@@ -1614,9 +1614,9 @@ function FournisseursTab({ fournisseurs, onRefresh, canWrite }) {
           <Card key={f.fournisseur_id}>
             <CardContent className="p-4">
               <p className="font-semibold text-[#0A2540] dark:text-white">{f.nom}</p>
-              {f.email && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1"><Mail className="w-3 h-3" />{f.email}</p>}
-              {f.telephone && <p className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3" />{f.telephone}</p>}
-              {f.adresse && <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" />{f.adresse}</p>}
+              {f.email && <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1 mt-1"><Mail className="w-3 h-3" />{f.email}</p>}
+              {f.telephone && <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1"><Phone className="w-3 h-3" />{f.telephone}</p>}
+              {f.adresse && <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1"><MapPin className="w-3 h-3" />{f.adresse}</p>}
               {f.notes && <p className="text-xs text-gray-400 mt-2 border-t pt-2">{f.notes}</p>}
             </CardContent>
           </Card>

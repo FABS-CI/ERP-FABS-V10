@@ -87,7 +87,7 @@ export default function CategoriesPro() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -97,8 +97,8 @@ export default function CategoriesPro() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catégories Professionnelles</h1>
-          <p className="text-sm text-gray-500">Gestion des catégories professionnelles</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Catégories Professionnelles</h1>
+          <p className="text-sm text-gray-500 dark:text-white/50">Gestion des catégories professionnelles</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -141,7 +141,7 @@ export default function CategoriesPro() {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -153,7 +153,7 @@ export default function CategoriesPro() {
           <TableBody>
             {categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={3} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune catégorie trouvée
                 </TableCell>
               </TableRow>
@@ -164,7 +164,7 @@ export default function CategoriesPro() {
                     <Layers className="w-4 h-4 text-gray-400" />
                     {cat.nom}
                   </TableCell>
-                  <TableCell className="text-gray-600">{cat.description || "-"}</TableCell>
+                  <TableCell className="text-gray-600 dark:text-white/70">{cat.description || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button

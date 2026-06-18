@@ -244,7 +244,7 @@ export default function Paiements() {
             {loading ? (
               <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : paiements.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">Aucun paiement</div>
+              <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucun paiement</div>
             ) : (
               <div className="overflow-x-auto -mx-2">
                 <table className="min-w-[640px] w-full">
@@ -263,7 +263,7 @@ export default function Paiements() {
                     {paiements.map((p) => (
                       <tr
                         key={p.paiement_id}
-                        className="border-b hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
+                        className="border-b hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer"
                         onClick={() => navigate(`/paiements/${p.paiement_id}`)}
                         data-testid={`row-paiement-${p.reference}`}
                       >
@@ -451,7 +451,7 @@ function PaiementFormDialog({ open, onOpenChange, clients, onCreated }) {
                 />
                 {factureSearch && (
                   <button onClick={() => setFactureSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                    <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:text-white/70" />
                   </button>
                 )}
               </div>
@@ -474,10 +474,10 @@ function PaiementFormDialog({ open, onOpenChange, clients, onCreated }) {
                   return filtered.map((f) => {
                     const isLate = f.date_echeance && new Date(f.date_echeance) < Date.now();
                     return (
-                      <div key={f.facture_id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5">
+                      <div key={f.facture_id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5">
                         <div className="flex-1 min-w-0">
                           <span className="font-mono text-xs font-semibold">{f.reference}</span>
-                          <span className="ml-2 text-xs text-gray-500">
+                          <span className="ml-2 text-xs text-gray-500 dark:text-white/50">
                             TTC {formatFCFA(f.montant_ttc)} ·{" "}
                             <span className="text-red-600 font-semibold">restant {formatFCFA(f.montant_restant)}</span>
                           </span>

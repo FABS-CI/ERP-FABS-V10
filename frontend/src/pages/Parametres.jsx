@@ -946,7 +946,7 @@ export default function Parametres() {
             ) : (
               <div className="flex flex-col gap-4">
                 {logoUrl ? (
-                  <div className="flex items-center gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-white/5">
+                  <div className="flex items-center gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5">
                     <img src={logoUrl} alt="Logo entreprise" className="h-20 max-w-[200px] object-contain rounded" />
                     <div className="flex flex-col gap-2">
                       <p className="text-sm text-gray-600 dark:text-white/60">Logo actuel — utilisé dans tous les aperçus de modèles</p>
@@ -959,7 +959,7 @@ export default function Parametres() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 p-4 border rounded-xl bg-gray-50 dark:bg-white/5 text-gray-400 text-sm">
+                  <div className="flex items-center gap-3 p-4 border rounded-xl bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-gray-400 text-sm">
                     <ImageIcon className="h-8 w-8 opacity-30" />
                     <span>Aucun logo configuré — un placeholder sera utilisé dans les aperçus</span>
                   </div>
@@ -1020,16 +1020,16 @@ export default function Parametres() {
             {twoFALoading ? (
               <Skeleton className="h-20 w-full" />
             ) : !twoFAStatus ? (
-              <p className="text-sm text-gray-500">Impossible de charger le statut 2FA.</p>
+              <p className="text-sm text-gray-500 dark:text-white/50">Impossible de charger le statut 2FA.</p>
             ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-white/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5">
                 <div className="flex items-center gap-3">
                   {twoFAStatus.enabled ? (
                     <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
                       <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-white/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-white dark:bg-[#0b1e30]/10 flex items-center justify-center">
                       <ShieldOff className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
@@ -1110,7 +1110,7 @@ export default function Parametres() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-32 w-full" /> : params.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">Aucun paramètre</div>
+              <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucun paramètre</div>
             ) : (
               <div className="space-y-3">
                 {params.map((p) => {
@@ -1119,7 +1119,7 @@ export default function Parametres() {
                     <div key={p.cle} className="border rounded-lg p-4" data-testid={`param-${p.cle}`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <Label className="font-mono text-xs text-gray-500">{p.cle}</Label>
+                          <Label className="font-mono text-xs text-gray-500 dark:text-white/50">{p.cle}</Label>
                           <p className="text-sm text-gray-600 dark:text-white/60">{p.description}</p>
                         </div>
                         {isSuperAdmin && !isEditing && (

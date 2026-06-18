@@ -76,7 +76,7 @@ export default function ProduitDetail() {
         </button>
 
         {/* Header */}
-        <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
+        <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
           <div className="flex flex-wrap items-start gap-4 justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center flex-wrap gap-3">
@@ -85,7 +85,7 @@ export default function ProduitDetail() {
                 <span className="font-mono text-xs text-gray-500 dark:text-white/50">{product.reference}</span>
                 <StockBadge statut={product.statut_stock} stock_actuel={product.stock_actuel} stock_minimum={product.stock_minimum} />
                 {!product.actif && (
-                  <span className="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-white/60 px-2 py-0.5 rounded">Désactivé</span>
+                  <span className="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/60 px-2 py-0.5 rounded">Désactivé</span>
                 )}
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-[#0A2540] dark:text-white mt-2">{product.titre}</h1>
@@ -99,7 +99,7 @@ export default function ProduitDetail() {
             {canWrite && product.actif && (
               <div className="flex gap-2">
                 <button data-testid="produit-detail-edit" onClick={() => setEdit(true)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[#0A2540] dark:text-white bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20">
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[#0A2540] dark:text-white bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 hover:bg-gray-200 dark:hover:bg-white dark:bg-[#0b1e30]/20">
                   <Pencil className="w-3.5 h-3.5" /> Modifier
                 </button>
                 <button data-testid="produit-detail-disable" onClick={handleDisable}
@@ -143,7 +143,7 @@ export default function ProduitDetail() {
 
           <div className="mt-5">
             {tab === "info" && (
-              <div data-testid="produit-detail-info" className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
+              <div data-testid="produit-detail-info" className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                   {[
                     ["Référence",       product.reference],
@@ -171,7 +171,7 @@ export default function ProduitDetail() {
               </div>
             )}
             {tab !== "info" && (
-              <div data-testid={`produit-detail-empty-${tab}`} className="bg-white dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-10 text-center">
+              <div data-testid={`produit-detail-empty-${tab}`} className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-10 text-center">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-[#FF6200] font-semibold">Bientôt</p>
                 <p className="text-sm text-gray-600 dark:text-white/60 mt-2">
                   Cet onglet sera alimenté quand les modules {tab === "mouvements" ? "Stock (Sprint 9)" : "Commandes (Sprint 6)"} seront livrés.

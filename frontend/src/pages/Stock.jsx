@@ -156,7 +156,7 @@ export default function Stock() {
             {loading ? (
               <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : mouvements.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-500 dark:text-white/50">
                 <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 Aucun mouvement
               </div>
@@ -178,17 +178,17 @@ export default function Stock() {
                     {mouvements.map((m) => {
                       const cfg = TYPE_CONFIG[m.type_mouvement] || { label: m.type_mouvement, color: "bg-gray-500" };
                       return (
-                        <tr key={m.mouvement_id} className="border-b hover:bg-gray-50 dark:hover:bg-white/5" data-testid={`row-mvt-${m.mouvement_id}`}>
+                        <tr key={m.mouvement_id} className="border-b hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5" data-testid={`row-mvt-${m.mouvement_id}`}>
                           <td className="py-3 text-sm">{formatDate(m.created_at)}</td>
                           <td className="py-3">
-                            <div className="font-mono text-xs text-gray-500">{m.produit_reference}</div>
+                            <div className="font-mono text-xs text-gray-500 dark:text-white/50">{m.produit_reference}</div>
                             <div className="text-sm">{m.produit_titre || m.produit_id}</div>
                           </td>
                           <td className="py-3"><Badge className={`${cfg.color} text-white`}>{cfg.label}</Badge></td>
                           <td className="py-3 text-right font-semibold">{m.quantite}</td>
-                          <td className="py-3 text-right text-gray-500">{m.stock_avant}</td>
+                          <td className="py-3 text-right text-gray-500 dark:text-white/50">{m.stock_avant}</td>
                           <td className="py-3 text-right font-bold text-[#FF6200]">{m.stock_apres}</td>
-                          <td className="py-3 text-sm text-gray-600">{m.motif || "-"}</td>
+                          <td className="py-3 text-sm text-gray-600 dark:text-white/70">{m.motif || "-"}</td>
                         </tr>
                       );
                     })}

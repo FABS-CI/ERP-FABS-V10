@@ -29,7 +29,7 @@ const STATUT_CONFIG = {
   arrive: { label: "Arrivé", color: "bg-purple-100 text-purple-800" },
   receptionne: { label: "Réceptionné", color: "bg-green-100 text-green-800" },
   incident: { label: "Incident", color: "bg-red-100 text-red-800" },
-  cloture: { label: "Clôturé", color: "bg-gray-100 text-gray-700" },
+  cloture: { label: "Clôturé", color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" },
 };
 
 const STATUT_TRANSITIONS = {
@@ -41,7 +41,7 @@ const STATUT_TRANSITIONS = {
 };
 
 const StatutBadge = ({ statut }) => {
-  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 text-gray-700" };
+  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" };
   return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>;
 };
 
@@ -178,7 +178,7 @@ export default function LivraisonsDirectes() {
             <Card key={label}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="text-xs text-gray-500 dark:text-white/50">{label}</p>
                   <p className={`text-xl font-bold ${color}`}>{val}</p>
                 </div>
                 <Icon className="w-5 h-5 text-gray-300" />
@@ -199,7 +199,7 @@ export default function LivraisonsDirectes() {
             />
           </div>
           <select
-            className="border rounded-md px-3 py-2 text-sm bg-white"
+            className="border rounded-md px-3 py-2 text-sm bg-white dark:bg-[#0b1e30]"
             value={statutFilter}
             onChange={(e) => setStatutFilter(e.target.value)}
           >
@@ -229,7 +229,7 @@ export default function LivraisonsDirectes() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-gray-600">
+                    <tr className="border-b bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-white/70">
                       <th className="text-left px-4 py-3 font-medium">Référence</th>
                       <th className="text-left px-4 py-3 font-medium">Destinataire</th>
                       <th className="text-left px-4 py-3 font-medium">Zone</th>
@@ -243,12 +243,12 @@ export default function LivraisonsDirectes() {
                     {livraisons.map((liv) => {
                       const transitions = STATUT_TRANSITIONS[liv.statut] || [];
                       return (
-                        <tr key={liv._id || liv.livraison_id} className="border-b hover:bg-gray-50">
+                        <tr key={liv._id || liv.livraison_id} className="border-b hover:bg-gray-50 dark:bg-white/5">
                           <td className="px-4 py-3 font-mono text-xs font-medium text-green-700">{liv.reference}</td>
                           <td className="px-4 py-3">
                             <div>{liv.adresse_livraison?.nom || "—"}</div>
                             {liv.adresse_livraison?.telephone && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-white/50">
                                 <Phone className="w-3 h-3" /> {liv.adresse_livraison.telephone}
                               </div>
                             )}
@@ -260,7 +260,7 @@ export default function LivraisonsDirectes() {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm">{liv.livreur_nom || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-500">
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">
                             {liv.date_livraison_prevue
                               ? new Date(liv.date_livraison_prevue).toLocaleDateString("fr-CI")
                               : "—"}
@@ -353,7 +353,7 @@ export default function LivraisonsDirectes() {
                 />
               </div>
               <hr />
-              <p className="text-sm font-medium text-gray-700">Adresse de livraison</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-white/90">Adresse de livraison</p>
               <div>
                 <Label>Nom destinataire *</Label>
                 <Input

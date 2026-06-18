@@ -610,7 +610,7 @@ export default function CommandeDetail() {
                       Facture générée : {commande.transformations.facture.reference}
                     </button>
                   ) : (
-                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 dark:border-white/10 px-3 py-2 text-sm text-gray-500 dark:text-white/50">
                       <Receipt className="h-4 w-4 shrink-0" />
                       Aucune facture générée
                     </div>
@@ -631,7 +631,7 @@ export default function CommandeDetail() {
                       </div>
                     ))
                   ) : (
-                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 dark:border-white/10 px-3 py-2 text-sm text-gray-500 dark:text-white/50">
                       <Truck className="h-4 w-4 shrink-0" />
                       Aucun bon de livraison généré
                     </div>

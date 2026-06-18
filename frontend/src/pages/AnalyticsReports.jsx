@@ -83,7 +83,7 @@ export default function AnalyticsReports() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-500">Chargement des rapports...</p>
+          <p className="text-gray-500 dark:text-white/50">Chargement des rapports...</p>
         </div>
       </DashboardLayout>
     );
@@ -147,7 +147,7 @@ export default function AnalyticsReports() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Ventes</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-white/70">Total Ventes</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export default function AnalyticsReports() {
                   <p className="text-2xl font-bold text-[#0A2540]">
                     {formatCurrency(dashboard?.total_ventes || 0)}
                   </p>
-                  <p className="text-sm text-gray-500">{dashboard?.total_factures || 0} factures</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">{dashboard?.total_factures || 0} factures</p>
                 </div>
               </div>
             </CardContent>
@@ -164,7 +164,7 @@ export default function AnalyticsReports() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Total TTC</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-white/70">Total TTC</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ export default function AnalyticsReports() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Clients Actifs</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-white/70">Clients Actifs</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -192,7 +192,7 @@ export default function AnalyticsReports() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Quantité Vendue</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-white/70">Quantité Vendue</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -214,19 +214,19 @@ export default function AnalyticsReports() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Total HT</p>
+                  <p className="text-sm text-gray-600 dark:text-white/70">Total HT</p>
                   <p className="text-xl font-bold">{formatCurrency(financial.total_ht)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Remises</p>
+                  <p className="text-sm text-gray-600 dark:text-white/70">Remises</p>
                   <p className="text-xl font-bold text-red-600">{formatCurrency(financial.total_remises)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Encaissé</p>
+                  <p className="text-sm text-gray-600 dark:text-white/70">Encaissé</p>
                   <p className="text-xl font-bold text-green-600">{formatCurrency(financial.total_encaisse)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Restant Dû</p>
+                  <p className="text-sm text-gray-600 dark:text-white/70">Restant Dû</p>
                   <p className="text-xl font-bold text-orange-600">{formatCurrency(financial.total_du)}</p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function AnalyticsReports() {
                   <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <p className="font-semibold">{client.client}</p>
-                      <p className="text-sm text-gray-600">{client.nb_factures} factures</p>
+                      <p className="text-sm text-gray-600 dark:text-white/70">{client.nb_factures} factures</p>
                     </div>
                     <p className="font-bold text-[#FF6200]">{formatCurrency(client.total_ventes)}</p>
                   </div>
@@ -266,7 +266,7 @@ export default function AnalyticsReports() {
                   <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <p className="font-semibold capitalize">{item.categorie}</p>
-                      <p className="text-sm text-gray-600">{item.quantite} unités</p>
+                      <p className="text-sm text-gray-600 dark:text-white/70">{item.quantite} unités</p>
                     </div>
                     <p className="font-bold text-blue-600">{formatCurrency(item.total_ventes)}</p>
                   </div>
@@ -286,7 +286,7 @@ export default function AnalyticsReports() {
                   <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <p className="font-semibold">{item.niveau}</p>
-                      <p className="text-sm text-gray-600">{item.quantite} unités</p>
+                      <p className="text-sm text-gray-600 dark:text-white/70">{item.quantite} unités</p>
                     </div>
                     <p className="font-bold text-green-600">{formatCurrency(item.total_ventes)}</p>
                   </div>
@@ -306,11 +306,11 @@ export default function AnalyticsReports() {
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                     <div className="flex-1">
                       <p className="font-medium text-sm">{article.code_article}</p>
-                      <p className="text-xs text-gray-600 truncate">{article.titre}</p>
+                      <p className="text-xs text-gray-600 dark:text-white/70 truncate">{article.titre}</p>
                     </div>
                     <div className="text-right ml-4">
                       <p className="text-sm font-bold">{article.quantite_vendue} u.</p>
-                      <p className="text-xs text-gray-600">{formatCurrency(article.ca_total)}</p>
+                      <p className="text-xs text-gray-600 dark:text-white/70">{formatCurrency(article.ca_total)}</p>
                     </div>
                   </div>
                 ))}

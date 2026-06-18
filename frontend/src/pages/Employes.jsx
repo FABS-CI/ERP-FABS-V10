@@ -106,7 +106,7 @@ export default function Employes() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -116,8 +116,8 @@ export default function Employes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employés</h1>
-          <p className="text-sm text-gray-500">Gestion des employés</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Employés</h1>
+          <p className="text-sm text-gray-500 dark:text-white/50">Gestion des employés</p>
         </div>
         <Button onClick={() => navigate("/rh/employes/new")}>
           <Plus className="w-4 h-4 mr-2" />
@@ -144,9 +144,9 @@ export default function Employes() {
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Département</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-white/90 mb-1 block">Département</label>
             <Select value={filterDepartement} onValueChange={(value) => { setFilterDepartement(value); loadEmployes(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous" />
@@ -162,7 +162,7 @@ export default function Employes() {
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Fonction</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-white/90 mb-1 block">Fonction</label>
             <Select value={filterFonction} onValueChange={(value) => { setFilterFonction(value); loadEmployes(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Toutes" />
@@ -178,7 +178,7 @@ export default function Employes() {
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Catégorie Pro</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-white/90 mb-1 block">Catégorie Pro</label>
             <Select value={filterCategoriePro} onValueChange={(value) => { setFilterCategoriePro(value); loadEmployes(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Toutes" />
@@ -194,7 +194,7 @@ export default function Employes() {
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Statut</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-white/90 mb-1 block">Statut</label>
             <Select value={filterStatut} onValueChange={(value) => { setFilterStatut(value); loadEmployes(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous" />
@@ -211,7 +211,7 @@ export default function Employes() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -226,7 +226,7 @@ export default function Employes() {
           <TableBody>
             {filteredEmployes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun employé trouvé
                 </TableCell>
               </TableRow>
@@ -237,7 +237,7 @@ export default function Employes() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{emp.nom}</div>
-                      <div className="text-sm text-gray-500">{emp.prenoms}</div>
+                      <div className="text-sm text-gray-500 dark:text-white/50">{emp.prenoms}</div>
                     </div>
                   </TableCell>
                   <TableCell>{emp.fonction_nom || "-"}</TableCell>
@@ -249,7 +249,7 @@ export default function Employes() {
                           ? "bg-green-100 text-green-800"
                           : emp.statut === "En conge"
                           ? "bg-orange-100 text-orange-800"
-                          : "bg-gray-100 text-gray-800"
+                          : "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white"
                       }`}
                     >
                       {emp.statut}
@@ -275,51 +275,51 @@ export default function Employes() {
                             <div className="space-y-4">
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Matricule</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Matricule</p>
                                   <p className="font-medium">{selectedEmploye.matricule}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Nom</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Nom</p>
                                   <p className="font-medium">{selectedEmploye.nom}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Prénoms</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Prénoms</p>
                                   <p className="font-medium">{selectedEmploye.prenoms}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Sexe</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Sexe</p>
                                   <p className="font-medium">{selectedEmploye.sexe}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Date de Naissance</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Date de Naissance</p>
                                   <p className="font-medium">{selectedEmploye.date_naissance}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Nationalité</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Nationalité</p>
                                   <p className="font-medium">{selectedEmploye.nationalite}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Téléphone</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Téléphone</p>
                                   <p className="font-medium">{selectedEmploye.telephone_principal}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Email</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Email</p>
                                   <p className="font-medium">{selectedEmploye.email || "-"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Fonction</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Fonction</p>
                                   <p className="font-medium">{selectedEmploye.fonction_nom || "-"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Département</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Département</p>
                                   <p className="font-medium">{selectedEmploye.departement_nom || "-"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Date d'Embauche</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Date d'Embauche</p>
                                   <p className="font-medium">{selectedEmploye.date_embauche}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Statut</p>
+                                  <p className="text-sm font-medium text-gray-500 dark:text-white/50">Statut</p>
                                   <p className="font-medium">{selectedEmploye.statut}</p>
                                 </div>
                               </div>

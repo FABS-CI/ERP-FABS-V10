@@ -80,7 +80,7 @@ export default function Dashboard() {
         {stats?.is_demo_data && (
           <div
             data-testid="demo-data-banner"
-            className="mb-5 text-[11px] uppercase tracking-wider bg-[#0A2540]/5 dark:bg-white/5 text-[#0A2540] dark:text-white/70 border border-[#0A2540]/10 dark:border-white/10 rounded-lg px-4 py-2"
+            className="mb-5 text-[11px] uppercase tracking-wider bg-[#0A2540]/5 dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white/70 border border-[#0A2540]/10 dark:border-white/10 rounded-lg px-4 py-2"
           >
             ⓘ Données de démonstration — connectées aux modules métier dès le Sprint 4.
           </div>
@@ -91,14 +91,14 @@ export default function Dashboard() {
             {/* KPI skeleton */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-5 h-24" />
+                <div key={i} className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-5 h-24" />
               ))}
             </div>
             {/* Chart skeleton */}
-            <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-64" />
+            <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 h-64" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
-              <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
+              <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
+              <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 h-48" />
             </div>
           </div>
         )}
@@ -154,7 +154,7 @@ export default function Dashboard() {
             {/* Roles without any chart get a contextual info card */}
             {!(stats.charts?.ventes_12_mois || stats.charts?.paiements_mode ||
                stats.charts?.top_clients) && (
-              <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
+              <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
                 <h2 className="text-lg font-bold text-[#0A2540] dark:text-white">
                   Votre espace de travail
                 </h2>

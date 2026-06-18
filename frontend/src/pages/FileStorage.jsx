@@ -260,7 +260,7 @@ const FileStorage = () => {
                 </tbody>
               </table>
               {documents?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun document trouvé
                 </div>
               )}
@@ -278,7 +278,7 @@ const FileStorage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Module en cours de développement</p>
             </div>
@@ -300,25 +300,25 @@ const FileStorage = () => {
                 <div className="text-3xl font-bold text-[#0A2540] dark:text-white">
                   {stats?.total_size_mb?.toFixed(2)} MB
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Espace utilisé</p>
+                <p className="text-sm text-gray-500 dark:text-white/50 mt-2">Espace utilisé</p>
               </div>
               <div className="p-4 border rounded-lg">
                 <div className="text-3xl font-bold text-[#0A2540] dark:text-white">
                   {stats?.file_count}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Fichiers stockés</p>
+                <p className="text-sm text-gray-500 dark:text-white/50 mt-2">Fichiers stockés</p>
               </div>
               <div className="p-4 border rounded-lg">
                 <div className="text-3xl font-bold text-[#0A2540] dark:text-white">
                   {stats?.total_documents}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Documents en base</p>
+                <p className="text-sm text-gray-500 dark:text-white/50 mt-2">Documents en base</p>
               </div>
               <div className="p-4 border rounded-lg">
                 <div className="text-3xl font-bold text-[#0A2540] dark:text-white">
                   {stats?.total_factures_pdf}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Factures PDF</p>
+                <p className="text-sm text-gray-500 dark:text-white/50 mt-2">Factures PDF</p>
               </div>
             </div>
           </CardContent>

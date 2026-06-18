@@ -27,7 +27,7 @@ export default function RapportsRH() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -65,8 +65,8 @@ export default function RapportsRH() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rapports RH</h1>
-          <p className="text-sm text-gray-500">Rapports et statistiques des ressources humaines</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Rapports RH</h1>
+          <p className="text-sm text-gray-500 dark:text-white/50">Rapports et statistiques des ressources humaines</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
@@ -77,17 +77,17 @@ export default function RapportsRH() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {rapportCards.map((card) => (
-          <div key={card.title} className="bg-white rounded-lg shadow-sm p-6">
+          <div key={card.title} className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-blue-50 rounded-lg">
                 <card.icon className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {card.value}{card.suffix || ""}
               </span>
             </div>
-            <h3 className="font-medium text-gray-900">{card.title}</h3>
-            <p className="text-sm text-gray-500 mt-1">{card.description}</p>
+            <h3 className="font-medium text-gray-900 dark:text-white">{card.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{card.description}</p>
           </div>
         ))}
       </div>
@@ -95,10 +95,10 @@ export default function RapportsRH() {
       {/* Report Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Effectif Report */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <BarChart3 className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Effectif par Département</h2>
+            <BarChart3 className="w-5 h-5 text-gray-600 dark:text-white/70" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Effectif par Département</h2>
           </div>
           <div className="space-y-3">
             {[
@@ -111,9 +111,9 @@ export default function RapportsRH() {
               { dept: "Comptabilité", count: 1 },
             ].map((item) => (
               <div key={item.dept} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{item.dept}</span>
+                <span className="text-sm text-gray-600 dark:text-white/70">{item.dept}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-32 h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full"
                       style={{ width: `${(item.count / (stats?.total_employes || 1)) * 100}%` }}
@@ -127,10 +127,10 @@ export default function RapportsRH() {
         </div>
 
         {/* Contrats Report */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Briefcase className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Répartition des Contrats</h2>
+            <Briefcase className="w-5 h-5 text-gray-600 dark:text-white/70" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Répartition des Contrats</h2>
           </div>
           <div className="space-y-3">
             {[
@@ -140,9 +140,9 @@ export default function RapportsRH() {
               { type: "Prestataire", count: 1, color: "bg-purple-500" },
             ].map((item) => (
               <div key={item.type} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{item.type}</span>
+                <span className="text-sm text-gray-600 dark:text-white/70">{item.type}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-32 h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${item.color} rounded-full`}
                       style={{ width: `${(item.count / (stats?.contrats_actifs || 1)) * 100}%` }}
@@ -156,10 +156,10 @@ export default function RapportsRH() {
         </div>
 
         {/* Alertes Report */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <Calendar className="w-5 h-5 text-orange-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Alertes à Traiter</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Alertes à Traiter</h2>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
@@ -174,18 +174,18 @@ export default function RapportsRH() {
               <span className="text-sm font-medium text-yellow-800">Congés en attente</span>
               <span className="text-sm font-bold text-yellow-800">{stats?.conges_en_attente || 0}</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-800">Documents expirés</span>
-              <span className="text-sm font-bold text-gray-800">{stats?.documents_expires || 0}</span>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
+              <span className="text-sm font-medium text-gray-800 dark:text-white">Documents expirés</span>
+              <span className="text-sm font-bold text-gray-800 dark:text-white">{stats?.documents_expires || 0}</span>
             </div>
           </div>
         </div>
 
         {/* Statut Report */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Users className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Statut des Employés</h2>
+            <Users className="w-5 h-5 text-gray-600 dark:text-white/70" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Statut des Employés</h2>
           </div>
           <div className="space-y-3">
             {[
@@ -194,9 +194,9 @@ export default function RapportsRH() {
               { statut: "Suspendu", count: stats?.employes_absents || 0, color: "bg-red-500" },
             ].map((item) => (
               <div key={item.statut} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{item.statut}</span>
+                <span className="text-sm text-gray-600 dark:text-white/70">{item.statut}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-32 h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${item.color} rounded-full`}
                       style={{ width: `${(item.count / (stats?.total_employes || 1)) * 100}%` }}

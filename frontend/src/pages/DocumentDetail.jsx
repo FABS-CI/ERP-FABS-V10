@@ -131,7 +131,7 @@ export default function DocumentDetail() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-500">Chargement...</p>
+          <p className="text-gray-500 dark:text-white/50">Chargement...</p>
         </div>
       </DashboardLayout>
     );
@@ -141,7 +141,7 @@ export default function DocumentDetail() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-500">Document introuvable</p>
+          <p className="text-gray-500 dark:text-white/50">Document introuvable</p>
         </div>
       </DashboardLayout>
     );

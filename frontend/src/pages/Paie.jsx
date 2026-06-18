@@ -264,7 +264,7 @@ export default function Paie() {
                 </CardHeader>
                 <CardContent>
                   {previewLoading && !preview ? (
-                    <Skeleton className="h-72 w-full bg-white/10" />
+                    <Skeleton className="h-72 w-full bg-white dark:bg-[#0b1e30]/10" />
                   ) : !preview ? (
                     <p className="text-white/60 text-sm py-8 text-center">Saisissez un salaire brut pour voir le calcul</p>
                   ) : (

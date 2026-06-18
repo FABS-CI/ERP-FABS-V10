@@ -78,7 +78,7 @@ export default function DuplicateWarning({ nom, telephone, excludeId, onMatchesC
               type="button"
               data-testid="duplicate-warning-dismiss"
               onClick={() => setDismissedKey(currentKey)}
-              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-gray-500 dark:text-white/50"
+              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/50"
               aria-label="Masquer l'alerte"
             >
               <X className="w-4 h-4" />

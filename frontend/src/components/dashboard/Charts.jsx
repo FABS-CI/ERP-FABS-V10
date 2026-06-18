@@ -10,7 +10,7 @@ function ChartCard({ title, subtitle, children, testId, height = 260 }) {
   return (
     <div
       data-testid={testId}
-      className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm"
+      className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm"
     >
       <div className="mb-4">
         <h3 className="text-sm font-bold text-[#0A2540] dark:text-white tracking-tight">

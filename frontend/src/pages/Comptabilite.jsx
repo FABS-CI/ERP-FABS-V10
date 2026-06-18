@@ -103,7 +103,7 @@ function EcrituresTab({ canWrite }) {
         </div>
 
         {loading ? <Skeleton className="h-32 w-full" /> : ecritures.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">Aucune écriture</div>
+          <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucune écriture</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -251,7 +251,7 @@ function CreancesTab() {
       </CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-32 w-full" /> : creances.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">Aucune créance — toutes les factures sont réglées 🎉</div>
+          <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucune créance — toutes les factures sont réglées 🎉</div>
         ) : (
           <table className="w-full">
             <thead className="border-b">
@@ -305,7 +305,7 @@ function BalanceTab() {
       </CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-32 w-full" /> : balance.length === 0 ? (
-          <div className="text-center py-12 text-gray-500"><Calculator className="h-12 w-12 mx-auto text-gray-400 mb-4" />Aucune écriture</div>
+          <div className="text-center py-12 text-gray-500 dark:text-white/50"><Calculator className="h-12 w-12 mx-auto text-gray-400 mb-4" />Aucune écriture</div>
         ) : (
           <table className="w-full">
             <thead className="border-b">

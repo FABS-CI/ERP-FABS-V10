@@ -25,7 +25,7 @@ export default function NotFound() {
       />
 
       <div className="relative z-10 text-center max-w-lg">
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-2xl p-8 shadow-2xl">
           <div className="flex justify-center mb-6">
             <Logo variant="light" size="md" />
           </div>
@@ -35,7 +35,7 @@ export default function NotFound() {
           <h1 className="text-3xl font-bold text-[#0A2540] tracking-tight mt-2">
             Page introuvable
           </h1>
-          <p className="text-sm text-gray-600 mt-3">
+          <p className="text-sm text-gray-600 dark:text-white/70 mt-3">
             La page que vous recherchez n'existe pas ou a été déplacée.
           </p>
           <Link

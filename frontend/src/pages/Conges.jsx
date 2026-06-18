@@ -121,15 +121,15 @@ export default function Conges() {
       approuve_direction: "bg-purple-100 text-purple-800",
       approuve_rh: "bg-green-100 text-green-800",
       refuse: "bg-red-100 text-red-800",
-      annule: "bg-gray-100 text-gray-800",
+      annule: "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white",
     };
-    return badges[statut] || "bg-gray-100 text-gray-800";
+    return badges[statut] || "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white";
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -226,7 +226,7 @@ export default function Conges() {
         }
       />
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -243,7 +243,7 @@ export default function Conges() {
           <TableBody>
             {conges.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune demande de congé trouvée
                 </TableCell>
               </TableRow>

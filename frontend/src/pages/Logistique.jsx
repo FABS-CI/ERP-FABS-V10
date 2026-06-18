@@ -265,7 +265,7 @@ const Logistique = () => {
               </tbody>
             </table>
             {missions?.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-white/50">
                 Aucune mission trouvée
               </div>
             )}

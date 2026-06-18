@@ -89,7 +89,7 @@ export default function BonsRetour() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card><CardHeader className="pb-2"><CardDescription>Total retours</CardDescription><CardTitle className="text-2xl">{brs.length}</CardTitle></CardHeader><CardContent><RotateCcw className="h-4 w-4 text-gray-500" /></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Total retours</CardDescription><CardTitle className="text-2xl">{brs.length}</CardTitle></CardHeader><CardContent><RotateCcw className="h-4 w-4 text-gray-500 dark:text-white/50" /></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardDescription>En attente</CardDescription><CardTitle className="text-2xl text-yellow-600">{brs.filter(b => b.statut === "en_attente").length}</CardTitle></CardHeader><CardContent /></Card>
           <Card><CardHeader className="pb-2"><CardDescription>Avoirs générés</CardDescription><CardTitle className="text-2xl text-green-600">{brs.filter(b => b.statut === "avoir_genere").length}</CardTitle></CardHeader><CardContent><CheckCircle className="h-4 w-4 text-green-500" /></CardContent></Card>
         </div>
@@ -126,7 +126,7 @@ export default function BonsRetour() {
           <CardHeader><CardTitle>Liste des bons de retour</CardTitle><CardDescription>{brs.length} retour(s)</CardDescription></CardHeader>
           <CardContent>
             {loading ? <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-              : brs.length === 0 ? <div className="text-center py-12 text-gray-500">Aucun bon de retour</div>
+              : brs.length === 0 ? <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucun bon de retour</div>
               : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -144,7 +144,7 @@ export default function BonsRetour() {
                     </thead>
                     <tbody>
                       {brs.map((br) => (
-                        <tr key={br.br_id} className="border-b hover:bg-gray-50 dark:hover:bg-white/5" data-testid={`row-br-${br.reference}`}>
+                        <tr key={br.br_id} className="border-b hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5" data-testid={`row-br-${br.reference}`}>
                           <td className="py-3 font-mono text-sm">{br.reference}</td>
                           <td className="py-3 font-mono text-xs">{br.facture_reference}</td>
                           <td className="py-3">{br.client_nom || "-"}</td>

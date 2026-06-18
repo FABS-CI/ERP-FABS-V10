@@ -194,7 +194,7 @@ export default function Clients() {
                     <button
                       key={opt.value}
                       onClick={() => handleExportPdf(opt.value)}
-                      className="w-full text-left px-4 py-2.5 text-sm text-[#0A2540] dark:text-white hover:bg-[#E8F0FB] dark:hover:bg-white/10 transition"
+                      className="w-full text-left px-4 py-2.5 text-sm text-[#0A2540] dark:text-white hover:bg-[#E8F0FB] dark:hover:bg-white dark:bg-[#0b1e30]/10 transition"
                     >
                       {opt.label}
                     </button>
@@ -206,7 +206,7 @@ export default function Clients() {
             <button
               onClick={handleExport}
               disabled={exporting || loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/10 transition disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
               {exporting ? "Export…" : "Export CSV"}
@@ -227,7 +227,7 @@ export default function Clients() {
         {/* Filters */}
         <div
           data-testid="clients-filters"
-          className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-4 mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+          className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-4 mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
         >
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -236,14 +236,14 @@ export default function Clients() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Nom, téléphone, référence, représentant..."
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200] text-[#0A2540] dark:text-white"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200] text-[#0A2540] dark:text-white"
             />
           </div>
           <select
             data-testid="clients-filter-type"
             value={typeClient}
             onChange={(e) => setTypeClient(e.target.value)}
-            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-[#0A2540] dark:text-white"
+            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 px-3 py-2 text-[#0A2540] dark:text-white"
           >
             <option value="">Tous les types</option>
             {TYPE_CLIENTS.map((t) => (
@@ -257,14 +257,14 @@ export default function Clients() {
               value={ville}
               onChange={(e) => setVille(e.target.value)}
               placeholder="Ville..."
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 text-[#0A2540] dark:text-white"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 text-[#0A2540] dark:text-white"
             />
           </div>
           <select
             data-testid="clients-filter-actif"
             value={actif}
             onChange={(e) => setActif(e.target.value)}
-            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-[#0A2540] dark:text-white"
+            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 px-3 py-2 text-[#0A2540] dark:text-white"
           >
             <option value="true">Actifs uniquement</option>
             <option value="false">Désactivés uniquement</option>
@@ -286,11 +286,11 @@ export default function Clients() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-[#0A2540]/70 dark:text-white/60">
+                <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-[#0A2540]/70 dark:text-white/60">
                   <th className="text-left px-4 py-3 font-semibold">Référence</th>
                   <SortTh label="Nom" sortKey="nom" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
                   <SortTh label="Type" sortKey="type_client" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
@@ -319,7 +319,7 @@ export default function Clients() {
                     <tr
                       key={c.client_id}
                       data-testid={`clients-row-${c.reference}`}
-                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
+                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer"
                       onClick={() => navigate(`/clients/${c.client_id}`)}
                     >
                       <td className="px-4 py-3 font-mono text-xs text-[#0A2540] dark:text-white/90">{c.reference}</td>
@@ -342,7 +342,7 @@ export default function Clients() {
                         {c.actif ? (
                           <span className="inline-block w-2 h-2 rounded-full bg-[#2E7D32]" title="Actif" />
                         ) : (
-                          <span className="text-[10px] uppercase tracking-wider bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 px-2 py-0.5 rounded">Désactivé</span>
+                          <span className="text-[10px] uppercase tracking-wider bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/50 px-2 py-0.5 rounded">Désactivé</span>
                         )}
                       </td>
                       <td
@@ -390,7 +390,7 @@ export default function Clients() {
                   data-testid="clients-prev-page"
                   disabled={page === 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5"
                 >
                   <ChevronLeft className="w-3 h-3" />Préc.
                 </button>
@@ -398,7 +398,7 @@ export default function Clients() {
                   data-testid="clients-next-page"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5"
                 >
                   Suiv.<ChevronRight className="w-3 h-3" />
                 </button>

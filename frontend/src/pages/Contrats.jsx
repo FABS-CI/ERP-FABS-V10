@@ -110,7 +110,7 @@ export default function Contrats() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -120,8 +120,8 @@ export default function Contrats() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contrats</h1>
-          <p className="text-sm text-gray-500">Gestion des contrats de travail</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contrats</h1>
+          <p className="text-sm text-gray-500 dark:text-white/50">Gestion des contrats de travail</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -197,7 +197,7 @@ export default function Contrats() {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -214,7 +214,7 @@ export default function Contrats() {
           <TableBody>
             {contrats.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun contrat trouvé
                 </TableCell>
               </TableRow>
@@ -237,7 +237,7 @@ export default function Contrats() {
                           ? "bg-green-100 text-green-800"
                           : contrat.statut === "Expiré"
                           ? "bg-red-100 text-red-800"
-                          : "bg-gray-100 text-gray-800"
+                          : "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white"
                       }`}
                     >
                       {contrat.statut}

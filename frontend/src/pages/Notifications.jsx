@@ -213,7 +213,7 @@ const Notifications = () => {
               </div>
             ))}
             {notifications?.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-white/50">
                 <Bell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>Aucune notification</p>
               </div>

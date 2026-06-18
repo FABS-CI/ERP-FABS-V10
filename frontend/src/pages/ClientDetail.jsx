@@ -43,7 +43,7 @@ const TABS = [
 // STATUT ENRICHI
 // ─────────────────────────────────────────────
 function computeClientStatut(client, stats) {
-  if (!client.actif) return { label: "Inactif", color: "bg-gray-400", text: "text-gray-700" };
+  if (!client.actif) return { label: "Inactif", color: "bg-gray-400", text: "text-gray-700 dark:text-white/90" };
   if (!stats) return { label: "Actif", color: "bg-green-500", text: "text-green-700" };
 
   const { encours, plafond, last30days, impaye } = stats;
@@ -77,7 +77,7 @@ const ago = (s) => {
 // STATUT BADGES (commandes / factures / BL)
 // ─────────────────────────────────────────────
 const CMD_STATUT = {
-  brouillon:       { label: "Brouillon",  color: "bg-gray-200 text-gray-700" },
+  brouillon:       { label: "Brouillon",  color: "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white/90" },
   en_attente:      { label: "En attente", color: "bg-amber-100 text-amber-700" },
   validee:         { label: "Validée",    color: "bg-blue-100 text-blue-700" },
   preparee:        { label: "Préparée",   color: "bg-indigo-100 text-indigo-700" },
@@ -85,7 +85,7 @@ const CMD_STATUT = {
   annulee:         { label: "Annulée",    color: "bg-red-100 text-red-700" },
 };
 const FAC_STATUT = {
-  brouillon:       { label: "Brouillon",  color: "bg-gray-200 text-gray-700" },
+  brouillon:       { label: "Brouillon",  color: "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white/90" },
   emise:           { label: "Émise",      color: "bg-blue-100 text-blue-700" },
   partiellement_payee: { label: "Partielle", color: "bg-amber-100 text-amber-700" },
   payee:           { label: "Payée",      color: "bg-green-100 text-green-700" },
@@ -103,11 +103,11 @@ const PRO_STATUT = {
   envoyee:         { label: "Envoyée",    color: "bg-indigo-100 text-indigo-700" },
   acceptee:        { label: "Acceptée",   color: "bg-green-100 text-green-700" },
   refusee:         { label: "Refusée",    color: "bg-red-100 text-red-700" },
-  expiree:         { label: "Expirée",    color: "bg-gray-200 text-gray-600" },
+  expiree:         { label: "Expirée",    color: "bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-white/70" },
 };
 
 function StatusBadge({ map, value }) {
-  const conf = map[value] || { label: value, color: "bg-gray-100 text-gray-600" };
+  const conf = map[value] || { label: value, color: "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70" };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${conf.color}`}>
       {conf.label}
@@ -325,7 +325,7 @@ export default function ClientDetail() {
         </button>
 
         {/* ── HEADER CARD ── */}
-        <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
+        <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-6 shadow-sm">
           <div className="flex flex-wrap items-start gap-4 justify-between">
             {/* Identity */}
             <div className="flex-1 min-w-0">
@@ -344,7 +344,7 @@ export default function ClientDetail() {
                   {statut.label}
                 </span>
                 {!client.actif && (
-                  <span className="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-white/10 text-gray-500 px-2 py-0.5 rounded">
+                  <span className="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/50 px-2 py-0.5 rounded">
                     Désactivé
                   </span>
                 )}
@@ -397,7 +397,7 @@ export default function ClientDetail() {
                   <button
                     data-testid="client-detail-edit"
                     onClick={() => setEdit(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#0A2540] dark:text-white bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#0A2540] dark:text-white bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 hover:bg-gray-200 dark:hover:bg-white dark:bg-[#0b1e30]/20"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Modifier
@@ -414,7 +414,7 @@ export default function ClientDetail() {
               )}
               <button
                 onClick={refresh}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-white/50 bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 hover:bg-gray-200 dark:hover:bg-white dark:bg-[#0b1e30]/20"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -429,7 +429,7 @@ export default function ClientDetail() {
               value={
                 <span>
                   {tauxCredit}%
-                  <div className="mt-1 w-full bg-gray-200 dark:bg-white/10 rounded-full h-1">
+                  <div className="mt-1 w-full bg-gray-200 dark:bg-white dark:bg-[#0b1e30]/10 rounded-full h-1">
                     <div
                       className={`h-1 rounded-full ${tauxCredit > 90 ? "bg-red-500" : tauxCredit > 70 ? "bg-amber-500" : "bg-green-500"}`}
                       style={{ width: `${tauxCredit}%` }}
@@ -575,7 +575,7 @@ function QuickAction({ icon: Icon, label, onClick, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#FF6200]/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10 hover:bg-[#FF6200]/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <Icon className="w-3.5 h-3.5" />
       {label}
@@ -633,7 +633,7 @@ function PaiementQuickDialog({ client, onClose, onCreated }) {
               type="number" min="1" required
               value={form.montant_total}
               onChange={e => setForm({ ...form, montant_total: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
               placeholder="Ex: 50000"
             />
           </div>
@@ -642,7 +642,7 @@ function PaiementQuickDialog({ client, onClose, onCreated }) {
             <select
               value={form.mode_paiement}
               onChange={e => setForm({ ...form, mode_paiement: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
             >
               <option value="especes">Espèces</option>
               <option value="virement">Virement</option>
@@ -657,13 +657,13 @@ function PaiementQuickDialog({ client, onClose, onCreated }) {
               type="text"
               value={form.reference}
               onChange={e => setForm({ ...form, reference: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm focus:outline-none focus:border-[#1B4F8A]"
               placeholder="N° chèque, reçu..."
             />
           </div>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-sm font-medium text-gray-600 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/5 transition">
+              className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-sm font-medium text-gray-600 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 transition">
               Annuler
             </button>
             <button type="submit" disabled={loading}
@@ -681,7 +681,7 @@ function TabCard({ children, testId }) {
   return (
     <div
       data-testid={testId}
-      className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden"
+      className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden"
     >
       {children}
     </div>
@@ -701,7 +701,7 @@ function TabSkeleton() {
   return (
     <div className="space-y-2 p-6">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-10 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
+        <div key={i} className="h-10 bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/5 rounded animate-pulse" />
       ))}
     </div>
   );
@@ -710,7 +710,7 @@ function TabSkeleton() {
 function TableRow({ onClick, children }) {
   return (
     <tr
-      className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
+      className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer transition-colors"
       onClick={onClick}
     >
       {children}
@@ -813,7 +813,7 @@ function CommandesTab({ items, loading, onGo, client, canWrite, navigate }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 dark:bg-white/5 text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-xs text-gray-500 dark:text-white/50 uppercase tracking-wider">
                 <th className="px-5 py-3 text-left">Référence</th>
                 <th className="px-5 py-3 text-left">Date</th>
                 <th className="px-5 py-3 text-left">Statut</th>
@@ -857,7 +857,7 @@ function ProformasTab({ items, loading, onGo }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 dark:bg-white/5 text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-xs text-gray-500 dark:text-white/50 uppercase tracking-wider">
                 <th className="px-5 py-3 text-left">Référence</th>
                 <th className="px-5 py-3 text-left">Émission</th>
                 <th className="px-5 py-3 text-left">Expiration</th>
@@ -910,7 +910,7 @@ function FacturesTab({ items, loading, onGo }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 dark:bg-white/5 text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-xs text-gray-500 dark:text-white/50 uppercase tracking-wider">
                 <th className="px-5 py-3 text-left">Référence</th>
                 <th className="px-5 py-3 text-left">Date</th>
                 <th className="px-5 py-3 text-left">Échéance</th>
@@ -962,7 +962,7 @@ function BLTab({ items, loading, onGo }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 dark:bg-white/5 text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-xs text-gray-500 dark:text-white/50 uppercase tracking-wider">
                 <th className="px-5 py-3 text-left">Référence</th>
                 <th className="px-5 py-3 text-left">Date création</th>
                 <th className="px-5 py-3 text-left">Livraison prévue</th>
@@ -1015,7 +1015,7 @@ function PaiementsTab({ items, loading, onGo }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 dark:bg-white/5 text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-xs text-gray-500 dark:text-white/50 uppercase tracking-wider">
                 <th className="px-5 py-3 text-left">Référence</th>
                 <th className="px-5 py-3 text-left">Date</th>
                 <th className="px-5 py-3 text-left">Mode</th>
@@ -1075,10 +1075,10 @@ function CompteTab({ data, loading, client }) {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-500">Encours</span>
+                <span className="text-gray-500 dark:text-white/50">Encours</span>
                 <span className="font-semibold">{fmt(client.solde || 0)} / {fmt(client.plafond_credit)}</span>
               </div>
-              <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
+              <div className="w-full bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all ${
                     (client.solde / client.plafond_credit) > 0.9 ? "bg-red-500" :
@@ -1122,7 +1122,7 @@ function CompteTab({ data, loading, client }) {
           <div className="px-5 py-2 space-y-2">
             {pList.slice(0, 5).map(p => (
               <div key={p.paiement_id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-50 dark:border-white/5 last:border-0">
-                <span className="font-mono text-xs text-gray-500">{p.reference}</span>
+                <span className="font-mono text-xs text-gray-500 dark:text-white/50">{p.reference}</span>
                 <span className="text-xs text-gray-400">{fmtDate(p.date_paiement)}</span>
                 <span className="font-semibold text-green-700">{fmt(p.montant_total)}</span>
               </div>
@@ -1136,7 +1136,7 @@ function CompteTab({ data, loading, client }) {
 
 function SummaryCard({ label, value, color, dark }) {
   return (
-    <div className={`rounded-xl border p-5 ${dark ? "bg-[#0A2540] dark:bg-white/5 border-[#0A2540]/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"}`}>
+    <div className={`rounded-xl border p-5 ${dark ? "bg-[#0A2540] dark:bg-white dark:bg-[#0b1e30]/5 border-[#0A2540]/20" : "bg-white dark:bg-white dark:bg-[#0b1e30]/5 border-gray-200 dark:border-white/10"}`}>
       <p className={`text-[10px] uppercase tracking-wider ${dark ? "text-white/60" : "text-gray-500 dark:text-white/50"}`}>{label}</p>
       <p className={`text-xl font-bold mt-1 ${dark ? "text-white" : color}`}>{value}</p>
     </div>

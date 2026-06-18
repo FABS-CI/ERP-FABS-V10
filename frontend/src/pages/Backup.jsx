@@ -51,7 +51,7 @@ const StatusBadge = ({ statut }) => {
     en_cours: { label: "En cours", cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
     echec:    { label: "Échec",   cls: "bg-red-500/15 text-red-400 border-red-500/30" },
   };
-  const { label, cls } = map[statut] || { label: statut, cls: "bg-white/10 text-[#94A3B8] border-white/10" };
+  const { label, cls } = map[statut] || { label: statut, cls: "bg-white dark:bg-[#0b1e30]/10 text-[#94A3B8] border-white/10" };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls}`}>
       {label}
@@ -179,11 +179,11 @@ const Backup = () => {
         {/* ── Barre navigation ── */}
         <div className="flex items-center gap-2">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] bg-white/5 border border-white/8 text-[#94A3B8] text-xs font-medium hover:bg-white/10 hover:text-[#E2E8F0] transition-all">
+            className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] bg-white dark:bg-[#0b1e30]/5 border border-white/8 text-[#94A3B8] text-xs font-medium hover:bg-white dark:bg-[#0b1e30]/10 hover:text-[#E2E8F0] transition-all">
             <ArrowLeft size={14} /> Retour
           </button>
           <button onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] bg-white/5 border border-white/8 text-[#94A3B8] text-xs font-medium hover:bg-white/10 hover:text-[#E2E8F0] transition-all">
+            className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] bg-white dark:bg-[#0b1e30]/5 border border-white/8 text-[#94A3B8] text-xs font-medium hover:bg-white dark:bg-[#0b1e30]/10 hover:text-[#E2E8F0] transition-all">
             <Home size={14} /> Accueil
           </button>
           <span className="text-white/20 text-xs ml-1">·</span>
@@ -215,7 +215,7 @@ const Backup = () => {
           {tabs.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all duration-200
-                ${activeTab === id ? "text-white shadow-sm" : "text-[#94A3B8] hover:text-[#E2E8F0] hover:bg-white/5"}`}
+                ${activeTab === id ? "text-white shadow-sm" : "text-[#94A3B8] hover:text-[#E2E8F0] hover:bg-white dark:bg-[#0b1e30]/5"}`}
               style={activeTab === id ? { background: "linear-gradient(90deg,#F97316,#FB923C)" } : {}}>
               <Icon size={16} />{label}
             </button>
@@ -278,7 +278,7 @@ const Backup = () => {
                       {diskStats.disk.used_gb} Go / {diskStats.disk.total_gb} Go
                     </span>
                   </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-2 bg-white dark:bg-[#0b1e30]/10 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
@@ -360,7 +360,7 @@ const Backup = () => {
               ) : (
                 <div className="divide-y divide-white/5">
                   {backups.slice(0, 5).map((b) => (
-                    <div key={b.backup_id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white/3 transition-colors">
+                    <div key={b.backup_id} className="flex items-center justify-between px-5 py-3.5 hover:bg-white dark:bg-[#0b1e30]/3 transition-colors">
                       <div className="flex items-center gap-3">
                         <FileArchive size={16} className="text-[#F97316]" />
                         <div>
@@ -450,7 +450,7 @@ const Backup = () => {
                     <tbody>
                       {backups.map((b, i) => (
                         <tr key={b.backup_id}
-                          className={`border-b border-white/5 hover:bg-white/3 transition-colors ${i % 2 === 0 ? "" : "bg-white/[0.02]"}`}>
+                          className={`border-b border-white/5 hover:bg-white dark:bg-[#0b1e30]/3 transition-colors ${i % 2 === 0 ? "" : "bg-white dark:bg-[#0b1e30]/[0.02]"}`}>
                           <td className="py-3.5 px-5 text-xs font-mono text-[#94A3B8]">{b.backup_id}</td>
                           <td className="py-3.5 px-5 text-sm text-[#E2E8F0] capitalize">{b.type_backup || "Complet"}</td>
                           <td className="py-3.5 px-5 text-sm text-[#E2E8F0]">{fmtSize(b.taille_octets)}</td>
@@ -539,8 +539,8 @@ const Backup = () => {
                   </div>
                   <button
                     onClick={() => setConfigData({ ...configData, actif: !configData.actif })}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${configData.actif ? "bg-[#F97316]" : "bg-white/10"}`}>
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${configData.actif ? "translate-x-5" : "translate-x-0.5"}`} />
+                    className={`relative w-11 h-6 rounded-full transition-colors ${configData.actif ? "bg-[#F97316]" : "bg-white dark:bg-[#0b1e30]/10"}`}>
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white dark:bg-[#0b1e30] rounded-full shadow transition-transform ${configData.actif ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </div>
               </CardContent>
@@ -564,8 +564,8 @@ const Backup = () => {
                     </div>
                     <button
                       onClick={() => setConfigData({ ...configData, [key]: !configData[key] })}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${configData[key] ? "bg-[#F97316]" : "bg-white/10"}`}>
-                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${configData[key] ? "translate-x-5" : "translate-x-0.5"}`} />
+                      className={`relative w-11 h-6 rounded-full transition-colors ${configData[key] ? "bg-[#F97316]" : "bg-white dark:bg-[#0b1e30]/10"}`}>
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white dark:bg-[#0b1e30] rounded-full shadow transition-transform ${configData[key] ? "translate-x-5" : "translate-x-0.5"}`} />
                     </button>
                   </div>
                 ))}

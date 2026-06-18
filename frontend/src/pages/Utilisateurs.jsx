@@ -112,7 +112,7 @@ export default function Utilisateurs() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-32 w-full" /> : users.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">Aucun utilisateur</div>
+              <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucun utilisateur</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -130,7 +130,7 @@ export default function Utilisateurs() {
                     {users.map((u) => (
                       <tr key={u.user_id} className="border-b" data-testid={`row-user-${u.email}`}>
                         <td className="py-3 font-medium">{u.nom_complet}</td>
-                        <td className="py-3 text-sm text-gray-500">{u.email}</td>
+                        <td className="py-3 text-sm text-gray-500 dark:text-white/50">{u.email}</td>
                         <td className="py-3">
                           <Badge className={`${ROLE_COLORS[u.role]} text-white`}>{u.role}</Badge>
                         </td>
@@ -142,7 +142,7 @@ export default function Utilisateurs() {
                             data-testid={`switch-actif-${u.email}`}
                           />
                         </td>
-                        <td className="py-3 text-sm text-gray-500">{new Date(u.created_at).toLocaleDateString("fr-FR")}</td>
+                        <td className="py-3 text-sm text-gray-500 dark:text-white/50">{new Date(u.created_at).toLocaleDateString("fr-FR")}</td>
                         <td className="py-3">
                           {isSuperAdmin && (
                             <div className="flex gap-1">

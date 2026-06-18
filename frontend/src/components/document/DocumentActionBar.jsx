@@ -151,7 +151,7 @@ export default function DocumentActionBar({
   };
 
   /* ── classes input réutilisables ── */
-  const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200]';
+  const inputCls = 'w-full border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200]';
 
   return (
     <>
@@ -197,14 +197,14 @@ export default function DocumentActionBar({
       {/* ══ Modale Email ═════════════════════════════════════════ */}
       {showEmailModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+          <div className="bg-white dark:bg-[#0b1e30] rounded-xl shadow-2xl w-full max-w-lg">
             {/* header */}
             <div className="flex justify-between items-center px-6 py-4 border-b">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Mail className="h-5 w-5 text-[#0A2540]" />
                 Envoyer par email
               </h3>
-              <button onClick={() => setShowEmailModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowEmailModal(false)} className="text-gray-400 hover:text-gray-600 dark:text-white/70">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -212,7 +212,7 @@ export default function DocumentActionBar({
             {/* body */}
             <div className="px-6 py-4 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/90 mb-1">
                   À <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -224,14 +224,14 @@ export default function DocumentActionBar({
                   autoFocus
                 />
                 {!clientEmail && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-white/50 mt-1">
                     Aucun email enregistré pour ce client — saisissez-le manuellement.
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CC</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/90 mb-1">CC</label>
                 <input
                   type="text"
                   value={emailForm.cc}
@@ -242,7 +242,7 @@ export default function DocumentActionBar({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">BCC</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/90 mb-1">BCC</label>
                 <input
                   type="text"
                   value={emailForm.bcc}
@@ -253,7 +253,7 @@ export default function DocumentActionBar({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Objet</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/90 mb-1">Objet</label>
                 <input
                   type="text"
                   value={emailForm.objet}
@@ -264,7 +264,7 @@ export default function DocumentActionBar({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/90 mb-1">Message</label>
                 <textarea
                   value={emailForm.message}
                   onChange={e => setEmailForm(f => ({ ...f, message: e.target.value }))}
@@ -306,7 +306,7 @@ export default function DocumentActionBar({
       {/* ══ Modale Aperçu PDF ════════════════════════════════════ */}
       {showPdfPreview && pdfUrl && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-[#0b1e30] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h3 className="text-lg font-semibold">
                 Aperçu — {documentType} {documentReference}

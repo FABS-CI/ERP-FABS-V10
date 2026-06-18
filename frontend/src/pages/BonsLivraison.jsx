@@ -99,7 +99,7 @@ export default function BonsLivraison() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2"><CardDescription>Total BL</CardDescription><CardTitle className="text-2xl">{bls.length}</CardTitle></CardHeader>
-            <CardContent><Truck className="h-4 w-4 text-gray-500" /></CardContent>
+            <CardContent><Truck className="h-4 w-4 text-gray-500 dark:text-white/50" /></CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2"><CardDescription>En cours</CardDescription><CardTitle className="text-2xl text-yellow-600">{stats.en_cours}</CardTitle></CardHeader>
@@ -143,7 +143,7 @@ export default function BonsLivraison() {
           <CardHeader><CardTitle>Liste des BL</CardTitle><CardDescription>{bls.length} bon(s) de livraison</CardDescription></CardHeader>
           <CardContent>
             {loading ? <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-              : bls.length === 0 ? <div className="text-center py-12 text-gray-500">Aucun BL</div>
+              : bls.length === 0 ? <div className="text-center py-12 text-gray-500 dark:text-white/50">Aucun BL</div>
               : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -160,7 +160,7 @@ export default function BonsLivraison() {
                     </thead>
                     <tbody>
                       {bls.map((bl) => (
-                        <tr key={bl.bl_id} className="border-b hover:bg-gray-50 dark:hover:bg-white/5" data-testid={`row-bl-${bl.reference}`}>
+                        <tr key={bl.bl_id} className="border-b hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5" data-testid={`row-bl-${bl.reference}`}>
                           <td className="py-3 font-mono text-sm">{bl.reference}</td>
                           <td className="py-3 font-mono text-xs">{bl.commande_reference}</td>
                           <td className="py-3">{bl.client_nom || "-"}</td>
@@ -265,7 +265,7 @@ function BlFormDialog({ open, onOpenChange, onCreated }) {
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           {commandeDetail && (
-            <div className="text-xs text-gray-500 border rounded-md p-2">
+            <div className="text-xs text-gray-500 dark:text-white/50 border rounded-md p-2">
               {commandeDetail.lignes?.length} ligne(s) seront copiées dans le BL.
             </div>
           )}

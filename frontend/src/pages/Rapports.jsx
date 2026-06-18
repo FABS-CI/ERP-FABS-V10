@@ -134,40 +134,40 @@ function RapportVentes() {
               placeholder="Matière (ex: Mathématiques)"
               value={filtres.matiere}
               onChange={(e) => setFiltres({ ...filtres, matiere: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
             <input
               type="text"
               placeholder="École"
               value={filtres.ecole}
               onChange={(e) => setFiltres({ ...filtres, ecole: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
             <input
               type="text"
               placeholder="Localité"
               value={filtres.localite}
               onChange={(e) => setFiltres({ ...filtres, localite: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
             <input
               type="text"
               placeholder="Niveau scolaire (ex: CE1)"
               value={filtres.niveau_scolaire}
               onChange={(e) => setFiltres({ ...filtres, niveau_scolaire: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
             <input
               type="date"
               value={filtres.date_debut}
               onChange={(e) => setFiltres({ ...filtres, date_debut: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
             <input
               type="date"
               value={filtres.date_fin}
               onChange={(e) => setFiltres({ ...filtres, date_fin: e.target.value })}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+              className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
             />
           </div>
         )}
@@ -182,7 +182,7 @@ function RapportVentes() {
           </button>
           <button
             onClick={resetFiltres}
-            className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[#0A2540] dark:text-white text-sm font-semibold rounded-lg transition-colors"
+            className="px-4 py-2 bg-gray-200 dark:bg-white dark:bg-[#0b1e30]/10 hover:bg-gray-300 dark:hover:bg-white dark:bg-[#0b1e30]/20 text-[#0A2540] dark:text-white text-sm font-semibold rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -287,7 +287,7 @@ function RapportVentes() {
             </div>
             <div className="overflow-x-auto -mx-2">
               <table className="min-w-[640px] w-full">
-                <thead className="bg-gray-50 dark:bg-white/5">
+                <thead className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Produit</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">École</th>
@@ -364,14 +364,14 @@ function RapportStock() {
             placeholder="Matière"
             value={filtres.matiere}
             onChange={(e) => setFiltres({ ...filtres, matiere: e.target.value })}
-            className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+            className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
           />
           <input
             type="text"
             placeholder="Niveau scolaire"
             value={filtres.niveau_scolaire}
             onChange={(e) => setFiltres({ ...filtres, niveau_scolaire: e.target.value })}
-            className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10"
+            className="px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10"
           />
           <label className="flex items-center gap-2 px-3 py-2">
             <input
@@ -435,7 +435,7 @@ function RapportStock() {
             </div>
             <div className="overflow-x-auto -mx-2">
               <table className="min-w-[640px] w-full">
-                <thead className="bg-gray-50 dark:bg-white/5">
+                <thead className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Référence</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Désignation</th>
@@ -481,7 +481,7 @@ function RapportStock() {
               </div>
               <div className="overflow-x-auto -mx-2">
                 <table className="min-w-[580px] w-full">
-                  <thead className="bg-gray-50 dark:bg-white/5">
+                  <thead className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Date</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-[#0A2540]/70 dark:text-white/70 uppercase">Produit</th>

@@ -139,7 +139,7 @@ export default function Produits() {
               <button
                 onClick={handleExport}
                 disabled={exporting || loading}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/10 transition disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 {exporting ? "Export…" : "Export CSV"}
@@ -159,7 +159,7 @@ export default function Produits() {
         />
 
         {/* Filters */}
-        <div data-testid="produits-filters" className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-4 mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div data-testid="produits-filters" className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 p-4 mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="relative lg:col-span-2">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -167,18 +167,18 @@ export default function Produits() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Titre, référence, ISBN, auteur..."
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200] text-[#0A2540] dark:text-white"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200] text-[#0A2540] dark:text-white"
             />
           </div>
           <select data-testid="produits-filter-categorie" value={categorie} onChange={(e) => setCategorie(e.target.value)}
-            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-[#0A2540] dark:text-white">
+            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 px-3 py-2 text-[#0A2540] dark:text-white">
             <option value="">Toutes catégories</option>
             {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
           <input data-testid="produits-filter-niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} placeholder="Niveau..."
-            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-[#0A2540] dark:text-white" />
+            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 px-3 py-2 text-[#0A2540] dark:text-white" />
           <select data-testid="produits-filter-stock" value={statutStock} onChange={(e) => setStatutStock(e.target.value)}
-            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-[#0A2540] dark:text-white">
+            className="text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 px-3 py-2 text-[#0A2540] dark:text-white">
             <option value="">Tous stocks</option>
             <option value="rupture">En rupture</option>
             <option value="alerte">Alerte stock</option>
@@ -196,11 +196,11 @@ export default function Produits() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5 text-[10px] uppercase tracking-wider text-[#0A2540]/70 dark:text-white/60">
+                <tr className="bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-[#0A2540]/70 dark:text-white/60">
                   <th className="text-left px-4 py-3 font-semibold">Référence</th>
                   <SortTh label="Titre" sortKey="titre" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
                   <SortTh label="Catégorie" sortKey="categorie" currentKey={sortKey} currentDir={sortDir} onSort={requestSort} className="text-left" />
@@ -225,7 +225,7 @@ export default function Produits() {
                     <tr
                       key={p.product_id}
                       data-testid={`produits-row-${p.reference}`}
-                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
+                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer"
                       onClick={() => navigate(`/produits/${p.product_id}`)}
                     >
                       <td className="px-4 py-3 font-mono text-xs text-[#0A2540] dark:text-white/90 whitespace-nowrap">{p.reference}</td>
@@ -281,11 +281,11 @@ export default function Produits() {
               <span>Page {page} / {totalPages} ({data.total} résultat{data.total > 1 ? "s" : ""})</span>
               <div className="flex gap-2">
                 <button data-testid="produits-prev-page" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5">
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5">
                   <ChevronLeft className="w-3 h-3" />Préc.
                 </button>
                 <button data-testid="produits-next-page" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white/5">
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5">
                   Suiv.<ChevronRight className="w-3 h-3" />
                 </button>
               </div>

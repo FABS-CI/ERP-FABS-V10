@@ -191,7 +191,7 @@ const MultiChannelNotifications = () => {
                         required
                         maxLength={160}
                       />
-                      <p className="text-xs text-gray-500 mt-1">{formData.message.length}/160 caractères</p>
+                      <p className="text-xs text-gray-500 dark:text-white/50 mt-1">{formData.message.length}/160 caractères</p>
                     </div>
                     <Button type="submit" className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90">
                       Envoyer le SMS
@@ -202,7 +202,7 @@ const MultiChannelNotifications = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Utilisez le bouton pour envoyer un nouveau SMS</p>
             </div>
@@ -254,7 +254,7 @@ const MultiChannelNotifications = () => {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Utilisez le bouton pour envoyer un message WhatsApp</p>
             </div>
@@ -324,7 +324,7 @@ const MultiChannelNotifications = () => {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <Mail className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Utilisez le bouton pour envoyer un email</p>
             </div>
@@ -341,7 +341,7 @@ const MultiChannelNotifications = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <Send className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Module en cours de développement</p>
             </div>
@@ -362,7 +362,7 @@ const MultiChannelNotifications = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-semibold">Twilio SMS</h3>
-                  <p className="text-sm text-gray-500">SMS international</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">SMS international</p>
                 </div>
                 <Badge variant={config?.twilio?.configured ? "success" : "destructive"}>
                   {config?.twilio?.configured ? "Configuré" : "Non configuré"}
@@ -379,7 +379,7 @@ const MultiChannelNotifications = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-semibold">Orange CI SMS</h3>
-                  <p className="text-sm text-gray-500">SMS local Côte d'Ivoire</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">SMS local Côte d'Ivoire</p>
                 </div>
                 <Badge variant={config?.orange_ci?.configured ? "success" : "destructive"}>
                   {config?.orange_ci?.configured ? "Configuré" : "Non configuré"}
@@ -396,7 +396,7 @@ const MultiChannelNotifications = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-semibold">MTN CI SMS</h3>
-                  <p className="text-sm text-gray-500">SMS local Côte d'Ivoire</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">SMS local Côte d'Ivoire</p>
                 </div>
                 <Badge variant={config?.mtn_ci?.configured ? "success" : "destructive"}>
                   {config?.mtn_ci?.configured ? "Configuré" : "Non configuré"}
@@ -413,7 +413,7 @@ const MultiChannelNotifications = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-semibold">WhatsApp Business</h3>
-                  <p className="text-sm text-gray-500">Messages WhatsApp</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">Messages WhatsApp</p>
                 </div>
                 <Badge variant={config?.whatsapp?.configured ? "success" : "destructive"}>
                   {config?.whatsapp?.configured ? "Configuré" : "Non configuré"}
@@ -430,7 +430,7 @@ const MultiChannelNotifications = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-semibold">Email SMTP</h3>
-                  <p className="text-sm text-gray-500">Envoi d'emails</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50">Envoi d'emails</p>
                 </div>
                 <Badge variant={config?.email?.configured ? "success" : "destructive"}>
                   {config?.email?.configured ? "Configuré" : "Non configuré"}

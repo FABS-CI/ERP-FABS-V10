@@ -95,7 +95,7 @@ export default function PaiementDetail() {
                 <Badge className={`${MODES[paiement.mode_paiement]?.color} text-white`}>
                   {MODES[paiement.mode_paiement]?.label}
                 </Badge>
-                <span className="text-sm text-gray-500">{paiement.date_paiement}</span>
+                <span className="text-sm text-gray-500 dark:text-white/50">{paiement.date_paiement}</span>
               </div>
             </div>
           </div>
@@ -122,12 +122,12 @@ export default function PaiementDetail() {
               <CardHeader><CardTitle>Informations client</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-1">
-                  <div><span className="text-gray-500">Client :</span> <span className="font-medium">{paiement.client_nom}</span></div>
-                  {paiement.banque && <div><span className="text-gray-500">Banque :</span> {paiement.banque}</div>}
-                  {paiement.numero_cheque && <div><span className="text-gray-500">N° chèque :</span> {paiement.numero_cheque}</div>}
-                  {paiement.reference_virement && <div><span className="text-gray-500">Réf virement :</span> {paiement.reference_virement}</div>}
-                  {paiement.operateur && <div><span className="text-gray-500">Opérateur :</span> {paiement.operateur}</div>}
-                  {paiement.numero_transaction && <div><span className="text-gray-500">N° transaction :</span> {paiement.numero_transaction}</div>}
+                  <div><span className="text-gray-500 dark:text-white/50">Client :</span> <span className="font-medium">{paiement.client_nom}</span></div>
+                  {paiement.banque && <div><span className="text-gray-500 dark:text-white/50">Banque :</span> {paiement.banque}</div>}
+                  {paiement.numero_cheque && <div><span className="text-gray-500 dark:text-white/50">N° chèque :</span> {paiement.numero_cheque}</div>}
+                  {paiement.reference_virement && <div><span className="text-gray-500 dark:text-white/50">Réf virement :</span> {paiement.reference_virement}</div>}
+                  {paiement.operateur && <div><span className="text-gray-500 dark:text-white/50">Opérateur :</span> {paiement.operateur}</div>}
+                  {paiement.numero_transaction && <div><span className="text-gray-500 dark:text-white/50">N° transaction :</span> {paiement.numero_transaction}</div>}
                 </div>
               </CardContent>
             </Card>
@@ -136,7 +136,7 @@ export default function PaiementDetail() {
               <CardHeader><CardTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Factures affectées</CardTitle></CardHeader>
               <CardContent>
                 {paiement.factures?.length === 0 ? (
-                  <p className="text-gray-500 text-sm">Aucune affectation — montant entièrement non affecté.</p>
+                  <p className="text-gray-500 dark:text-white/50 text-sm">Aucune affectation — montant entièrement non affecté.</p>
                 ) : (
                   <div className="space-y-2">
                     {paiement.factures.map((f) => (

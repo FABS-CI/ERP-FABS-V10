@@ -80,37 +80,37 @@ export default function DoublonAlert({ open, commande, niveau, logId, onContinue
 
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Référence</span>
+              <span className="text-gray-500 dark:text-white/50">Référence</span>
               <span className="font-semibold text-[#0A2540] dark:text-white">{commande.reference || '-'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Date</span>
+              <span className="text-gray-500 dark:text-white/50">Date</span>
               <span>{formatDate(commande.created_at)}</span>
             </div>
             <Separator />
             <div className="flex justify-between">
-              <span className="text-gray-500">Client</span>
+              <span className="text-gray-500 dark:text-white/50">Client</span>
               <span>{commande.client_nom || commande.client_id}</span>
             </div>
             {commande.client_representant && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Représentant</span>
+                <span className="text-gray-500 dark:text-white/50">Représentant</span>
                 <span>{commande.client_representant}</span>
               </div>
             )}
             {commande.client_telephone && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Téléphone</span>
+                <span className="text-gray-500 dark:text-white/50">Téléphone</span>
                 <span>{commande.client_telephone}</span>
               </div>
             )}
             <Separator />
             <div className="flex justify-between">
-              <span className="text-gray-500">Montant total</span>
+              <span className="text-gray-500 dark:text-white/50">Montant total</span>
               <span className="font-bold text-[#FF6200]">{formatCurrency(commande.montant_total || 0)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Statut</span>
+              <span className="text-gray-500 dark:text-white/50">Statut</span>
               <Badge variant="outline" className="text-xs capitalize">{commande.statut}</Badge>
             </div>
           </div>

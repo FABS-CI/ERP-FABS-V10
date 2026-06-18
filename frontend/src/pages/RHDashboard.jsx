@@ -38,7 +38,7 @@ export default function RHDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+        <div className="text-sm text-gray-500 dark:text-white/50">Chargement...</div>
       </div>
     );
   }
@@ -104,12 +104,12 @@ export default function RHDashboard() {
           <div
             key={kpi.title}
             onClick={kpi.onClick}
-            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-white/70">{kpi.title}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{kpi.value}</p>
               </div>
               <div className={`${kpi.color} p-3 rounded-lg`}>
                 <kpi.icon className="w-6 h-6 text-white" />
@@ -121,8 +121,8 @@ export default function RHDashboard() {
 
       {/* Alerts Section */}
       {alertes.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-orange-500" />
             Alertes RH
           </h2>
@@ -138,7 +138,7 @@ export default function RHDashboard() {
                     : "bg-blue-50 border-blue-200"
                 }`}
               >
-                <p className="text-sm font-medium text-gray-900">{alerte.message}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{alerte.message}</p>
               </div>
             ))}
           </div>
@@ -146,36 +146,36 @@ export default function RHDashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h2>
+      <div className="bg-white dark:bg-[#0b1e30] rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions Rapides</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             onClick={() => navigate("/rh/employes")}
-            className="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex flex-col items-center p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:bg-white/10 transition-colors"
           >
-            <Users className="w-6 h-6 text-gray-700 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Employés</span>
+            <Users className="w-6 h-6 text-gray-700 dark:text-white/90 mb-2" />
+            <span className="text-sm font-medium text-gray-700 dark:text-white/90">Employés</span>
           </button>
           <button
             onClick={() => navigate("/rh/contrats")}
-            className="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex flex-col items-center p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:bg-white/10 transition-colors"
           >
-            <Briefcase className="w-6 h-6 text-gray-700 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Contrats</span>
+            <Briefcase className="w-6 h-6 text-gray-700 dark:text-white/90 mb-2" />
+            <span className="text-sm font-medium text-gray-700 dark:text-white/90">Contrats</span>
           </button>
           <button
             onClick={() => navigate("/rh/conges")}
-            className="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex flex-col items-center p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:bg-white/10 transition-colors"
           >
-            <Calendar className="w-6 h-6 text-gray-700 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Congés</span>
+            <Calendar className="w-6 h-6 text-gray-700 dark:text-white/90 mb-2" />
+            <span className="text-sm font-medium text-gray-700 dark:text-white/90">Congés</span>
           </button>
           <button
             onClick={() => navigate("/rh/rapports")}
-            className="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex flex-col items-center p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:bg-white/10 transition-colors"
           >
-            <FileText className="w-6 h-6 text-gray-700 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Rapports</span>
+            <FileText className="w-6 h-6 text-gray-700 dark:text-white/90 mb-2" />
+            <span className="text-sm font-medium text-gray-700 dark:text-white/90">Rapports</span>
           </button>
         </div>
       </div>

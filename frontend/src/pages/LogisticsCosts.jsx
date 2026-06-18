@@ -281,7 +281,7 @@ const LogisticsCosts = () => {
                 </tbody>
               </table>
               {couts?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun coût enregistré
                 </div>
               )}
@@ -331,7 +331,7 @@ const LogisticsCosts = () => {
                 </tbody>
               </table>
               {rentabilite?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune donnée de rentabilité disponible
                 </div>
               )}
@@ -381,7 +381,7 @@ const LogisticsCosts = () => {
                 </tbody>
               </table>
               {rentabiliteVehicules?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune donnée de rentabilité par véhicule disponible
                 </div>
               )}
@@ -397,7 +397,7 @@ const LogisticsCosts = () => {
             <CardDescription>Générer des rapports sur une période</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>Sélectionnez une période pour générer un rapport</p>
               <div className="flex gap-4 justify-center mt-4">

@@ -28,7 +28,7 @@ const STATUT_CONFIG = {
   colisage_termine: { label: "Terminé", color: "bg-purple-100 text-purple-800" },
   livre: { label: "Livré", color: "bg-green-100 text-green-800" },
   expedie: { label: "Expédié", color: "bg-indigo-100 text-indigo-800" },
-  cloture: { label: "Clôturé", color: "bg-gray-100 text-gray-700" },
+  cloture: { label: "Clôturé", color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" },
   annule: { label: "Annulé", color: "bg-red-100 text-red-800" },
 };
 
@@ -49,7 +49,7 @@ const CARTON_STATUT = {
 };
 
 const StatutBadge = ({ statut, config = STATUT_CONFIG }) => {
-  const cfg = config[statut] || { label: statut, color: "bg-gray-100 text-gray-700" };
+  const cfg = config[statut] || { label: statut, color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" };
   return (
     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
       {cfg.label}
@@ -72,7 +72,7 @@ function EtiquetteCarton({ carton }) {
         <div>Articles: {carton.total_articles ?? "—"} unités</div>
         <div>Poids: {carton.poids_kg ? `${carton.poids_kg} kg` : "—"}</div>
       </div>
-      <div className="text-center mt-2 text-xs text-gray-600">
+      <div className="text-center mt-2 text-xs text-gray-600 dark:text-white/70">
         {carton.qr_code_url || `fabsci.ci/carton/${carton._id}`}
       </div>
     </div>
@@ -235,13 +235,13 @@ export default function OrdreColisageDetail() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-gray-500">Statut</p>
+              <p className="text-xs text-gray-500 dark:text-white/50">Statut</p>
               <div className="mt-1"><StatutBadge statut={ordre.statut} /></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-gray-500">Mode expédition</p>
+              <p className="text-xs text-gray-500 dark:text-white/50">Mode expédition</p>
               <p className="text-sm font-medium capitalize mt-1">
                 {ordre.mode_expedition_prevu?.replace("_", " ") || "—"}
               </p>
@@ -249,13 +249,13 @@ export default function OrdreColisageDetail() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-gray-500">Cartons</p>
+              <p className="text-xs text-gray-500 dark:text-white/50">Cartons</p>
               <p className="text-xl font-bold text-orange-600 mt-1">{cartons.length}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-gray-500">Priorité</p>
+              <p className="text-xs text-gray-500 dark:text-white/50">Priorité</p>
               <p className="text-sm font-medium capitalize mt-1">{ordre.priorite || "normale"}</p>
             </CardContent>
           </Card>
@@ -295,7 +295,7 @@ export default function OrdreColisageDetail() {
             <CardContent className="p-0">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50 text-gray-600">
+                  <tr className="border-b bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-white/70">
                     <th className="text-left px-4 py-2 font-medium">Produit</th>
                     <th className="text-right px-4 py-2 font-medium">Qté</th>
                     <th className="text-right px-4 py-2 font-medium">Cond./carton</th>
@@ -304,10 +304,10 @@ export default function OrdreColisageDetail() {
                 </thead>
                 <tbody>
                   {ordre.lignes.map((ligne, i) => (
-                    <tr key={i} className="border-b hover:bg-gray-50">
+                    <tr key={i} className="border-b hover:bg-gray-50 dark:bg-white/5">
                       <td className="px-4 py-2">{ligne.produit_nom || ligne.produit_id}</td>
                       <td className="px-4 py-2 text-right">{ligne.quantite}</td>
-                      <td className="px-4 py-2 text-right text-gray-500">{ligne.conditionnement_carton ?? "—"}</td>
+                      <td className="px-4 py-2 text-right text-gray-500 dark:text-white/50">{ligne.conditionnement_carton ?? "—"}</td>
                       <td className="px-4 py-2 text-right font-medium">
                         {ligne.conditionnement_carton
                           ? Math.ceil(ligne.quantite / ligne.conditionnement_carton)
@@ -345,7 +345,7 @@ export default function OrdreColisageDetail() {
                       <EtiquetteCarton carton={carton} />
                     </div>
                     {/* Vue liste normale */}
-                    <div className="flex items-center px-4 py-3 hover:bg-gray-50 print:hidden">
+                    <div className="flex items-center px-4 py-3 hover:bg-gray-50 dark:bg-white/5 print:hidden">
                       <button
                         className="mr-2 text-gray-400"
                         onClick={() => setExpandedCarton(expandedCarton === carton._id ? null : carton._id)}
@@ -358,11 +358,11 @@ export default function OrdreColisageDetail() {
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-xs font-medium text-orange-700">{carton.reference}</span>
                           <StatutBadge statut={carton.statut} config={CARTON_STATUT} />
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-white/50">
                             {carton.numero_carton}/{carton.total_cartons}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">
                           {carton.total_articles ?? "—"} articles
                           {carton.poids_kg ? ` · ${carton.poids_kg} kg` : ""}
                         </p>
@@ -410,9 +410,9 @@ export default function OrdreColisageDetail() {
                     {/* Détail carton étendu */}
                     {expandedCarton === carton._id && carton.contenu && (
                       <div className="px-10 pb-3 print:hidden">
-                        <table className="w-full text-xs bg-gray-50 rounded">
+                        <table className="w-full text-xs bg-gray-50 dark:bg-white/5 rounded">
                           <thead>
-                            <tr className="border-b text-gray-500">
+                            <tr className="border-b text-gray-500 dark:text-white/50">
                               <th className="text-left px-3 py-1.5">Produit</th>
                               <th className="text-right px-3 py-1.5">Qté</th>
                             </tr>
@@ -439,7 +439,7 @@ export default function OrdreColisageDetail() {
         {ordre.notes && (
           <Card className="print:hidden">
             <CardContent className="p-4">
-              <p className="text-xs text-gray-500 mb-1">Notes</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mb-1">Notes</p>
               <p className="text-sm">{ordre.notes}</p>
             </CardContent>
           </Card>
@@ -496,22 +496,22 @@ export default function OrdreColisageDetail() {
                 />
                 <div className="w-full text-sm space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Référence</span>
+                    <span className="text-gray-500 dark:text-white/50">Référence</span>
                     <span className="font-medium">{showEtiquette.reference || showEtiquette.carton_id}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Carton</span>
+                    <span className="text-gray-500 dark:text-white/50">Carton</span>
                     <span className="font-medium">{showEtiquette.numero_carton} / {showEtiquette.total_cartons}</span>
                   </div>
                   {showEtiquette.designation && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Article</span>
+                      <span className="text-gray-500 dark:text-white/50">Article</span>
                       <span className="font-medium text-right max-w-[60%]">{showEtiquette.designation}</span>
                     </div>
                   )}
                   {showEtiquette.quantite != null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Qté</span>
+                      <span className="text-gray-500 dark:text-white/50">Qté</span>
                       <span className="font-medium">{showEtiquette.quantite}{showEtiquette.est_partiel ? " (partiel)" : ""}</span>
                     </div>
                   )}

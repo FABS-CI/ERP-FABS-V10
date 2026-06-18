@@ -12,7 +12,7 @@ export default function ModulePlaceholder({ title, sprint, description }) {
         data-testid={`placeholder-${title.toLowerCase().replace(/\s+/g, "-")}`}
         className="max-w-3xl mx-auto"
       >
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-10 text-center">
+        <div className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-10 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#FF6200]/10 mb-6">
             <Construction className="w-8 h-8 text-[#FF6200]" />
           </div>

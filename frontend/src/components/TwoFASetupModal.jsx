@@ -47,7 +47,7 @@ function StepQR({ qrBase64, secret, onNext, onClose }) {
 
       {/* QR Code */}
       <div className="flex justify-center">
-        <div className="border-2 border-[#FF6200]/30 rounded-2xl p-3 bg-white shadow-lg">
+        <div className="border-2 border-[#FF6200]/30 rounded-2xl p-3 bg-white dark:bg-[#0b1e30] shadow-lg">
           <img
             src={`data:image/png;base64,${qrBase64}`}
             alt="QR Code 2FA"
@@ -62,7 +62,7 @@ function StepQR({ qrBase64, secret, onNext, onClose }) {
           Ou saisissez manuellement la clé secrète :
         </p>
         <div className="flex gap-2">
-          <code className="flex-1 bg-gray-100 dark:bg-white/10 rounded-lg px-3 py-2 text-sm font-mono text-center tracking-widest select-all">
+          <code className="flex-1 bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 rounded-lg px-3 py-2 text-sm font-mono text-center tracking-widest select-all">
             {secret}
           </code>
           <Button
@@ -246,10 +246,10 @@ export default function TwoFASetupModal({ onClose, onActivated }) {
           {step !== "loading" && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10 transition-colors"
               aria-label="Fermer"
             >
-              <X className="h-4 w-4 text-gray-500" />
+              <X className="h-4 w-4 text-gray-500 dark:text-white/50" />
             </button>
           )}
         </div>
@@ -259,7 +259,7 @@ export default function TwoFASetupModal({ onClose, onActivated }) {
           {step === "loading" && (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="h-8 w-8 animate-spin text-[#FF6200]" />
-              <p className="text-sm text-gray-500">Génération du QR code…</p>
+              <p className="text-sm text-gray-500 dark:text-white/50">Génération du QR code…</p>
             </div>
           )}
 

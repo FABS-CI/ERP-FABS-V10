@@ -237,7 +237,7 @@ export default function Commandes() {
             <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
           <CardContent>
-            <FileText className="h-4 w-4 text-gray-500" />
+            <FileText className="h-4 w-4 text-gray-500 dark:text-white/50" />
           </CardContent>
         </Card>
 
@@ -446,7 +446,7 @@ export default function Commandes() {
           {/* TICKET-014 — Pagination */}
           {pageData.total > 0 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-white/50">
                 Page {page} · {pageData.total} commande{pageData.total > 1 ? 's' : ''} au total
               </span>
               <div className="flex gap-2">

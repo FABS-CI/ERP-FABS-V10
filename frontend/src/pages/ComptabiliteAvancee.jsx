@@ -284,7 +284,7 @@ const ComptabiliteAvancee = () => {
                 </tbody>
               </table>
               {ecritures?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucune écriture trouvée
                 </div>
               )}

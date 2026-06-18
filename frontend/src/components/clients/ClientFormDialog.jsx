@@ -145,7 +145,7 @@ export default function ClientFormDialog({ open, onClose, onSaved, client }) {
           <button
             data-testid="client-form-close"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-white/60"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/60"
           >
             <X className="w-5 h-5" />
           </button>
@@ -312,7 +312,7 @@ export default function ClientFormDialog({ open, onClose, onSaved, client }) {
               type="button"
               data-testid="client-form-cancel"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[#0A2540] dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[#0A2540] dark:text-white hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10"
             >
               Annuler
             </button>
@@ -350,6 +350,6 @@ const Err = ({ msg }) => (
 );
 
 const inputCls = (hasErr) =>
-  `w-full px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white/5 border ${
+  `w-full px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white dark:bg-[#0b1e30]/5 border ${
     hasErr ? "border-[#C62828]" : "border-gray-200 dark:border-white/10"
   } text-[#0A2540] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200]`;

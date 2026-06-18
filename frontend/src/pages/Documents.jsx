@@ -321,12 +321,12 @@ export default function Documents() {
           <CardContent>
             {loading ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">Chargement...</p>
+                <p className="text-gray-500 dark:text-white/50">Chargement...</p>
               </div>
             ) : documents.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Aucun document trouvé</p>
+                <p className="text-gray-500 dark:text-white/50">Aucun document trouvé</p>
                 <Button
                   onClick={() => navigate("/documents/upload")}
                   className="mt-4 bg-[#FF6200] hover:bg-[#E55900]"

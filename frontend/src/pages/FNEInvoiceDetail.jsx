@@ -109,17 +109,17 @@ export default function FNEInvoiceDetail() {
                   <DataRow label="Mis à jour" value={meta.updated_at?.slice(0, 19).replace("T", " ") || "—"} />
                 </dl>
 
-                <div className="flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-white/5 rounded-lg p-6 border">
+                <div className="flex flex-col items-center justify-center bg-[#F9FAFB] dark:bg-white dark:bg-[#0b1e30]/5 rounded-lg p-6 border">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">QR Code DGI</p>
                   {qr?.qr_code ? (
                     <img
                       src={qr.qr_code.startsWith("data:") ? qr.qr_code : `data:image/png;base64,${qr.qr_code}`}
                       alt="QR Code FNE"
-                      className="w-48 h-48 bg-white rounded-md p-2"
+                      className="w-48 h-48 bg-white dark:bg-[#0b1e30] rounded-md p-2"
                       data-testid="fne-qr-code"
                     />
                   ) : (
-                    <div className="w-48 h-48 bg-white/50 rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center text-center text-sm text-muted-foreground">
+                    <div className="w-48 h-48 bg-white dark:bg-[#0b1e30]/50 rounded-md border-2 border-dashed border-gray-300 dark:border-white/10 flex items-center justify-center text-center text-sm text-muted-foreground">
                       QR code disponible après certification
                     </div>
                   )}

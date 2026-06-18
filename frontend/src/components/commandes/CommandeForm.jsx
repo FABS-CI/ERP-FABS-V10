@@ -305,13 +305,13 @@ export default function CommandeForm() {
           <React.Fragment key={s}>
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                s <= step ? 'bg-[#FF6200] text-white' : 'bg-gray-200 text-gray-600'
+                s <= step ? 'bg-[#FF6200] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-white/70'
               }`}
             >
               {s}
             </div>
             {s < 3 && (
-              <div className={`h-1 w-24 ${s < step ? 'bg-[#FF6200]' : 'bg-gray-200'}`} />
+              <div className={`h-1 w-24 ${s < step ? 'bg-[#FF6200]' : 'bg-gray-200 dark:bg-white/10'}`} />
             )}
           </React.Fragment>
         ))}
@@ -392,7 +392,7 @@ export default function CommandeForm() {
             </Button>
 
             {formData.lignes.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-white/50">
                 Aucune ligne ajoutée. Cliquez sur "Ajouter une ligne" pour commencer.
               </div>
             ) : (
@@ -452,7 +452,7 @@ export default function CommandeForm() {
                                       />
                                       <div>
                                         <div className="font-medium">{produit.titre}</div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-gray-500 dark:text-white/50">
                                           {produit.reference} — {formatCurrency(produit.prix_vente)}
                                         </div>
                                       </div>
@@ -541,7 +541,7 @@ export default function CommandeForm() {
             <div>
               <h4 className="font-semibold mb-2">Client</h4>
               <p className="text-gray-700 dark:text-gray-300">{selectedClient?.nom}</p>
-              <p className="text-sm text-gray-500">{selectedClient?.reference}</p>
+              <p className="text-sm text-gray-500 dark:text-white/50">{selectedClient?.reference}</p>
             </div>
 
             <Separator />

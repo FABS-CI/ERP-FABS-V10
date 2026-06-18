@@ -228,7 +228,7 @@ export default function Factures() {
             <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
           <CardContent>
-            <FileText className="h-4 w-4 text-gray-500" />
+            <FileText className="h-4 w-4 text-gray-500 dark:text-white/50" />
           </CardContent>
         </Card>
 
@@ -417,7 +417,7 @@ export default function Factures() {
                         {formatCurrency(facture.montant_ttc)}
                       </td>
                       <td className="py-3 text-right">
-                        <span className={facture.montant_restant > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500'}>
+                        <span className={facture.montant_restant > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500 dark:text-white/50'}>
                           {formatCurrency(facture.montant_restant)}
                         </span>
                       </td>
@@ -458,7 +458,7 @@ export default function Factures() {
           {/* TICKET-014 — Pagination */}
           {pageData.total > 0 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-white/50">
                 Page {page} · {pageData.total} facture{pageData.total > 1 ? 's' : ''} au total
               </span>
               <div className="flex gap-2">

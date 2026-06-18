@@ -111,7 +111,7 @@ export default function HistoriqueEnvois() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-[#0A2540]">Journal des envois</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">
               Historique de tous les envois WhatsApp & Email — tous documents
             </p>
           </div>
@@ -127,15 +127,15 @@ export default function HistoriqueEnvois() {
         </div>
 
         {/* Filtres */}
-        <div className="bg-white rounded-xl border p-4 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-xl border p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-white/90">
             <Filter className="h-4 w-4" />
             Filtres
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* Date début */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Du</label>
+              <label className="block text-xs text-gray-500 dark:text-white/50 mb-1">Du</label>
               <input
                 type="date"
                 value={filters.date_debut}
@@ -145,7 +145,7 @@ export default function HistoriqueEnvois() {
             </div>
             {/* Date fin */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Au</label>
+              <label className="block text-xs text-gray-500 dark:text-white/50 mb-1">Au</label>
               <input
                 type="date"
                 value={filters.date_fin}
@@ -155,7 +155,7 @@ export default function HistoriqueEnvois() {
             </div>
             {/* Type document */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Type document</label>
+              <label className="block text-xs text-gray-500 dark:text-white/50 mb-1">Type document</label>
               <select
                 value={filters.type_document}
                 onChange={e => handleFilterChange('type_document', e.target.value)}
@@ -169,7 +169,7 @@ export default function HistoriqueEnvois() {
             </div>
             {/* Canal */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Canal</label>
+              <label className="block text-xs text-gray-500 dark:text-white/50 mb-1">Canal</label>
               <select
                 value={filters.canal}
                 onChange={e => handleFilterChange('canal', e.target.value)}
@@ -182,7 +182,7 @@ export default function HistoriqueEnvois() {
             </div>
             {/* Recherche */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Recherche</label>
+              <label className="block text-xs text-gray-500 dark:text-white/50 mb-1">Recherche</label>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input
@@ -198,7 +198,7 @@ export default function HistoriqueEnvois() {
           <div className="flex justify-end">
             <button
               onClick={resetFilters}
-              className="text-xs text-gray-500 hover:text-[#FF6200] underline"
+              className="text-xs text-gray-500 dark:text-white/50 hover:text-[#FF6200] underline"
             >
               Réinitialiser les filtres
             </button>
@@ -206,9 +206,9 @@ export default function HistoriqueEnvois() {
         </div>
 
         {/* Tableau */}
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-white dark:bg-[#0b1e30] rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b flex justify-between items-center">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-white/50">
               {total} envoi{total !== 1 ? 's' : ''} au total
               {search ? ` (${filtered.length} affichés)` : ''}
             </span>
@@ -225,7 +225,7 @@ export default function HistoriqueEnvois() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead className="bg-gray-50 dark:bg-white/5 text-xs uppercase text-gray-500 dark:text-white/50">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Date</th>
                     <th className="px-4 py-3 text-left font-medium">Canal</th>
@@ -240,11 +240,11 @@ export default function HistoriqueEnvois() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.map((log, i) => {
-                    const canalInfo = CANAL_LABELS[log.canal] || { label: log.canal, color: 'text-gray-600 bg-gray-50' };
+                    const canalInfo = CANAL_LABELS[log.canal] || { label: log.canal, color: 'text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5' };
                     const CanalIcon = canalInfo.icon || Mail;
                     return (
-                      <tr key={log.log_id || i} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                      <tr key={log.log_id || i} className="hover:bg-gray-50 dark:bg-white/5 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-white/70">
                           {formatDate(log.created_at)}
                         </td>
                         <td className="px-4 py-3">
@@ -253,26 +253,26 @@ export default function HistoriqueEnvois() {
                             {canalInfo.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-700 capitalize">
+                        <td className="px-4 py-3 text-gray-700 dark:text-white/90 capitalize">
                           {TYPE_DOC_LABELS[log.type_document] || log.type_document || '—'}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs text-[#0A2540] font-medium">
                           {log.reference || '—'}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">
+                        <td className="px-4 py-3 text-gray-600 dark:text-white/70 max-w-[160px] truncate">
                           {log.destinataire || '—'}
                         </td>
-                        <td className="px-4 py-3 text-gray-500 text-xs max-w-[120px] truncate">
+                        <td className="px-4 py-3 text-gray-500 dark:text-white/50 text-xs max-w-[120px] truncate">
                           {log.cc || '—'}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">
+                        <td className="px-4 py-3 text-gray-600 dark:text-white/70 max-w-[200px] truncate">
                           {log.objet || '—'}
                         </td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">
+                        <td className="px-4 py-3 text-gray-500 dark:text-white/50 text-xs">
                           {log.user_email || log.user_id || '—'}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUT_COLORS[log.statut] || 'bg-gray-100 text-gray-600'}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUT_COLORS[log.statut] || 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70'}`}>
                             {log.statut || '—'}
                           </span>
                         </td>
@@ -286,7 +286,7 @@ export default function HistoriqueEnvois() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500">
+            <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500 dark:text-white/50">
               <span>Page {page} / {totalPages}</span>
               <div className="flex gap-2">
                 <Button

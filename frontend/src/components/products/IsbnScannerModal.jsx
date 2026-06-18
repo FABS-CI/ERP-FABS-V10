@@ -93,7 +93,7 @@ export default function IsbnScannerModal({ open, onClose, onDetected }) {
           <button
             data-testid="isbn-scanner-close"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-white/60"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/60"
           >
             <X className="w-4 h-4" />
           </button>
@@ -143,7 +143,7 @@ export default function IsbnScannerModal({ open, onClose, onDetected }) {
                 value={manualIsbn}
                 onChange={(e) => setManualIsbn(e.target.value.replace(/[^0-9Xx]/g, ""))}
                 placeholder="978..."
-                className="flex-1 px-3 py-2 text-sm rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[#0A2540] dark:text-white"
+                className="flex-1 px-3 py-2 text-sm rounded-lg bg-white dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10 text-[#0A2540] dark:text-white"
               />
               <button
                 data-testid="isbn-scanner-manual-submit"

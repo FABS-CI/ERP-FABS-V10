@@ -462,7 +462,7 @@ export default function FactureDetail() {
                     <Package className="h-5 w-5 text-[#F97316]" />
                     Ordres de colisage
                     {colisageData && Array.isArray(colisageData) && (
-                      <span className="text-sm font-normal text-gray-500 ml-2">
+                      <span className="text-sm font-normal text-gray-500 dark:text-white/50 ml-2">
                         {colisageData.length} ordre{colisageData.length > 1 ? "s" : ""}
                       </span>
                     )}
@@ -508,7 +508,7 @@ export default function FactureDetail() {
                           <Package className="h-4 w-4 text-gray-400" />
                           <div>
                             <div className="font-mono text-sm font-medium">{ordre.reference || ordre.ordre_id}</div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 dark:text-white/50">
                               Mode : {ordre.mode_expedition_prevu || "—"} · Priorité : {ordre.priorite || "—"}
                             </div>
                             {ordre.notes && <div className="text-xs text-gray-400 italic">{ordre.notes}</div>}
@@ -596,7 +596,7 @@ export default function FactureDetail() {
                 onChange={(e) => setAvoirData(prev => ({ ...prev, montant: e.target.value }))}
                 data-testid="input-montant-avoir"
               />
-              <p className="text-sm text-gray-500 mt-1">Maximum: {formatCurrency(facture.montant_ttc)}</p>
+              <p className="text-sm text-gray-500 dark:text-white/50 mt-1">Maximum: {formatCurrency(facture.montant_ttc)}</p>
             </div>
             <div>
               <Label htmlFor="motif-avoir">Motif (minimum 10 caractères)</Label>

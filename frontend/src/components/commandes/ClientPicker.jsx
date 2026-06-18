@@ -25,7 +25,7 @@ const TYPE_OPTIONS = [
 const TYPE_COLORS = {
   ecole: 'bg-green-100 text-green-800',
   librairie: 'bg-blue-100 text-blue-800',
-  particulier: 'bg-gray-100 text-gray-800',
+  particulier: 'bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-white',
   distributeur: 'bg-orange-100 text-orange-800',
   representant: 'bg-purple-100 text-purple-800',
 };
@@ -127,7 +127,7 @@ export default function ClientPicker({ clients, selectedClient, onSelect, onClie
       <div className="border rounded-lg" data-testid="client-list">
         <ScrollArea className="h-72">
           {filteredClients.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-500">
+            <div className="p-8 text-center text-sm text-gray-500 dark:text-white/50">
               {search.trim()
                 ? `Aucun client trouvé pour "${search}"`
                 : 'Aucun client disponible'}
@@ -149,7 +149,7 @@ export default function ClientPicker({ clients, selectedClient, onSelect, onClie
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium truncate">{c.nom}</span>
-                          <Badge className={`${TYPE_COLORS[c.type_client] || 'bg-gray-100'} text-xs`}>
+                          <Badge className={`${TYPE_COLORS[c.type_client] || 'bg-gray-100 dark:bg-white/10'} text-xs`}>
                             {c.type_client}
                           </Badge>
                         </div>
@@ -182,7 +182,7 @@ export default function ClientPicker({ clients, selectedClient, onSelect, onClie
             </ul>
           )}
         </ScrollArea>
-        <div className="px-4 py-2 border-t bg-gray-50 dark:bg-gray-900 text-xs text-gray-500">
+        <div className="px-4 py-2 border-t bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-white/50">
           {filteredClients.length} sur {clients.length} clients
           {clients.length > filteredClients.length && ' (filtrés)'}
         </div>

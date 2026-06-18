@@ -58,7 +58,7 @@ export default function TreasuryAlert({ data }) {
             >
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#FF6200]/8 dark:bg-white/5 text-[10px] uppercase tracking-wider text-[#0A2540] dark:text-white/70">
+                  <tr className="bg-[#FF6200]/8 dark:bg-white dark:bg-[#0b1e30]/5 text-[10px] uppercase tracking-wider text-[#0A2540] dark:text-white/70">
                     <th className="text-left px-3 py-2 font-semibold">Référence</th>
                     <th className="text-left px-3 py-2 font-semibold">Client</th>
                     <th className="text-right px-3 py-2 font-semibold">Montant</th>
@@ -89,7 +89,7 @@ export default function TreasuryAlert({ data }) {
                               ? "bg-[#C62828]/15 text-[#C62828]"
                               : f.jours_retard >= 15
                               ? "bg-[#FF6200]/15 text-[#FF6200]"
-                              : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70"
+                              : "bg-gray-100 dark:bg-white dark:bg-[#0b1e30]/10 text-gray-600 dark:text-white/70"
                           }`}
                         >
                           {f.jours_retard} j

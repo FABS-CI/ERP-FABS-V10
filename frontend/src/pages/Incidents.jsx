@@ -25,13 +25,13 @@ const TYPE_CONFIG = {
   avarie:          { label: "Avarie",           color: "bg-red-100 text-red-800" },
   manquant:        { label: "Manquant",         color: "bg-orange-100 text-orange-800" },
   erreur_adresse:  { label: "Erreur adresse",   color: "bg-pink-100 text-pink-800" },
-  client_absent:   { label: "Client absent",    color: "bg-gray-100 text-gray-700" },
+  client_absent:   { label: "Client absent",    color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" },
   refus:           { label: "Refus",            color: "bg-red-100 text-red-800" },
-  autre:           { label: "Autre",            color: "bg-gray-100 text-gray-700" },
+  autre:           { label: "Autre",            color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" },
 };
 
 const SourceBadge = ({ source }) => {
-  const cfg = SOURCE_CONFIG[source] || { label: source, color: "bg-gray-100 text-gray-700", icon: AlertTriangle };
+  const cfg = SOURCE_CONFIG[source] || { label: source, color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90", icon: AlertTriangle };
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
@@ -42,7 +42,7 @@ const SourceBadge = ({ source }) => {
 };
 
 const TypeBadge = ({ type }) => {
-  const cfg = TYPE_CONFIG[type] || { label: type || "—", color: "bg-gray-100 text-gray-700" };
+  const cfg = TYPE_CONFIG[type] || { label: type || "—", color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" };
   return (
     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
       {cfg.label}
@@ -54,11 +54,11 @@ const RESOLUTION_CONFIG = {
   ouvert:      { label: "Ouvert",      color: "bg-red-100 text-red-800" },
   en_cours:    { label: "En cours",    color: "bg-yellow-100 text-yellow-800" },
   resolu:      { label: "Résolu",      color: "bg-green-100 text-green-800" },
-  clos:        { label: "Clos",        color: "bg-gray-100 text-gray-600" },
+  clos:        { label: "Clos",        color: "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70" },
 };
 
 const ResolutionBadge = ({ statut }) => {
-  const cfg = RESOLUTION_CONFIG[statut] || { label: statut || "—", color: "bg-gray-100 text-gray-600" };
+  const cfg = RESOLUTION_CONFIG[statut] || { label: statut || "—", color: "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70" };
   return (
     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
       {cfg.label}
@@ -131,25 +131,25 @@ export default function Incidents() {
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-red-600">{stats.total}</div>
-            <div className="text-sm text-gray-500">Total incidents</div>
+            <div className="text-sm text-gray-500 dark:text-white/50">Total incidents</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-blue-600">{stats.livraisons}</div>
-            <div className="text-sm text-gray-500">Livraisons</div>
+            <div className="text-sm text-gray-500 dark:text-white/50">Livraisons</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-purple-600">{stats.expeditions}</div>
-            <div className="text-sm text-gray-500">Expéditions</div>
+            <div className="text-sm text-gray-500 dark:text-white/50">Expéditions</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-orange-600">{stats.types.length}</div>
-            <div className="text-sm text-gray-500">Types distincts</div>
+            <div className="text-sm text-gray-500 dark:text-white/50">Types distincts</div>
           </CardContent>
         </Card>
       </div>
@@ -194,12 +194,12 @@ export default function Incidents() {
 
       {/* Liste */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-gray-500">
+        <div className="flex items-center justify-center h-48 text-gray-500 dark:text-white/50">
           <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Chargement...
         </div>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center h-48 text-gray-500">
+          <CardContent className="flex flex-col items-center justify-center h-48 text-gray-500 dark:text-white/50">
             <AlertTriangle className="w-8 h-8 mb-2 text-gray-300" />
             <p>Aucun incident trouvé</p>
           </CardContent>
@@ -215,17 +215,17 @@ export default function Incidents() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <SourceBadge source={inc.source} />
                       <TypeBadge type={inc.type_incident} />
-                      <span className="text-sm font-semibold text-gray-800">
+                      <span className="text-sm font-semibold text-gray-800 dark:text-white">
                         {inc.document_reference || inc.document_id}
                       </span>
                     </div>
                     {inc.description && (
-                      <p className="text-sm text-gray-700 mb-2 flex items-start gap-1">
+                      <p className="text-sm text-gray-700 dark:text-white/90 mb-2 flex items-start gap-1">
                         <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
                         {inc.description}
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-white/50">
                       {inc.client_nom && (
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" /> {inc.client_nom}
@@ -247,7 +247,7 @@ export default function Incidents() {
                   {/* Date + statut + actions */}
                   <div className="flex flex-col items-end gap-2 text-right">
                     {inc.date && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-white/50">
                         <Calendar className="w-3 h-3" />
                         {new Date(inc.date).toLocaleDateString("fr-FR", {
                           day: "2-digit", month: "short", year: "numeric",
@@ -297,10 +297,10 @@ export default function Incidents() {
           </DialogHeader>
           {resolveTarget && (
             <div className="space-y-4 py-2">
-              <div className="text-sm text-gray-600 bg-gray-50 rounded p-3">
+              <div className="text-sm text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5 rounded p-3">
                 <span className="font-medium">{resolveTarget.inc.document_reference || resolveTarget.inc.document_id}</span>
                 {" — "}{resolveTarget.inc.type_incident}
-                {resolveTarget.inc.description && <p className="text-xs mt-1 text-gray-500">{resolveTarget.inc.description}</p>}
+                {resolveTarget.inc.description && <p className="text-xs mt-1 text-gray-500 dark:text-white/50">{resolveTarget.inc.description}</p>}
               </div>
               <div>
                 <Label>Statut de résolution</Label>

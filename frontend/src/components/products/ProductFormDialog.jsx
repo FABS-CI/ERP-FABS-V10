@@ -175,7 +175,7 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
             <button
               data-testid="product-form-close"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-white/60"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10 text-gray-500 dark:text-white/60"
             >
               <X className="w-5 h-5" />
             </button>
@@ -192,7 +192,7 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
                   data-testid="product-form-isbn"
                   {...register("isbn")}
                   placeholder="ISBN (978...)"
-                  className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[#0A2540] dark:text-white font-mono"
+                  className="flex-1 min-w-0 px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10 text-[#0A2540] dark:text-white font-mono"
                 />
                 <button
                   type="button"
@@ -252,9 +252,9 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
             </div>
 
             {/* Classification auto — modifiable */}
-            <div className="rounded-lg border border-dashed border-gray-300 p-3 bg-gray-50/60">
+            <div className="rounded-lg border border-dashed border-gray-300 dark:border-white/10 p-3 bg-gray-50 dark:bg-white/5/60">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-600 inline-flex items-center gap-1">
+                <span className="text-xs font-semibold text-gray-600 dark:text-white/70 inline-flex items-center gap-1">
                   <Sparkles size={13} className="text-violet-500" /> Classification (auto, modifiable)
                 </span>
                 <button
@@ -312,7 +312,7 @@ export default function ProductFormDialog({ open, onClose, onSaved, product }) {
             {/* Actions */}
             <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
               <button type="button" data-testid="product-form-cancel" onClick={onClose}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[#0A2540] dark:text-white hover:bg-gray-100 dark:hover:bg-white/10">
+                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[#0A2540] dark:text-white hover:bg-gray-100 dark:hover:bg-white dark:bg-[#0b1e30]/10">
                 Annuler
               </button>
               <button type="submit" data-testid="product-form-submit" disabled={submitting}
@@ -342,6 +342,6 @@ const Label = ({ children }) => (
 );
 const Err = ({ msg }) => <p className="text-[11px] text-[#C62828] mt-1">{msg}</p>;
 const inputCls = (hasErr) =>
-  `w-full px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white/5 border ${
+  `w-full px-3 py-2.5 text-sm rounded-lg bg-white dark:bg-white dark:bg-[#0b1e30]/5 border ${
     hasErr ? "border-[#C62828]" : "border-gray-200 dark:border-white/10"
   } text-[#0A2540] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF6200]/40 focus:border-[#FF6200]`;

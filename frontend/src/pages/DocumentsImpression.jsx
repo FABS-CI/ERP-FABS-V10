@@ -227,7 +227,7 @@ export default function DocumentsImpression() {
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                         selectedTemplate === template.id
                           ? "border-[#FF6200] bg-orange-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-white/10"
                       }`}
                       onClick={() => {
                         setSelectedTemplate(template.id);
@@ -246,8 +246,8 @@ export default function DocumentsImpression() {
                         </div>
                         <span className="text-sm font-medium">{template.name}</span>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">{template.description}</p>
-                      <p className="text-xs text-gray-500 italic">{template.style}</p>
+                      <p className="text-xs text-gray-600 dark:text-white/70 mb-2">{template.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-white/50 italic">{template.style}</p>
                     </div>
                   ))}
                 </div>
@@ -291,7 +291,7 @@ export default function DocumentsImpression() {
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center">
                     <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600 dark:text-white/70 mb-4">
                       Glissez-déposez ou cliquez pour télécharger
                     </p>
                     <input
@@ -307,7 +307,7 @@ export default function DocumentsImpression() {
                         Choisir un fichier
                       </Button>
                     </label>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-white/50 mt-2">
                       PNG ou JPG, maximum 2MB
                     </p>
                   </div>
@@ -348,7 +348,7 @@ export default function DocumentsImpression() {
                         className={`w-8 h-8 rounded-full border-2 ${
                           settings?.watermark_settings?.color === color
                             ? "border-[#FF6200]"
-                            : "border-gray-300"
+                            : "border-gray-300 dark:border-white/10"
                         }`}
                         style={{ backgroundColor: color }}
                         onClick={() => updateWatermark("color", color)}

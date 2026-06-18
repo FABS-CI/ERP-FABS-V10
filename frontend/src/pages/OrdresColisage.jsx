@@ -33,7 +33,7 @@ const STATUT_CONFIG = {
   colisage_termine: { label: "Colisage terminé", color: "bg-purple-100 text-purple-800", icon: CheckCircle },
   livre: { label: "Livré", color: "bg-green-100 text-green-800", icon: Truck },
   expedie: { label: "Expédié", color: "bg-indigo-100 text-indigo-800", icon: Truck },
-  cloture: { label: "Clôturé", color: "bg-gray-100 text-gray-700", icon: CheckCircle },
+  cloture: { label: "Clôturé", color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90", icon: CheckCircle },
   annule: { label: "Annulé", color: "bg-red-100 text-red-800", icon: AlertCircle },
 };
 
@@ -46,7 +46,7 @@ const STATUT_TRANSITIONS = {
 };
 
 const StatutBadge = ({ statut }) => {
-  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 text-gray-700" };
+  const cfg = STATUT_CONFIG[statut] || { label: statut, color: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/90" };
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
       {cfg.label}
@@ -59,11 +59,11 @@ const KPICard = ({ title, value, subtitle, color, Icon }) => (
     <CardContent className="p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{title}</p>
+          <p className="text-sm text-gray-500 dark:text-white/50">{title}</p>
           <p className={`text-2xl font-bold ${color}`}>{value ?? "—"}</p>
           {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
         </div>
-        <div className={`p-2 rounded-lg bg-gray-50`}>
+        <div className={`p-2 rounded-lg bg-gray-50 dark:bg-white/5`}>
           <Icon className="w-5 h-5 text-gray-400" />
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function OrdresColisage() {
             />
           </div>
           <select
-            className="border rounded-md px-3 py-2 text-sm bg-white"
+            className="border rounded-md px-3 py-2 text-sm bg-white dark:bg-[#0b1e30]"
             value={statutFilter}
             onChange={(e) => setStatutFilter(e.target.value)}
           >
@@ -230,7 +230,7 @@ export default function OrdresColisage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-gray-600">
+                    <tr className="border-b bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-white/70">
                       <th className="text-left px-4 py-3 font-medium">Référence</th>
                       <th className="text-left px-4 py-3 font-medium">Facture</th>
                       <th className="text-left px-4 py-3 font-medium">Client</th>
@@ -245,13 +245,13 @@ export default function OrdresColisage() {
                     {ordres.map((ordre) => {
                       const transitions = STATUT_TRANSITIONS[ordre.statut] || [];
                       return (
-                        <tr key={ordre._id || ordre.ordre_id} className="border-b hover:bg-gray-50 transition-colors">
+                        <tr key={ordre._id || ordre.ordre_id} className="border-b hover:bg-gray-50 dark:bg-white/5 transition-colors">
                           <td className="px-4 py-3 font-mono text-xs font-medium text-orange-700">
                             {ordre.reference}
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600">{ordre.facture_reference || ordre.facture_id}</td>
+                          <td className="px-4 py-3 text-xs text-gray-600 dark:text-white/70">{ordre.facture_reference || ordre.facture_id}</td>
                           <td className="px-4 py-3 text-sm">{ordre.client_nom || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-500 capitalize">
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50 capitalize">
                             {ordre.mode_expedition_prevu?.replace("_", " ") || "—"}
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -263,7 +263,7 @@ export default function OrdresColisage() {
                           <td className="px-4 py-3">
                             <StatutBadge statut={ordre.statut} />
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-500">
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">
                             {ordre.date_creation
                               ? new Date(ordre.date_creation).toLocaleDateString("fr-CI")
                               : "—"}

@@ -227,7 +227,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-gray-500">
+                  <tr className="border-b text-gray-500 dark:text-white/50">
                     <th className="text-left py-2 pr-3">Produit</th>
                     <th className="text-center py-2 px-2">Facturé</th>
                     <th className="text-center py-2 px-2">Restant</th>
@@ -242,7 +242,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
                         <div className="font-medium">{ligne.designation}</div>
                         <div className="text-xs text-gray-400">{ligne.produit_id}</div>
                       </td>
-                      <td className="text-center py-2 px-2 text-gray-500">{ligne.quantite_facturee}</td>
+                      <td className="text-center py-2 px-2 text-gray-500 dark:text-white/50">{ligne.quantite_facturee}</td>
                       <td className="text-center py-2 px-2">
                         <span className={ligne.quantite_restante === 0 ? "text-red-500" : "text-green-600 font-medium"}>
                           {ligne.quantite_restante ?? (ligne.quantite_facturee - (factureData.lignes.find(l => l.ligne_id === ligne.ligne_facture_id)?.quantite_colisee || 0))}
@@ -383,7 +383,7 @@ const Colis = () => {
   const canValidate = user && ["super_admin", "admin", "gestionnaire"].includes(user.role);
   const canDelete = user && ["super_admin", "admin"].includes(user.role);
 
-  if (isLoading) return <DashboardLayout><div className="p-8 text-gray-500">Chargement...</div></DashboardLayout>;
+  if (isLoading) return <DashboardLayout><div className="p-8 text-gray-500 dark:text-white/50">Chargement...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -458,7 +458,7 @@ const Colis = () => {
                         <td className="py-3 px-4">
                           <button
                             onClick={() => toggleExpand(colis.colis_id)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 dark:text-white/70"
                           >
                             {expandedRows[colis.colis_id]
                               ? <ChevronDown className="w-4 h-4" />
@@ -540,11 +540,11 @@ const Colis = () => {
 
                       {/* Lignes détaillées (expandable) */}
                       {expandedRows[colis.colis_id] && (
-                        <tr key={`${colis.colis_id}-detail`} className="bg-gray-50/50 dark:bg-[#040f1a]/20">
+                        <tr key={`${colis.colis_id}-detail`} className="bg-gray-50 dark:bg-white/5/50 dark:bg-[#040f1a]/20">
                           <td colSpan={8} className="px-8 py-3">
                             <table className="w-full text-xs">
                               <thead>
-                                <tr className="text-gray-500 border-b">
+                                <tr className="text-gray-500 dark:text-white/50 border-b">
                                   <th className="text-left pb-1">Produit</th>
                                   <th className="text-center pb-1">Qté facturée</th>
                                   <th className="text-center pb-1">Qté colisée</th>
@@ -568,7 +568,7 @@ const Colis = () => {
                               </tbody>
                             </table>
                             {colis.notes && (
-                              <div className="mt-2 text-xs text-gray-500">
+                              <div className="mt-2 text-xs text-gray-500 dark:text-white/50">
                                 <span className="font-medium">Notes:</span> {colis.notes}
                               </div>
                             )}
@@ -611,19 +611,19 @@ const Colis = () => {
           {selectedColis && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-gray-500">Statut:</span>{" "}<StatutBadge statut={selectedColis.statut} /></div>
-                <div><span className="text-gray-500">Client:</span> <span className="font-medium">{selectedColis.client_nom || "—"}</span></div>
-                <div><span className="text-gray-500">Ville:</span> {selectedColis.client_ville || "—"}</div>
-                <div><span className="text-gray-500">Tél:</span> {selectedColis.client_telephone || "—"}</div>
-                <div><span className="text-gray-500">Poids total:</span> {selectedColis.poids_total} kg</div>
-                <div><span className="text-gray-500">Code-barres:</span> <span className="font-mono">{selectedColis.code_barres}</span></div>
+                <div><span className="text-gray-500 dark:text-white/50">Statut:</span>{" "}<StatutBadge statut={selectedColis.statut} /></div>
+                <div><span className="text-gray-500 dark:text-white/50">Client:</span> <span className="font-medium">{selectedColis.client_nom || "—"}</span></div>
+                <div><span className="text-gray-500 dark:text-white/50">Ville:</span> {selectedColis.client_ville || "—"}</div>
+                <div><span className="text-gray-500 dark:text-white/50">Tél:</span> {selectedColis.client_telephone || "—"}</div>
+                <div><span className="text-gray-500 dark:text-white/50">Poids total:</span> {selectedColis.poids_total} kg</div>
+                <div><span className="text-gray-500 dark:text-white/50">Code-barres:</span> <span className="font-mono">{selectedColis.code_barres}</span></div>
               </div>
               <Separator />
               <div>
                 <div className="font-medium text-sm mb-2">Lignes colisées</div>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-gray-500 text-xs border-b">
+                    <tr className="text-gray-500 dark:text-white/50 text-xs border-b">
                       <th className="text-left pb-1">Produit</th>
                       <th className="text-center pb-1">Facturé</th>
                       <th className="text-center pb-1">Colisé</th>
@@ -646,7 +646,7 @@ const Colis = () => {
                 </table>
               </div>
               {selectedColis.notes && (
-                <div className="text-sm"><span className="text-gray-500">Notes:</span> {selectedColis.notes}</div>
+                <div className="text-sm"><span className="text-gray-500 dark:text-white/50">Notes:</span> {selectedColis.notes}</div>
               )}
             </div>
           )}

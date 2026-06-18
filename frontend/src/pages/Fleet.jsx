@@ -416,7 +416,7 @@ const Fleet = () => {
                 </tbody>
               </table>
               {vehicules?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-white/50">
                   Aucun véhicule trouvé
                 </div>
               )}
@@ -434,7 +434,7 @@ const Fleet = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-white/50">
               <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
               <p>Cette fonctionnalité sera disponible dans le prochain sprint</p>
             </div>
