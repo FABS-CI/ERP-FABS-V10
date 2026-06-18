@@ -251,4 +251,144 @@ def build_rapports_router(db, resolve_user):
             "mouvements_recents": mouvements,
         }
     
+    # ══════════════════════════════════════════════════════════════
+    # EXPORT PDF — ÉTAT DE COMPTE CLIENTS
+    # ══════════════════════════════════════════════════════════════
+    @router.get("/etat-compte-clients")
+    async def export_etat_compte_clients(
+        request: Request,
+        filtre: str = "tous",
+        annee: Optional[str] = None,
+        authorization: Optional[str] = Header(None),
+    ):
+        """
+        Génère et renvoie le PDF État de Compte Clients.
+        filtre: tous | paye | impaye
+        annee: ex "2025" (optionnel, défaut = année courante)
+        """
+        from fastapi.responses import StreamingResponse
+        from compte_client_pdf_generator import generate_etat_compte_clients_pdf
+
+        await check_read(request, authorization)
+
+        now_year = str(datetime.now().year)
+        if annee is None:
+            annee = now_year
+
+        # ── 1. Récupérer toutes les factures (type facture uniquement) ──
+        query_factures: Dict = {"type_facture": "facture"}
+
+        # Filtre payé / impayé sur montant_restant
+        if filtre == "paye":
+            query_factures["montant_restant"] = 0
+        elif filtre == "impaye":
+            query_factures["montant_restant"] = {"$gt": 0}
+
+        factures_raw = await db.factures.find(
+            query_factures,
+            {"_id": 0, "facture_id": 1, "reference": 1, "client_id": 1,
+             "date_facture": 1, "date_livraison": 1,
+             "montant_ht": 1, "montant_ttc": 1, "montant_tva": 1,
+             "remise_globale": 1, "montant_regle": 1, "montant_restant": 1,
+             "statut": 1}
+        ).to_list(None)
+
+        if not factures_raw:
+            # Retourner un PDF vide avec message
+            clients_data = []
+            resume = {
+                "nb_clients": 0, "nb_factures": 0,
+                "total_vente": 0, "total_remise": 0,
+                "total_ht": 0, "total_regle": 0, "total_solde": 0,
+            }
+            pdf_buf = generate_etat_compte_clients_pdf(
+                clients_data, resume, filtre=filtre, annee=annee
+            )
+            filename = f"etat_compte_clients_{filtre}_{annee}.pdf"
+            return StreamingResponse(
+                pdf_buf,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+
+        # ── 2. Regrouper les factures par client_id ──
+        from collections import defaultdict
+        factures_par_client: Dict[str, List] = defaultdict(list)
+        all_client_ids = set()
+        for f in factures_raw:
+            cid = f.get("client_id")
+            if cid:
+                factures_par_client[cid].append(f)
+                all_client_ids.add(cid)
+
+        # ── 3. Récupérer les clients concernés ──
+        clients_raw = await db.clients.find(
+            {"client_id": {"$in": list(all_client_ids)}},
+            {"_id": 0, "client_id": 1, "nom": 1, "representant": 1,
+             "telephone": 1, "type_client": 1, "region": 1, "ville": 1}
+        ).to_list(None)
+
+        clients_by_id: Dict[str, Dict] = {c["client_id"]: c for c in clients_raw}
+
+        # ── 4. Construire clients_data + calcul résumé ──
+        clients_data = []
+        total_vente  = 0.0
+        total_remise = 0.0
+        total_ht     = 0.0
+        total_regle  = 0.0
+        total_solde  = 0.0
+        total_facts  = 0
+
+        # Trier par nom client
+        sorted_client_ids = sorted(
+            factures_par_client.keys(),
+            key=lambda cid: (clients_by_id.get(cid, {}).get("nom") or "").lower()
+        )
+
+        for cid in sorted_client_ids:
+            client_doc = clients_by_id.get(cid, {"client_id": cid, "nom": cid})
+            # Normaliser ville/zone
+            client_doc["ville"] = (
+                client_doc.get("ville") or client_doc.get("region") or "—"
+            )
+            factures_client = factures_par_client[cid]
+
+            # Trier les factures par date
+            factures_client.sort(key=lambda x: str(x.get("date_facture") or ""))
+
+            clients_data.append({
+                "client": client_doc,
+                "factures": factures_client,
+            })
+
+            for f in factures_client:
+                total_vente  += float(f.get("montant_ttc") or 0)
+                total_remise += float(f.get("remise_globale") or 0)
+                total_ht     += float(f.get("montant_ht") or 0)
+                total_regle  += float(f.get("montant_regle") or 0)
+                total_solde  += float(f.get("montant_restant") or 0)
+                total_facts  += 1
+
+        resume = {
+            "nb_clients":   len(clients_data),
+            "nb_factures":  total_facts,
+            "total_vente":  total_vente,
+            "total_remise": total_remise,
+            "total_ht":     total_ht,
+            "total_regle":  total_regle,
+            "total_solde":  total_solde,
+        }
+
+        # ── 5. Générer le PDF ──
+        pdf_buf = generate_etat_compte_clients_pdf(
+            clients_data, resume, filtre=filtre, annee=annee
+        )
+
+        filename = f"etat_compte_clients_{filtre}_{annee}.pdf"
+        return StreamingResponse(
+            pdf_buf,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
     return router
