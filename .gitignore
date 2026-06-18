@@ -134,3 +134,5 @@ backend/_e2e_test.py
 backend/audit_production.md
 backend/classification.py
 Login.jsx.old
+.git-credentials.env
+backend/.env
