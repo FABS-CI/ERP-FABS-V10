@@ -89,6 +89,7 @@ const DocumentsImpression = lazy(() => import("./pages/DocumentsImpression"));
 const FileStorage = lazy(() => import("./pages/FileStorage"));
 const Backup = lazy(() => import("./pages/Backup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EtatCompteClients = lazy(() => import("./pages/EtatCompteClients"));
 
 // Loading fallback for lazy loaded components — skeleton animé
 function PageLoader() {
@@ -683,6 +684,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AnalyticsReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rapports/etat-compte-clients"
+              element={
+                <ProtectedRoute moduleKey="etat-compte-clients">
+                  <EtatCompteClients />
                 </ProtectedRoute>
               }
             />

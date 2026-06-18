@@ -11,6 +11,7 @@ export const MODULES = [
   { key: "dashboard",            path: "/dashboard",            label: "Tableau de bord",        icon: "LayoutDashboard", group: "Tableau de bord" },
   { key: "bi-analytics",         path: "/bi-analytics",         label: "Business Intelligence", icon: "BarChart3",       group: "Tableau de bord" },
   { key: "rapports",             path: "/rapports",             label: "Rapports",               icon: "BarChart3",       group: "Tableau de bord" },
+  { key: "etat-compte-clients", path: "/rapports/etat-compte-clients", label: "États de compte clients", icon: "FileText", group: "Finances" },
 
   // 👥 GESTION COMMERCIALE
   { key: "clients",              path: "/clients",              label: "Clients",                icon: "Users",           group: "Gestion commerciale" },
@@ -115,6 +116,7 @@ export const PERMISSIONS = {
   approvisionnements:         { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0 },
 
   // 💰 FINANCES
+  "etat-compte-clients":      { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 1, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 1, assistante: 0, service_logistique: 0 },
   comptabilite:               { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0 },
   "comptabilite-avancee":     { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0 },
   fne:                        { super_admin: 1, directeur_general: 0, comptable: 1, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0 },

@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Filter, Plus, MoreHorizontal, ChevronLeft, ChevronRight,
-  Pencil, PowerOff, RotateCw, AlertCircle, Download, FileText, ChevronDown,
+  Pencil, PowerOff, RotateCw, AlertCircle, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,9 +34,6 @@ export default function Clients() {
   const [editing, setEditing] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
-  const pdfMenuRef = useRef(null);
 
   const dq = useDebouncedValue(q, 300);
   const dville = useDebouncedValue(ville, 300);
@@ -80,46 +77,6 @@ export default function Clients() {
       fetchData();
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Échec de la désactivation");
-    }
-  };
-
-  // Fermer le menu PDF si clic extérieur
-  useEffect(() => {
-    if (!pdfMenuOpen) return;
-    const handler = (e) => {
-      if (pdfMenuRef.current && !pdfMenuRef.current.contains(e.target)) {
-        setPdfMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [pdfMenuOpen]);
-
-  const handleExportPdf = async (filtre) => {
-    setPdfMenuOpen(false);
-    setExportingPdf(true);
-    try {
-      const token = localStorage.getItem("token");
-      const annee = new Date().getFullYear();
-      const url = `/api/rapports/etat-compte-clients?filtre=${filtre}&annee=${annee}`;
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Erreur serveur");
-      }
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `etat_compte_clients_${filtre}_${annee}.pdf`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      toast.success("PDF généré avec succès");
-    } catch (e) {
-      toast.error(e.message || "Échec de l'export PDF");
-    } finally {
-      setExportingPdf(false);
     }
   };
 
@@ -173,36 +130,6 @@ export default function Clients() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            {/* Export PDF État de Compte */}
-            <div className="relative" ref={pdfMenuRef}>
-              <button
-                onClick={() => setPdfMenuOpen((v) => !v)}
-                disabled={exportingPdf}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#1B4F8A]/30 bg-[#E8F0FB] dark:bg-[#1B4F8A]/20 text-[#1B4F8A] dark:text-blue-300 text-sm font-semibold hover:bg-[#D0E2F7] dark:hover:bg-[#1B4F8A]/30 transition disabled:opacity-50"
-              >
-                <FileText className="w-4 h-4" />
-                {exportingPdf ? "Génération…" : "État de compte"}
-                <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-              </button>
-              {pdfMenuOpen && (
-                <div className="absolute right-0 mt-1 w-52 bg-white dark:bg-[#0A2540] border border-gray-200 dark:border-white/10 rounded-lg shadow-lg z-50 overflow-hidden">
-                  {[
-                    { value: "tous",   label: "Tous les comptes" },
-                    { value: "paye",   label: "Comptes soldés (payés)" },
-                    { value: "impaye", label: "Comptes impayés" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleExportPdf(opt.value)}
-                      className="w-full text-left px-4 py-2.5 text-sm text-[#0A2540] dark:text-white hover:bg-[#E8F0FB] dark:hover:bg-white dark:bg-[#0b1e30]/10 transition"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <button
               onClick={handleExport}
               disabled={exporting || loading}

@@ -178,7 +178,10 @@ def _draw_logo_4blocs(canvas, x, y, size, logo_colors):
 # EN-TÊTE CANVAS
 # ══════════════════════════════════════════════════════════════════
 def _draw_header(canvas, doc, date_str: str, heure_str: str,
-                 logo_data: Optional[str], filtre: str, annee: str):
+                 logo_data: Optional[str], filtre: str, annee: str,
+                 annee_scolaire: Optional[str] = None,
+                 date_debut: Optional[str] = None,
+                 date_fin: Optional[str] = None):
     canvas.saveState()
     w, h = A4
 
@@ -220,9 +223,16 @@ def _draw_header(canvas, doc, date_str: str, heure_str: str,
     canvas.drawRightString(rx, title_y, "ÉTAT DE COMPTE CLIENTS")
 
     filtre_label = FILTRE_LABELS.get(filtre, filtre)
+    # Construire la ligne période
+    if annee_scolaire:
+        periode_str = f"Année scolaire : {annee_scolaire}"
+    elif date_debut or date_fin:
+        periode_str = f"Période : {date_debut or '…'} → {date_fin or '…'}"
+    else:
+        periode_str = f"Année : {annee}"
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(C_GREY)
-    canvas.drawRightString(rx, title_y - 0.45 * cm, f"Filtre : {filtre_label}   —   Année : {annee}")
+    canvas.drawRightString(rx, title_y - 0.45 * cm, f"Filtre : {filtre_label}   —   {periode_str}")
     canvas.drawRightString(rx, title_y - 0.82 * cm, f"Date : {date_str}   Heure : {heure_str}")
 
     # Ligne séparatrice orange
@@ -513,6 +523,9 @@ def generate_etat_compte_clients_pdf(
     resume: Dict,
     filtre: str = "tous",
     annee: Optional[str] = None,
+    annee_scolaire: Optional[str] = None,
+    date_debut: Optional[str] = None,
+    date_fin: Optional[str] = None,
 ) -> BytesIO:
     """
     Génère le PDF État de Compte Clients.
@@ -543,7 +556,8 @@ def generate_etat_compte_clients_pdf(
 
     # ─── PageTemplate ────────────────────────────────────────────
     def make_header_footer(canvas, doc):
-        _draw_header(canvas, doc, date_str, heure_str, logo_data, filtre, annee)
+        _draw_header(canvas, doc, date_str, heure_str, logo_data, filtre, annee,
+                     annee_scolaire=annee_scolaire, date_debut=date_debut, date_fin=date_fin)
         _draw_footer(canvas, doc)
 
     frame = Frame(ML, MB, PAGE_W - ML - MR, PAGE_H - MT - MB, id="main")
