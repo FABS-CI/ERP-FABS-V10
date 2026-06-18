@@ -25,6 +25,7 @@ export const MODULES = [
 
   // 📦 STOCKS & LOGISTIQUE
   { key: "produits",             path: "/produits",             label: "Produits",               icon: "BookOpen",        group: "Stocks & Logistique" },
+  { key: "produits_inventaire",  path: "/produits-inventaire",  label: "Inventaire",             icon: "ClipboardList",   group: "Stocks & Logistique" },
   { key: "stock",                path: "/stock",                label: "Stock",                  icon: "Package",         group: "Stocks & Logistique" },
   { key: "logistique",           path: "/logistique",           label: "Logistique",            icon: "Truck",           group: "Stocks & Logistique" },
   { key: "ordres_colisage",      path: "/ordres-colisage",      label: "Ordres de colisage",     icon: "Package",         group: "Stocks & Logistique" },
@@ -103,6 +104,7 @@ export const PERMISSIONS = {
   // 📦 STOCKS & LOGISTIQUE
   // Note V10 : Assistante & Secretariat écrivent les Produits (prix vente uniquement côté backend FINANCIAL_ROLES)
   produits:                   { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 1, assistante: 1, service_logistique: 0 },
+  produits_inventaire:        { super_admin: 1, directeur_general: 1, comptable: 0, directeur_commercial: 1, gestionnaire_stock: 1, responsable_magasinier: 1, secretariat: 0, assistante: 0, service_logistique: 1 },
   stock:                      { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 1, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 0 },
   logistique:                 { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1 },
   fleet:                      { super_admin: 1, directeur_general: 0, comptable: 0, directeur_commercial: 0, gestionnaire_stock: 0, responsable_magasinier: 0, secretariat: 0, assistante: 0, service_logistique: 1 },
