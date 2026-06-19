@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Skeleton } from '../components/ui/skeleton';
+import LignesTable from '../components/document/LignesTable';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -403,24 +404,7 @@ export default function CommandeDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Array.isArray(commande?.lignes) && commande.lignes.map((ligne) => (
-                  <div key={ligne.ligne_id} className="flex justify-between items-start border-b pb-3 last:border-0">
-                    <div className="flex-1">
-                      <div className="font-medium">{ligne.produit_titre || ligne.produit_id}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Réf: {ligne.produit_reference} - Qté: {ligne.quantite} × {formatCurrency(ligne.prix_unitaire)}
-                      </div>
-                      {ligne.remise_ligne > 0 && (
-                        <Badge variant="outline" className="mt-1 text-orange-600">
-                          Remise: -{ligne.remise_ligne}%
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="font-semibold">
-                      {formatCurrency(ligne.montant_ligne)}
-                    </div>
-                  </div>
-                ))}
+                <LignesTable lignes={commande?.lignes || []} showPrix={true} />
               </div>
 
               <Separator className="my-4" />
