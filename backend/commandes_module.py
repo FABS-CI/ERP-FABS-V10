@@ -1325,6 +1325,39 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         return Response(status_code=204)
 
+    # Preview PDF (pour aperçu frontend)
+    @router.get("/{commande_id}/preview-pdf")
+    async def commande_preview_pdf(
+        commande_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        
+        cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+        
+        # Retourne un JSON avec l'URL du PDF
+        return {"pdf_url": f"/api/commandes/{commande_id}/pdf"}
+
+    # Print (pour impression)
+    @router.get("/{commande_id}/print")
+    async def commande_print(
+        commande_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        
+        cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
+        _ensure(cmd is not None, 404, "Commande introuvable")
+        
+        # Retourne un JSON avec l'URL pour impression
+        return {"print_url": f"/api/commandes/{commande_id}/pdf"}
+
+
     # ---------- PDF ----------
     @router.get("/{commande_id}/pdf")
     async def commande_pdf(
