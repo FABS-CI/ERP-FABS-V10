@@ -225,7 +225,7 @@ export default function Produits() {
                     <tr
                       key={p.product_id}
                       data-testid={`produits-row-${p.reference}`}
-                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer"
+                      className="border-t border-gray-100 dark:border-white/10 cursor-pointer transition-all duration-150 hover:bg-[#10B981]/20 dark:hover:bg-[#10B981]/30 hover:shadow-md"
                       onClick={() => navigate(`/produits/${p.product_id}`)}
                     >
                       <td className="px-4 py-3 font-mono text-xs text-[#0A2540] dark:text-white/90 whitespace-nowrap">{p.reference}</td>

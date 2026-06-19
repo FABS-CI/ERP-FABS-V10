@@ -190,6 +190,17 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
         />
       )}
 
+      {/* Styles pour survol — injection CSS propre */}
+      <style>{`
+        .sidebar-item-hover {
+          transition: all 0.15s ease;
+        }
+        .sidebar-item-hover:hover:not(.active) {
+          color: #FFFFFF !important;
+          border-radius: 10px !important;
+        }
+      `}</style>
+
       <aside
         data-testid="sidebar"
         className={`w-64 fixed inset-y-0 left-0 z-40 flex flex-col transition-transform duration-300 md:translate-x-0 ${
@@ -485,3 +496,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
     </>
   );
 }
+
+/* Export de styles spécifiques sidebar */
+export const sidebarStyles = `
+  .sidebar-nav-item {
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+`;

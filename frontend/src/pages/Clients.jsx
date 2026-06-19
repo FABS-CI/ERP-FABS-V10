@@ -246,7 +246,7 @@ export default function Clients() {
                     <tr
                       key={c.client_id}
                       data-testid={`clients-row-${c.reference}`}
-                      className="border-t border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/5 cursor-pointer"
+                      className="border-t border-gray-100 dark:border-white/10 cursor-pointer transition-all duration-150 hover:bg-[#F97316]/20 dark:hover:bg-[#F97316]/30 hover:shadow-md"
                       onClick={() => navigate(`/clients/${c.client_id}`)}
                     >
                       <td className="px-4 py-3 font-mono text-xs text-[#0A2540] dark:text-white/90">{c.reference}</td>
