@@ -1,35 +1,35 @@
-# Niveau & Matière Implementation Summary ✅ COMPLETE
+# Résumé d'Implémentation : Niveau & Matière ✅ COMPLÈTE
 
-**Status**: All components are fully implemented. No additional code changes needed.
+**Statut**: Tous les composants sont complètement implémentés. Aucune modification de code supplémentaire nécessaire.
 
-**Date Completed**: 2026-06-19  
-**System**: FABS-CI ERP V10  
-**Database**: 56 products with matiere + niveau_scolaire populated  
+**Date de Finalisation**: 2026-06-19  
+**Système**: FABS-CI ERP V10  
+**Base de Données**: 56 produits avec matiere + niveau_scolaire peuplés  
 
 ---
 
-## Architecture Overview
+## Vue d'Ensemble de l'Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         MongoDB Database                         │
-│  - produits: 56 items with matiere, niveau_scolaire, reference  │
-│  - commande_lignes: linked to products via produit_id           │
-│  - facture_lignes: linked to products via produit_id            │
+│                         Base de Données MongoDB                  │
+│  - produits: 56 articles avec matiere, niveau_scolaire, reference│
+│  - commande_lignes: liées aux produits via produit_id           │
+│  - facture_lignes: liées aux produits via produit_id            │
 └──────────────────┬──────────────────────────────────────────────┘
                    │
                    ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              Backend (Python/FastAPI) - Port 8000               │
+│           Backend (Python/FastAPI) - Port 8000                  │
 │                                                                  │
-│  1. API Enrichment (_get_commande_with_lignes)                 │
-│     └─ Fetches product matiere + niveau_scolaire              │
-│     └─ Returns in response schema (LigneCommandeOut)           │
+│  1. Enrichissement API (_get_commande_with_lignes)              │
+│     └─ Récupère matiere + niveau_scolaire du produit           │
+│     └─ Retourne dans le schéma de réponse (LigneCommandeOut)   │
 │                                                                  │
-│  2. PDF Generation (pdf_generator.py)                          │
-│     └─ enrich_lignes_for_pdf() populates both fields          │
-│     └─ PDF headers: ["Niveau", "Matière", ...]               │
-│     └─ PDF rows: display niveau + matiere in table            │
+│  2. Génération PDF (pdf_generator.py)                          │
+│     └─ enrich_lignes_for_pdf() remplit les deux champs        │
+│     └─ En-têtes PDF: ["Niveau", "Matière", ...]               │
+│     └─ Lignes PDF: affichent niveau + matiere dans le tableau │
 └──────────────────┬──────────────────────────────────────────────┘
                    │
                    ▼
@@ -37,33 +37,33 @@
 │         Frontend (React) - Port 3000                            │
 │                                                                  │
 │  LignesTable.jsx                                                │
-│  ├─ Headers: <th>Niveau</th> <th>Matière</th>                 │
-│  ├─ Rows: ligne.produit_niveau_scolaire, ligne.produit_matiere│
-│  ├─ Grouped by cycle (Primaire, 1er Cycle, etc.)             │
-│  └─ Used in: CommandeDetail, FactureDetail, BLDetail         │
+│  ├─ En-têtes: <th>Niveau</th> <th>Matière</th>                │
+│  ├─ Lignes: ligne.produit_niveau_scolaire, ligne.produit_matiere│
+│  ├─ Regroupées par cycle (Primaire, 1er Cycle, etc.)          │
+│  └─ Utilisée dans: CommandeDetail, FactureDetail, BLDetail    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Detailed Implementation
+## Implémentation Détaillée
 
-### 1. Backend API Enrichment
+### 1. Enrichissement API Backend
 
-**File**: `backend/commandes_module.py` (lines 295-322)
+**Fichier**: `backend/commandes_module.py` (lignes 295-322)
 
 ```python
 async def _get_commande_with_lignes(db: AsyncIOMotorDatabase, commande_id: str) -> Optional[dict]:
-    """Fetch commande + lignes with product enrichment"""
+    """Récupère commande + lignes avec enrichissement produit"""
     cmd = await db.commandes.find_one({"commande_id": commande_id}, {"_id": 0})
     if not cmd:
         return None
     
-    # Fetch lignes
+    # Récupère les lignes
     lignes_cursor = db.commande_lignes.find({"commande_id": commande_id}, {"_id": 0})
     lignes = await lignes_cursor.to_list(500)
     
-    # Enrich lignes with product info
+    # Enrichit les lignes avec les infos produit
     for ligne in lignes:
         prod_info = await _get_produit_info(db, ligne["produit_id"])
         ligne["produit_reference"] = prod_info.get("reference")
@@ -78,7 +78,7 @@ async def _get_commande_with_lignes(db: AsyncIOMotorDatabase, commande_id: str) 
     return cmd
 ```
 
-**Response Schema** `LigneCommandeOut` (lines 154-169):
+**Schéma de Réponse** `LigneCommandeOut` (lignes 154-169):
 ```python
 class LigneCommandeOut(BaseModel):
     # ...
@@ -89,11 +89,11 @@ class LigneCommandeOut(BaseModel):
 
 ---
 
-### 2. PDF Generation
+### 2. Génération PDF
 
-**File**: `backend/pdf_generator.py`
+**Fichier**: `backend/pdf_generator.py`
 
-#### A. Data Enrichment (lines 462-487)
+#### A. Enrichissement des Données (lignes 462-487)
 ```python
 def enrich_lignes_for_pdf(produits_by_id: Dict[str, Dict], lignes: List[Dict]) -> List[Dict]:
     """Enrichit chaque ligne de document avec les vraies données produit"""
@@ -113,13 +113,13 @@ def enrich_lignes_for_pdf(produits_by_id: Dict[str, Dict], lignes: List[Dict]) -
     return lignes
 ```
 
-#### B. PDF Headers (lines 446-447)
+#### B. En-têtes PDF (lignes 446-447)
 ```python
 HDR_PRIX = ["Niveau", "Matière", "Code Article", "Désignation", "Qté", "Prix Unitaire", "Montant"]
 HDR_NOPX = ["Niveau", "Matière", "Code Article", "Désignation", "Qté"]
 ```
 
-#### C. PDF Table Rows (lines 520-530)
+#### C. Lignes du Tableau PDF (lignes 520-530)
 ```python
 for ligne in items:
     m = float(ligne.get("montant_ht", 0))
@@ -132,17 +132,17 @@ for ligne in items:
         Paragraph(str(int(ligne.get("quantite", 0))), S_NORMAL),
     ]
     if include_prix:
-        row += [ ... ]  # Add price columns
+        row += [ ... ]  # Ajoute les colonnes de prix
     data.append(row)
 ```
 
 ---
 
-### 3. Frontend Display
+### 3. Affichage Frontend
 
-**File**: `frontend/src/components/document/LignesTable.jsx`
+**Fichier**: `frontend/src/components/document/LignesTable.jsx`
 
-#### A. Table Headers (lines 48-63)
+#### A. En-têtes du Tableau (lignes 48-63)
 ```jsx
 <thead>
   <tr className="border-b border-gray-300 ...">
@@ -161,7 +161,7 @@ for ligne in items:
 </thead>
 ```
 
-#### B. Table Data Rows (lines 75-109)
+#### B. Lignes de Données du Tableau (lignes 75-109)
 ```jsx
 <tr key={ligne.ligne_id || idx} className="border-b border-gray-200 ...">
   <td className="px-3 py-2 text-gray-900 dark:text-white">
@@ -197,9 +197,9 @@ for ligne in items:
 </tr>
 ```
 
-#### C. Cycle Grouping (lines 33-48)
+#### C. Regroupement par Cycle (lignes 33-48)
 ```jsx
-// Grouper par cycle si présent
+// Regroupe par cycle en conservant l'ordre d'insertion
 const grouped = {};
 const cycles_order = [];
 
@@ -212,7 +212,7 @@ lignes.forEach((ligne) => {
   grouped[cycle].push(ligne);
 });
 
-// Render tables grouped by cycle
+// Affiche les tableaux regroupés par cycle
 {cycles_order.map((cycle) => (
   <div key={cycle} className="space-y-2">
     {cycle !== "Divers" && (
@@ -220,92 +220,92 @@ lignes.forEach((ligne) => {
         {cycle}
       </h3>
     )}
-    {/* Table rendered per cycle */}
+    {/* Tableau affiché par cycle */}
   </div>
 ))}
 ```
 
-**Used in**:
-- `CommandeDetail.jsx` (line 407): `<LignesTable lignes={commande?.lignes || []} showPrix={true} />`
-- `FactureDetail.jsx`: Same usage
-- `BLDetail.jsx`: Same usage
+**Utilisée dans**:
+- `CommandeDetail.jsx` (ligne 407): `<LignesTable lignes={commande?.lignes || []} showPrix={true} />`
+- `FactureDetail.jsx`: Même utilisation
+- `BLDetail.jsx`: Même utilisation
 
 ---
 
-## Data Flow Example
+## Flux de Données - Exemple Concret
 
-### Create Commande → PDF Display
+### Créer Commande → Affichage PDF
 
 ```
-1. Frontend: Create commande with lignes (product_id + quantite)
+1. Frontend: Crée commande avec lignes (product_id + quantite)
            ↓
-2. Backend: Save to MongoDB (commande_lignes collection)
+2. Backend: Sauvegarde dans MongoDB (collection commande_lignes)
            ↓
-3. API Call: GET /api/commandes/{id}
-   └─ _get_commande_with_lignes() enriches each ligne:
-      └─ Fetches product data (reference, titre, matiere, niveau_scolaire, etc.)
-      └─ Returns LigneCommandeOut with:
+3. Appel API: GET /api/commandes/{id}
+   └─ _get_commande_with_lignes() enrichit chaque ligne:
+      └─ Récupère données produit (reference, titre, matiere, niveau_scolaire, etc.)
+      └─ Retourne LigneCommandeOut avec:
          • produit_matiere: "Français"
          • produit_niveau_scolaire: "CP1"
-   └─ Response to Frontend ✓
+   └─ Réponse au Frontend ✓
            ↓
-4. Frontend: Displays in LignesTable
-   └─ Shows "Français" in Matière column
-   └─ Shows "CP1" in Niveau column
+4. Frontend: Affiche dans LignesTable
+   └─ Affiche "Français" dans la colonne Matière
+   └─ Affiche "CP1" dans la colonne Niveau
            ↓
-5. PDF Generation: GET /api/commandes/{id}/pdf
-   └─ Calls enrich_lignes_for_pdf()
-   └─ Fetches same product data
-   └─ Populates niveau + matiere
-   └─ PDF headers: ["Niveau", "Matière", ...]
-   └─ PDF rows: ["CP1", "Français", ...]
+5. Génération PDF: GET /api/commandes/{id}/pdf
+   └─ Appelle enrich_lignes_for_pdf()
+   └─ Récupère les mêmes données produit
+   └─ Remplit niveau + matiere
+   └─ En-têtes PDF: ["Niveau", "Matière", ...]
+   └─ Lignes PDF: ["CP1", "Français", ...]
            ↓
-6. Browser: Download/Print PDF with all fields ✓
+6. Navigateur: Télécharge/Imprime PDF avec tous les champs ✓
 ```
 
 ---
 
-## Testing Checklist ✅
+## Checklist de Vérification ✅
 
-- ✅ Backend enriches lignes with product matiere/niveau from MongoDB
-- ✅ LigneCommandeOut schema includes produit_matiere & produit_niveau_scolaire
-- ✅ LigneFactureOut schema includes matiere & niveau
-- ✅ PDF generator fetches both fields via enrich_lignes_for_pdf()
-- ✅ PDF headers define "Niveau" and "Matière" columns
-- ✅ PDF table rows populate niveau and matiere values
-- ✅ Frontend LignesTable has column headers for both
-- ✅ Frontend displays ligne.produit_matiere & ligne.produit_niveau_scolaire
-- ✅ Fallback values ("-") shown if missing
-- ✅ Data grouped by cycle in both PDF and Frontend
-
----
-
-## Known Limitations
-
-**None** — Feature is complete and functional.
+- ✅ Backend enrichit les lignes avec matiere/niveau depuis MongoDB
+- ✅ Schéma LigneCommandeOut inclut produit_matiere & produit_niveau_scolaire
+- ✅ Schéma LigneFactureOut inclut matiere & niveau
+- ✅ Générateur PDF récupère les deux champs via enrich_lignes_for_pdf()
+- ✅ En-têtes PDF définissent les colonnes "Niveau" et "Matière"
+- ✅ Lignes du tableau PDF remplissent niveau et matiere
+- ✅ Frontend LignesTable a les en-têtes pour les deux colonnes
+- ✅ Frontend affiche ligne.produit_matiere & ligne.produit_niveau_scolaire
+- ✅ Valeurs de secours ("-") affichées si manquantes
+- ✅ Données regroupées par cycle dans PDF et Frontend
 
 ---
 
-## Future Enhancements (Optional)
+## Limitations Connues
 
-1. **ProduitDetail.jsx**: Add matiere & niveau display on product detail page
-2. **Search/Filter**: Add filters by matiere or niveau in product list
-3. **Reports**: Generate reports grouped by matiere or niveau
-4. **Dashboard**: Statistics by matiere/niveau
+**Aucune** — La fonctionnalité est complète et opérationnelle.
 
 ---
 
-## System Status
+## Améliorations Futures (Optionnelles)
+
+1. **ProduitDetail.jsx**: Ajouter affichage matiere & niveau sur page détail produit
+2. **Recherche/Filtres**: Ajouter filtres par matiere ou niveau dans liste produits
+3. **Rapports**: Générer rapports regroupés par matiere ou niveau
+4. **Tableau de Bord**: Statistiques par matiere/niveau
+
+---
+
+## Statut du Système
 
 ```
-✅ MongoDB   : Running (27017)
-✅ Backend   : Running (8000) via PM2
-✅ Frontend  : Running (3000) via npm
-✅ Database  : 56 products with matiere + niveau populated
-✅ Commits   : Pushed to GitHub
-✅ Tests     : 18/18 passing
+✅ MongoDB   : En cours d'exécution (27017)
+✅ Backend   : En cours d'exécution (8000) via PM2
+✅ Frontend  : En cours d'exécution (3000) via npm
+✅ BD        : 56 produits avec matiere + niveau peuplés
+✅ Commits   : Poussés sur GitHub
+✅ Tests     : 18/18 tests réussis
 ```
 
 ---
 
-**Implementation Verified**: 2026-06-19 11:30 UTC
+**Implémentation Vérifiée**: 2026-06-19 11:30 UTC
