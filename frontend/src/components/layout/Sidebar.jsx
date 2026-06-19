@@ -128,12 +128,27 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
   };
 
   /* ── Groupe actif ────────────────────────────────────────────────────── */
+  // Match précis : un module est actif si le chemin courant est égal à son path
+  // ou s'il commence par "<path>/" (sous-page). On évite ainsi qu'un chemin comme
+  // "/livraisons-directes" matche par erreur le module "/livraisons".
+  const pathMatches = (current, path) =>
+    current === path || current.startsWith(path + "/");
+
   const activeGroup = useMemo(() => {
+    // On garde le module dont le path est le plus long parmi ceux qui matchent
+    // (le plus spécifique gagne).
+    let bestGroup = null;
+    let bestLen = -1;
     for (const g of GROUP_CONFIG) {
       const items = grouped[g.name] || [];
-      if (items.some((m) => location.pathname.startsWith(m.path))) return g.name;
+      for (const m of items) {
+        if (pathMatches(location.pathname, m.path) && m.path.length > bestLen) {
+          bestLen = m.path.length;
+          bestGroup = g.name;
+        }
+      }
     }
-    return null;
+    return bestGroup;
   }, [grouped, location.pathname]);
 
   const activeGroupCfg = useMemo(
@@ -401,11 +416,19 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
                               })}
                               onMouseEnter={(e) => {
                                 const isActive = e.currentTarget.getAttribute("aria-current") === "page";
-                                if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                                if (!isActive) {
+                                  e.currentTarget.style.background = g.light;
+                                  e.currentTarget.style.color = "#FFFFFF";
+                                  e.currentTarget.style.boxShadow = `inset 3px 0 0 ${g.color}`;
+                                }
                               }}
                               onMouseLeave={(e) => {
                                 const isActive = e.currentTarget.getAttribute("aria-current") === "page";
-                                if (!isActive) e.currentTarget.style.background = "transparent";
+                                if (!isActive) {
+                                  e.currentTarget.style.background = "transparent";
+                                  e.currentTarget.style.color = "#94A3B8";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }
                               }}
                             >
                               {({ isActive }) => (
