@@ -26,7 +26,7 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from sanitizers import sanitize_str
 from notifications_module import notify_vente_event
 
@@ -130,7 +130,9 @@ async def next_facture_reference(db: AsyncIOMotorDatabase, type_facture: TypeFac
 # Schemas
 # ---------------------------------------------------------------------------
 class LigneFactureIn(BaseModel):
-    produit_id: str
+    model_config = ConfigDict(populate_by_name=True)
+    
+    produit_id: str = Field(..., alias='product_id')
     designation: str  # Product title/description
     quantite: int = Field(..., gt=0)
     prix_unitaire: float = Field(..., gt=0)
@@ -608,7 +610,7 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         for ligne in cmd_lignes:
             pid = ligne["produit_id"]
             prod = await db.produits.find_one(
-                {"$or": [{"product_id": pid}, {"produit_id": pid}]},
+                {"$or": [{"product_id": pid}, {"$or": [{"product_id": pid}, {"produit_id": pid}]}]},
                 {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
             )
             lignes_facture.append(LigneFactureIn(
@@ -1452,7 +1454,7 @@ async def seed_factures(db: AsyncIOMotorDatabase, user_id: str) -> int:
         for ligne in cmd_lignes:
             pid = ligne["produit_id"]
             prod = await db.produits.find_one(
-                {"$or": [{"product_id": pid}, {"produit_id": pid}]},
+                {"$or": [{"product_id": pid}, {"$or": [{"product_id": pid}, {"produit_id": pid}]}]},
                 {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
             )
             ligne_doc = {
