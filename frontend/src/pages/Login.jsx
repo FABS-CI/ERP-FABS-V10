@@ -280,7 +280,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen relative flex"
+      className="login-page-root min-h-screen relative flex"
       style={{
         backgroundImage: "url('/assets/login-bg.png')",
         backgroundSize: "cover",
@@ -290,10 +290,48 @@ export default function Login() {
       }}
       data-testid="login-page"
     >
+      {/* Styles responsive (mobile / tablette / desktop) */}
+      <style>{`
+        .login-page-shell {
+          flex: 1 1 100%;
+          justify-content: center;
+          padding-left: 22%;
+        }
+        .login-card-box {
+          padding: 48px 40px;
+        }
+        /* Tablette */
+        @media (max-width: 1024px) {
+          .login-page-shell { padding-left: 8%; justify-content: center; }
+        }
+        /* Mobile : carte centrée, fond assombri uniformément, padding réduit */
+        @media (max-width: 768px) {
+          .login-page-root {
+            background-position: center top;
+          }
+          .login-page-shell {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            justify-content: center !important;
+            align-items: center;
+          }
+          .login-card-box {
+            padding: 32px 22px;
+            max-width: 100%;
+          }
+          .login-overlay-mobile {
+            background: rgba(8,16,28,0.78) !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .login-card-box { padding: 26px 16px; }
+        }
+      `}</style>
+
       {/* Overlay sombre pour lisibilité de la carte */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none"
+        className="login-overlay-mobile absolute inset-0 pointer-events-none"
         style={{
           background: "linear-gradient(90deg, rgba(13,27,42,0.0) 0%, rgba(13,27,42,0.25) 40%, rgba(13,27,42,0.55) 60%, rgba(13,27,42,0.0) 100%)",
         }}
@@ -301,8 +339,7 @@ export default function Login() {
 
       {/* ── Carte login décalée vers la droite (à côté du livre) ── */}
       <div
-        className="relative z-10 flex items-center px-6 py-10 w-full"
-        style={{ flex: "1 1 100%", justifyContent: "center", paddingLeft: "22%" }}
+        className="login-page-shell relative z-10 flex items-center px-4 sm:px-6 py-8 sm:py-10 w-full"
       >
         {/* Glow effect */}
         <div aria-hidden style={{
@@ -315,13 +352,12 @@ export default function Login() {
       {/* Carte login */}
       <div
         data-testid="login-card"
-        className="relative z-10 w-full max-w-sm"
+        className="login-card-box relative z-10 w-full max-w-sm"
         style={{
           background: "rgba(20,32,50,0.85)",
           backdropFilter: "blur(10px)",
           border: "1px solid rgba(249,115,22,0.15)",
           borderRadius: "16px",
-          padding: "48px 40px",
           boxShadow: "0 25px 50px rgba(0,0,0,0.6)",
         }}
       >
