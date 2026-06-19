@@ -1039,6 +1039,39 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         await _enrich_facture_with_client(db, avoir_doc)
         return FactureOut(**avoir_doc)
 
+    # Preview PDF (pour aperçu frontend)
+    @router.get("/{facture_id}/preview-pdf")
+    async def facture_preview_pdf(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        _ensure(facture is not None, 404, "Facture introuvable")
+        
+        # Retourne un JSON avec l'URL du PDF
+        return {"pdf_url": f"/api/factures/{facture_id}/pdf"}
+
+    # Print (pour impression)
+    @router.get("/{facture_id}/print")
+    async def facture_print(
+        facture_id: str,
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        
+        facture = await db.factures.find_one({"facture_id": facture_id}, {"_id": 0})
+        _ensure(facture is not None, 404, "Facture introuvable")
+        
+        # Retourne un JSON avec l'URL pour impression
+        return {"print_url": f"/api/factures/{facture_id}/pdf"}
+
+
     # ---------- PDF ----------
     @router.get("/{facture_id}/pdf")
     async def facture_pdf(
