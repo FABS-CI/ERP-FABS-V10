@@ -231,7 +231,7 @@ class CommandeDetail(CommandeOut):
 
 
 class AnnulerCommandeIn(BaseModel):
-    motif: str = Field(..., min_length=10, max_length=500)
+    motif: Optional[str] = Field(default="", min_length=0, max_length=500)
 
 
 class DoublonCheckIn(BaseModel):
@@ -1215,8 +1215,8 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
     @router.post("/{commande_id}/annuler", response_model=CommandeOut)
     async def annuler_commande(
         commande_id: str,
-        payload: AnnulerCommandeIn,
-        request: Request,
+        payload: Optional[AnnulerCommandeIn] = None,
+        request: Request = None,
         authorization: Optional[str] = Header(default=None),
     ):
         me = await resolve_user(request, authorization)
