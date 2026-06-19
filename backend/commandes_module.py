@@ -138,10 +138,18 @@ async def next_commande_reference(db: AsyncIOMotorDatabase) -> str:
 # Schemas
 # ---------------------------------------------------------------------------
 class LigneCommandeIn(BaseModel):
-    produit_id: str
+    produit_id: Optional[str] = None
+    product_id: Optional[str] = None
     quantite: int = Field(..., gt=0)
     prix_unitaire: float = Field(..., gt=0)
     remise_ligne: float = Field(default=0, ge=0, le=100)  # percentage
+
+    @field_validator('produit_id', 'product_id', mode='before')
+    @classmethod
+    def normalize_product_id(cls, v):
+        if v is None:
+            raise ValueError('produit_id ou product_id requis')
+        return v
 
     @property
     def montant_ligne(self) -> float:
