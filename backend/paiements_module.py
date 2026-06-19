@@ -259,10 +259,16 @@ def build_paiements_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         docs = facet.get("items", [])
         total = facet["total_count"][0]["n"] if facet.get("total_count") else 0
 
-        return {
-            "items": [PaiementOut(**d).model_dump() for d in docs],
-            "total": total,
-        }
+        items = []
+        for d in docs:
+            try:
+                items.append(PaiementOut(**d).model_dump())
+            except Exception as exc:
+                logger.error(
+                    "Paiement doc invalide ignoré (numero=%s): %s",
+                    d.get("numero") or d.get("_id"), exc,
+                )
+        return {"items": items, "total": total}
 
     # ---------- CREATE ----------
     @router.post("", response_model=PaiementOut, status_code=201)

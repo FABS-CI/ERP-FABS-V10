@@ -440,8 +440,17 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         )
         total = count_res[0]["total"] if count_res else 0
         page = (skip // limit) + 1 if limit else 1
+        items = []
+        for d in docs:
+            try:
+                items.append(FactureOut(**d).model_dump())
+            except Exception as exc:
+                logger.error(
+                    "Facture doc invalide ignorée (numero=%s): %s",
+                    d.get("numero") or d.get("_id"), exc,
+                )
         return {
-            "items": [FactureOut(**d).model_dump() for d in docs],
+            "items": items,
             "total": total,
             "page": page,
             "limit": limit,
@@ -1393,8 +1402,11 @@ async def seed_factures(db: AsyncIOMotorDatabase, user_id: str) -> int:
 
     demo_factures = []
     for i, cmd in enumerate(commandes):
+        cmd_id = cmd.get("commande_id")
+        if not cmd_id:
+            continue
         # Get commande lignes
-        lignes_cursor = db.commande_lignes.find({"commande_id": cmd["commande_id"]}, {"_id": 0})
+        lignes_cursor = db.commande_lignes.find({"commande_id": cmd_id}, {"_id": 0})
         cmd_lignes = await lignes_cursor.to_list(500)
         
         if len(cmd_lignes) == 0:
@@ -1417,7 +1429,7 @@ async def seed_factures(db: AsyncIOMotorDatabase, user_id: str) -> int:
             "reference": reference,
             "type_facture": "facture",
             "client_id": cmd["client_id"],
-            "commande_id": cmd["commande_id"],
+            "commande_id": cmd_id,
             "statut": statut,
             "date_facture": now[:10],
             "date_echeance": None,
