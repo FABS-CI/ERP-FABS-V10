@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DocumentActionBar from '../components/document/DocumentActionBar';
+import LignesTable from '../components/document/LignesTable';
 
 const STATUT_CONFIG = {
   brouillon: { label: 'Brouillon', color: 'bg-gray-500' },
@@ -382,24 +383,7 @@ export default function FactureDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Array.isArray(facture?.lignes) && facture.lignes.map((ligne) => (
-                  <div key={ligne.ligne_id} className="flex justify-between items-start border-b pb-3 last:border-0">
-                    <div className="flex-1">
-                      <div className="font-medium">{ligne.designation}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Qté: {ligne.quantite} × {formatCurrency(ligne.prix_unitaire)}
-                      </div>
-                      {ligne.remise_ligne > 0 && (
-                        <Badge variant="outline" className="mt-1 text-orange-600">
-                          Remise: -{ligne.remise_ligne}%
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="font-semibold">
-                      {formatCurrency(ligne.montant_ht)}
-                    </div>
-                  </div>
-                ))}
+                <LignesTable lignes={facture?.lignes || []} showPrix={true} />
               </div>
 
               <Separator className="my-4" />
