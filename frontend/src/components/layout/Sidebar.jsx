@@ -326,10 +326,16 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
                       boxShadow: isGroupActive ? `0 4px 14px ${g.shadow}` : "none",
                     }}
                     onMouseEnter={(e) => {
-                      if (!isGroupActive) e.currentTarget.style.background = g.light;
+                      if (!isGroupActive) {
+                        e.currentTarget.style.background = `${g.color}28`;
+                        e.currentTarget.style.boxShadow = `0 4px 12px ${g.shadow}`;
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      if (!isGroupActive) e.currentTarget.style.background = "transparent";
+                      if (!isGroupActive) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.boxShadow = "none";
+                      }
                     }}
                   >
                     <span className="flex items-center gap-2.5 min-w-0">
@@ -417,9 +423,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
                               onMouseEnter={(e) => {
                                 const isActive = e.currentTarget.getAttribute("aria-current") === "page";
                                 if (!isActive) {
-                                  e.currentTarget.style.background = g.light;
+                                  // Fond teinté fort + accent latéral épais
+                                  e.currentTarget.style.background = `${g.color}30`;
                                   e.currentTarget.style.color = "#FFFFFF";
-                                  e.currentTarget.style.boxShadow = `inset 3px 0 0 ${g.color}`;
+                                  e.currentTarget.style.boxShadow = `inset 5px 0 0 ${g.color}`;
+                                  e.currentTarget.style.borderRadius = "10px";
                                 }
                               }}
                               onMouseLeave={(e) => {
