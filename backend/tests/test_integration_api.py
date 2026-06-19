@@ -17,7 +17,7 @@ API = f"{BASE_URL}/api"
 SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL', 'pissken@editionsfabsci.com')
 SUPER_ADMIN_PASSWORD = os.environ.get('SUPER_ADMIN_PASSWORD', 'Admin@2025')
 DG_EMAIL = os.environ.get('DG_EMAIL', 'ali.mamin@editionsfabsci.com')
-DG_PASSWORD = os.environ.get('DG_PASSWORD', 'DG@2025')
+DG_PASSWORD = os.environ.get('DG_PASSWORD', 'Admin@2025')
 
 
 def bearer(token: str) -> dict:
@@ -113,11 +113,12 @@ class TestIntegrationClients:
     def test_create_client(self, super_token):
         """Test POST /clients"""
         unique_name = f"TEST_Integration_{uuid.uuid4().hex[:8]}"
+        unique_phone = f"+225 {uuid.uuid4().hex[:10]}"  # Unique phone to avoid duplicates
         payload = {
             "nom": unique_name,
             "representant": "Representant Test",
             "type_client": "particulier",
-            "telephone": f"+225 07 01 02 03 04",
+            "telephone": unique_phone,
             "email": f"test_{uuid.uuid4().hex[:8]}@example.com",
             "ville": "Abidjan",
             "plafond_credit": 100000
