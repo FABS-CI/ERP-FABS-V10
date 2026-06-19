@@ -65,12 +65,14 @@ function EtiquetteCarton({ carton }) {
         <div className="font-bold">{carton.reference}</div>
         <div>Cmd: {carton.ordre_reference}</div>
       </div>
-      <div className="text-center text-2xl font-bold my-1">
-        {carton.numero_carton}/{carton.total_cartons}
+      <div className="text-center my-1">
+        <div className="text-[10px] uppercase tracking-wider text-gray-600">Carton</div>
+        <div className="text-3xl font-bold leading-none">
+          {carton.numero_carton}/{carton.total_cartons}
+        </div>
       </div>
       <div className="text-xs">
         <div>Articles: {carton.total_articles ?? "—"} unités</div>
-        <div>Poids: {carton.poids_kg ? `${carton.poids_kg} kg` : "—"}</div>
       </div>
       <div className="text-center mt-2 text-xs text-gray-600 dark:text-white/70">
         {carton.qr_code_url || `fabsci.ci/carton/${carton._id}`}
@@ -358,13 +360,12 @@ export default function OrdreColisageDetail() {
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-xs font-medium text-orange-700">{carton.reference}</span>
                           <StatutBadge statut={carton.statut} config={CARTON_STATUT} />
-                          <span className="text-xs text-gray-500 dark:text-white/50">
-                            {carton.numero_carton}/{carton.total_cartons}
+                          <span className="text-xs font-bold text-orange-700 bg-orange-100 dark:bg-orange-500/20 px-2 py-0.5 rounded">
+                            Carton {carton.numero_carton}/{carton.total_cartons}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">
                           {carton.total_articles ?? "—"} articles
-                          {carton.poids_kg ? ` · ${carton.poids_kg} kg` : ""}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">

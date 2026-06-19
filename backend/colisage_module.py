@@ -166,6 +166,7 @@ class LigneColis(BaseModel):
     designation: str = Field(..., min_length=1, max_length=255)
     quantite_facturee: int = Field(gt=0, le=100000)
     quantite_colisee: int = Field(gt=0, le=100000)
+    # Champs poids conservés pour rétrocompatibilité, mais optionnels
     poids_unitaire: float = Field(ge=0, default=0.0)
     poids_total: float = Field(ge=0, default=0.0)
 
@@ -173,7 +174,7 @@ class LigneColis(BaseModel):
 class ColisIn(BaseModel):
     facture_id: str = Field(..., min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9_\-]+$")
     lignes: List[LigneColis] = Field(..., min_length=1, max_length=500)
-    poids_total: float = Field(ge=0, default=0.0)
+    nombre_cartons: int = Field(ge=1, le=10000, default=1)
     dimensions: Optional[dict] = None
     notes: Optional[str] = Field(default=None, max_length=1000)
 
@@ -182,7 +183,7 @@ class ColisIn(BaseModel):
 
 class ColisUpdate(BaseModel):
     lignes: List[LigneColis] = Field(..., min_length=1, max_length=500)
-    poids_total: float = Field(ge=0, default=0.0)
+    nombre_cartons: int = Field(ge=1, le=10000, default=1)
     dimensions: Optional[dict] = None
     notes: Optional[str] = Field(default=None, max_length=1000)
 
@@ -1751,17 +1752,22 @@ def build_colisage_router(db, resolve_user, log_audit_event=None):
                 "designation": ligne.designation or lg_fac.get("designation", ""),
                 "quantite_facturee": lg_fac["quantite"],
                 "quantite_colisee": ligne.quantite_colisee,
-                "poids_unitaire": ligne.poids_unitaire,
-                "poids_total": ligne.poids_total,
             })
 
         now = _now_iso()
+        nb_cartons = max(1, int(payload.nombre_cartons or 1))
+        # Génération de la numérotation des cartons : 1/N, 2/N, ... N/N
+        cartons_numeros = [
+            {"numero_carton": i + 1, "total_cartons": nb_cartons, "label": f"{i + 1}/{nb_cartons}"}
+            for i in range(nb_cartons)
+        ]
         colis_doc = {
             "colis_id": colis_id,
             "reference": reference,
             "facture_id": payload.facture_id,
             "lignes": lignes_doc,
-            "poids_total": payload.poids_total,
+            "nombre_cartons": nb_cartons,
+            "cartons_numeros": cartons_numeros,
             "dimensions": payload.dimensions,
             "statut": "en_preparation",
             "code_barres": code_barres,
@@ -1770,7 +1776,7 @@ def build_colisage_router(db, resolve_user, log_audit_event=None):
             "created_at": now,
             "created_by": user["user_id"],
             "updated_at": now,
-            "historique": [{"action": "creation", "user_id": user["user_id"], "timestamp": now, "details": {}}]
+            "historique": [{"action": "creation", "user_id": user["user_id"], "timestamp": now, "details": {"nombre_cartons": nb_cartons}}]
         }
         await db.colis.insert_one(colis_doc)
         colis_doc.pop("_id", None)
@@ -1815,13 +1821,17 @@ def build_colisage_router(db, resolve_user, log_audit_event=None):
                 "designation": ligne.designation or lg_fac.get("designation", ""),
                 "quantite_facturee": lg_fac["quantite"],
                 "quantite_colisee": ligne.quantite_colisee,
-                "poids_unitaire": ligne.poids_unitaire,
-                "poids_total": ligne.poids_total,
             })
 
+        nb_cartons = max(1, int(payload.nombre_cartons or 1))
+        cartons_numeros = [
+            {"numero_carton": i + 1, "total_cartons": nb_cartons, "label": f"{i + 1}/{nb_cartons}"}
+            for i in range(nb_cartons)
+        ]
         update_data = {
             "lignes": lignes_doc,
-            "poids_total": payload.poids_total,
+            "nombre_cartons": nb_cartons,
+            "cartons_numeros": cartons_numeros,
             "dimensions": payload.dimensions,
             "notes": payload.notes,
             "updated_at": _now_iso()

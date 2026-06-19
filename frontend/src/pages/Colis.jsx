@@ -58,7 +58,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
   const [factureInput, setFactureInput] = useState(factureId || "");
   const [searchingFacture, setSearchingFacture] = useState(false);
   const [lignes, setLignes] = useState([]);
-  const [poids, setPoids] = useState(0);
+  const [nombreCartons, setNombreCartons] = useState(colisExistant?.nombre_cartons || 1);
   const [notes, setNotes] = useState(colisExistant?.notes || "");
 
   // Charger la facture et ses lignes disponibles
@@ -74,10 +74,9 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
           colisExistant.lignes.map((l) => ({
             ...l,
             qte_input: l.quantite_colisee,
-            poids_unitaire_input: l.poids_unitaire || 0,
           }))
         );
-        setPoids(colisExistant.poids_total || 0);
+        setNombreCartons(colisExistant.nombre_cartons || 1);
         setNotes(colisExistant.notes || "");
       } else {
         // Pré-remplir avec les lignes restantes > 0
@@ -90,10 +89,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
             quantite_facturee: l.quantite,
             quantite_colisee: l.quantite_restante,
             quantite_restante: l.quantite_restante,
-            poids_unitaire: 0,
-            poids_total: 0,
             qte_input: l.quantite_restante,
-            poids_unitaire_input: 0,
           }));
         setLignes(lignesInit);
       }
@@ -114,19 +110,6 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
     });
   };
 
-  const handlePoidsUnitaireChange = (idx, val) => {
-    setLignes((prev) => {
-      const updated = [...prev];
-      const pu = parseFloat(val) || 0;
-      updated[idx] = {
-        ...updated[idx],
-        poids_unitaire_input: pu,
-        poids_total: pu * (updated[idx].qte_input || 0),
-      };
-      return updated;
-    });
-  };
-
   const handleSubmit = async () => {
     const fid = factureId || factureInput;
     if (!fid) { toast.error("Sélectionnez une facture"); return; }
@@ -134,6 +117,9 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
 
     const lignesValides = lignes.filter((l) => l.qte_input > 0);
     if (!lignesValides.length) { toast.error("Au moins une ligne avec quantité > 0 requise"); return; }
+
+    const nbCartons = parseInt(nombreCartons) || 0;
+    if (nbCartons < 1) { toast.error("Le nombre de cartons doit être au moins 1"); return; }
 
     const payload = {
       facture_id: fid,
@@ -143,10 +129,8 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
         designation: l.designation,
         quantite_facturee: l.quantite_facturee,
         quantite_colisee: l.qte_input,
-        poids_unitaire: l.poids_unitaire_input || 0,
-        poids_total: (l.poids_unitaire_input || 0) * l.qte_input,
       })),
-      poids_total: parseFloat(poids) || 0,
+      nombre_cartons: nbCartons,
       notes: notes || null,
     };
 
@@ -155,7 +139,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
       if (colisExistant) {
         await updateColis(colisExistant.colis_id, {
           lignes: payload.lignes,
-          poids_total: payload.poids_total,
+          nombre_cartons: payload.nombre_cartons,
           notes: payload.notes,
         });
         toast.success("Colis modifié avec succès");
@@ -231,8 +215,7 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
                     <th className="text-left py-2 pr-3">Produit</th>
                     <th className="text-center py-2 px-2">Facturé</th>
                     <th className="text-center py-2 px-2">Restant</th>
-                    <th className="text-center py-2 px-2 w-24">Qté colis</th>
-                    <th className="text-center py-2 px-2 w-24">Poids/u (kg)</th>
+                    <th className="text-center py-2 px-2 w-24">Qté à coliser</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,16 +241,6 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
                           className="w-20 text-center"
                         />
                       </td>
-                      <td className="py-2 px-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.1}
-                          value={ligne.poids_unitaire_input}
-                          onChange={(e) => handlePoidsUnitaireChange(idx, e.target.value)}
-                          className="w-20 text-center"
-                        />
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -275,18 +248,32 @@ function ColisForm({ factureId, colisExistant, onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Poids total + notes */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Poids total (kg)</Label>
-              <Input
-                type="number"
-                min={0}
-                step={0.1}
-                value={poids}
-                onChange={(e) => setPoids(e.target.value)}
-              />
-            </div>
+          {/* Nombre de cartons */}
+          <div className="space-y-1">
+            <Label>Nombre de cartons</Label>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              value={nombreCartons}
+              onChange={(e) => setNombreCartons(e.target.value)}
+              className="w-32"
+            />
+            {parseInt(nombreCartons) > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                {Array.from({ length: Math.min(parseInt(nombreCartons), 50) }, (_, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center justify-center px-2 py-1 rounded bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-bold font-mono"
+                  >
+                    {i + 1}/{parseInt(nombreCartons)}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1">
+              Chaque carton sera étiqueté automatiquement (ex: 1/{parseInt(nombreCartons) || "N"}, 2/{parseInt(nombreCartons) || "N"}...).
+            </p>
           </div>
           <div className="space-y-1">
             <Label>Notes (optionnel)</Label>
@@ -443,7 +430,7 @@ const Colis = () => {
                     <th className="text-left py-3 px-4 font-semibold">Facture</th>
                     <th className="text-left py-3 px-4 font-semibold">Client</th>
                     <th className="text-left py-3 px-4 font-semibold">Lignes</th>
-                    <th className="text-left py-3 px-4 font-semibold">Poids (kg)</th>
+                    <th className="text-left py-3 px-4 font-semibold">Cartons</th>
                     <th className="text-left py-3 px-4 font-semibold">Statut</th>
                     <th className="text-left py-3 px-4 font-semibold">Actions</th>
                   </tr>
@@ -485,7 +472,12 @@ const Colis = () => {
                             {colis.lignes?.length || 0}
                           </span>
                         </td>
-                        <td className="py-3 px-4">{colis.poids_total ?? "—"}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center gap-1 text-xs bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded font-mono font-bold">
+                            <Package className="w-3 h-3" />
+                            {colis.nombre_cartons ?? 1} carton{(colis.nombre_cartons ?? 1) > 1 ? "s" : ""}
+                          </span>
+                        </td>
                         <td className="py-3 px-4">
                           <StatutBadge statut={colis.statut} />
                         </td>
@@ -548,8 +540,6 @@ const Colis = () => {
                                   <th className="text-left pb-1">Produit</th>
                                   <th className="text-center pb-1">Qté facturée</th>
                                   <th className="text-center pb-1">Qté colisée</th>
-                                  <th className="text-center pb-1">Poids/u</th>
-                                  <th className="text-center pb-1">Poids total</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -561,12 +551,25 @@ const Colis = () => {
                                     </td>
                                     <td className="text-center py-1">{lg.quantite_facturee}</td>
                                     <td className="text-center py-1 font-semibold text-[#0A2540] dark:text-white">{lg.quantite_colisee}</td>
-                                    <td className="text-center py-1">{lg.poids_unitaire || 0} kg</td>
-                                    <td className="text-center py-1">{lg.poids_total || 0} kg</td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
+                            <div className="mt-3">
+                              <div className="text-xs font-medium text-gray-500 dark:text-white/50 mb-1">
+                                Cartons ({colis.nombre_cartons ?? 1})
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {Array.from({ length: Math.min(colis.nombre_cartons ?? 1, 50) }, (_, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center justify-center px-2 py-1 rounded bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-bold font-mono"
+                                  >
+                                    {i + 1}/{colis.nombre_cartons ?? 1}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                             {colis.notes && (
                               <div className="mt-2 text-xs text-gray-500 dark:text-white/50">
                                 <span className="font-medium">Notes:</span> {colis.notes}
@@ -615,11 +618,22 @@ const Colis = () => {
                 <div><span className="text-gray-500 dark:text-white/50">Client:</span> <span className="font-medium">{selectedColis.client_nom || "—"}</span></div>
                 <div><span className="text-gray-500 dark:text-white/50">Ville:</span> {selectedColis.client_ville || "—"}</div>
                 <div><span className="text-gray-500 dark:text-white/50">Tél:</span> {selectedColis.client_telephone || "—"}</div>
-                <div><span className="text-gray-500 dark:text-white/50">Poids total:</span> {selectedColis.poids_total} kg</div>
+                <div><span className="text-gray-500 dark:text-white/50">Nombre de cartons:</span> <span className="font-bold text-orange-600">{selectedColis.nombre_cartons ?? 1}</span></div>
                 <div><span className="text-gray-500 dark:text-white/50">Code-barres:</span> <span className="font-mono">{selectedColis.code_barres}</span></div>
               </div>
               <Separator />
               <div>
+                <div className="font-medium text-sm mb-2">Cartons</div>
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {Array.from({ length: Math.min(selectedColis.nombre_cartons ?? 1, 50) }, (_, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center justify-center px-2.5 py-1 rounded bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-sm font-bold font-mono"
+                    >
+                      {i + 1}/{selectedColis.nombre_cartons ?? 1}
+                    </span>
+                  ))}
+                </div>
                 <div className="font-medium text-sm mb-2">Lignes colisées</div>
                 <table className="w-full text-sm">
                   <thead>
@@ -627,7 +641,6 @@ const Colis = () => {
                       <th className="text-left pb-1">Produit</th>
                       <th className="text-center pb-1">Facturé</th>
                       <th className="text-center pb-1">Colisé</th>
-                      <th className="text-center pb-1">Poids total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -639,7 +652,6 @@ const Colis = () => {
                         </td>
                         <td className="text-center py-1">{lg.quantite_facturee}</td>
                         <td className="text-center py-1 font-semibold">{lg.quantite_colisee}</td>
-                        <td className="text-center py-1">{lg.poids_total || 0} kg</td>
                       </tr>
                     ))}
                   </tbody>
