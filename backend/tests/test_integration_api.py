@@ -99,7 +99,7 @@ class TestIntegrationClients:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_clients(self, super_token):
         """Test GET /clients"""
@@ -149,7 +149,7 @@ class TestIntegrationProduits:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_produits(self, super_token):
         """Test GET /produits"""
@@ -181,7 +181,7 @@ class TestIntegrationCommandes:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_commandes(self, super_token):
         """Test GET /commandes"""
@@ -202,7 +202,7 @@ class TestIntegrationFactures:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_factures(self, super_token):
         """Test GET /factures"""
@@ -223,7 +223,7 @@ class TestIntegrationPaiements:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_paiements(self, super_token):
         """Test GET /paiements"""
@@ -244,7 +244,7 @@ class TestIntegrationStock:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_list_mouvements_stock(self, super_token):
         """Test GET /stock/mouvements"""
@@ -265,7 +265,7 @@ class TestIntegrationDashboard:
             "password": SUPER_ADMIN_PASSWORD
         }, timeout=10)
         data = r.json()
-    return data.get("access_token") or data.get("token", "")
+        return data.get("access_token") or data.get("token", "")
     
     def test_dashboard_stats(self, super_token):
         """Test GET /dashboard/stats"""
