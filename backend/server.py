@@ -577,7 +577,7 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
         key="session_token",
         value=access_token,
         httponly=True,
-        secure=is_production,
+        secure=False,  # Allow HTTP cookies in dev (frontend runs on http://localhost:3000)
         samesite="lax",
         max_age=JWT_ACCESS_TOKEN_EXPIRY_MINUTES * 60  # Convert minutes to seconds
     )
