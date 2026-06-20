@@ -448,10 +448,10 @@ def build_analytics_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
             "total_factures": 0
         }
         
-        # Total encaissé (paiements)
+        # Total encaissé (paiements) - use montant_total field (montant_affecte + montant_non_affecte)
         pipeline_paid = [
             {"$match": {}},  # Tous les paiements
-            {"$group": {"_id": None, "total_encaisse": {"$sum": "$montant"}}}
+            {"$group": {"_id": None, "total_encaisse": {"$sum": "$montant_total"}}}
         ]
         paid_result = await db.paiements.aggregate(pipeline_paid).to_list(1)
         total_encaisse = paid_result[0]["total_encaisse"] if paid_result else 0

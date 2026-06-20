@@ -203,15 +203,23 @@ async def log_audit_event(
     resource_type: str,
     resource_id: Optional[str] = None,
     details: Optional[dict] = None,
-    ip_address: Optional[str] = None
+    ip_address: Optional[str] = None,
+    user_email: Optional[str] = None
 ):
     """
     Log audit event to database
     """
     try:
+        # If user_email not provided, try to resolve from DB
+        email = user_email
+        if not email:
+            user_doc = await db.users.find_one({"user_id": user_id}, {"email": 1})
+            email = user_doc.get("email") if user_doc else None
+        
         audit_doc = {
             "audit_id": f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{user_id[:8]}",
             "user_id": user_id,
+            "user_email": email or "unknown",
             "action": action,  # CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT, etc.
             "resource_type": resource_type,  # user, client, produit, commande, etc.
             "resource_id": resource_id,
@@ -220,7 +228,7 @@ async def log_audit_event(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         await db.audit_logs.insert_one(audit_doc)
-        logger.info(f"AUDIT: {action} on {resource_type} by {user_id}")
+        logger.info(f"AUDIT: {action} on {resource_type} by {user_id} ({email})")
     except Exception as e:
         logger.error(f"Failed to log audit event: {e}")
 

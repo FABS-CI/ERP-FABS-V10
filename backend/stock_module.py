@@ -174,6 +174,49 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
     router = APIRouter(prefix="/stock", tags=["stock"])
 
     # ══════════════════════════════════════
+    # STOCK GLOBAL SUMMARY
+    # ══════════════════════════════════════
+    @router.get("", response_model=dict)
+    async def get_stock_summary(
+        request: Request,
+        authorization: Optional[str] = Header(default=None)
+    ):
+        """Global stock summary: total articles, stock, value, today's movements"""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
+        
+        # Total articles in catalogue
+        total_articles = await db.produits.count_documents({"actif": True})
+        
+        # Total stock quantity and value
+        stock_pipeline = [
+            {"$match": {"actif": True}},
+            {"$group": {
+                "_id": None,
+                "total_qty": {"$sum": {"$ifNull": ["$stock_actuel", 0]}},
+                "total_value": {"$sum": {"$multiply": [
+                    {"$ifNull": ["$stock_actuel", 0]},
+                    {"$ifNull": ["$prix_vente", 0]},
+                ]}},
+            }}
+        ]
+        stock_result = await db.produits.aggregate(stock_pipeline).to_list(1)
+        stock_data = stock_result[0] if stock_result else {"total_qty": 0, "total_value": 0}
+        
+        # Today's movements
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today_movements = await db.mouvements_stock.count_documents({"created_at": {"$regex": f"^{today}"}})
+        
+        return {
+            "total_articles": total_articles,
+            "stock_quantity": stock_data.get("total_qty", 0),
+            "stock_value": round(stock_data.get("total_value", 0), 2),
+            "movements_today": today_movements,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+    # ══════════════════════════════════════
     # MOUVEMENTS DE STOCK
     # ══════════════════════════════════════
 

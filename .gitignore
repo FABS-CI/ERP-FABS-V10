@@ -43,3 +43,4 @@ auto-save-reports/
 # Test files
 **/test-*.html
 **/debug-*.py
+.env.github

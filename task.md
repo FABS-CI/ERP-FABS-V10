@@ -1,77 +1,53 @@
-# TASK TRACKER : Audit complet ERP FABS-CI
+# 🚀 FIXES PRE-PRODUCTION - ERIP FABS-CI
 
-## OBJECTIF
-- Analyser tous les boutons des pages de vente
-- Tester tous les workflows complets
-- Corriger les bugs
-- Reporter à l'user en français
+## 📋 BUGS À FIXER
 
-## PROGRESSION
+### ✅ BUG 1: GET /api/stock endpoint manquant
+**Status:** IN PROGRESS
+**Fichier:** backend/stock_module.py
+**Problem:** No simple GET /api/stock route (only sub-routes)
+**Fix:** Add GET /api/stock route returning global stock summary
+- Ajouter route GET "/" (racine) dans build_stock_router
+- Retourner: total_articles, stock_total, valeur_stock, mouvements_aujourd'hui
 
-### ✅ FAIT
-1. [20:53] Backend relancé (venv activate, uvicorn server:app)
-2. [20:55] API endpoints validés (httpx test: login, /api/auth/me, listes OK)
-3. [21:00] Rapports générés :
-   - RAPPORT_INVESTIGATION.md : Root cause analysée
-   - RAPPORT_AUDIT_FINAL.json : Test Playwright partiel
-   - RAPPORT_API_TEST.py : Script test API créé (en cours de fix)
+### 🔴 BUG 2: total_encaisse = 0 dans /api/analytics/financial
+**Status:** INVESTIGATING
+**Fichier:** backend/analytics_module.py ligne ~264
+**Problem:** Pipeline paiements cherche field "montant" qui n'existe pas
+**Observation:** paiements_module.py utilise "montant_total", "montant_affecte"
+**Fix:** Mettre à jour le field name dans le pipeline (probably "montant_total")
 
-### 🔄 EN COURS
-1. Fix test_api_direct.py :
-   - Issue : Réponses API au format {items: [...]} pas [...]
-   - Fix appliqué : Parse items + fallback
-   - Prochaine : Exécuter et collecter résultats
+### 🔴 BUG 3: audit user_email = None
+**Status:** INVESTIGATING
+**Fichier:** backend/server.py log_audit_event() ligne 200
+**Problem:** Enregistre user_id mais pas user_email
+**Fix:** 
+- Ajouter paramètre user_email à log_audit_event()
+- Ou résoudre l'email depuis la DB en récupérant le user_id
+- Ajouter user_email au audit_doc
 
-### ⏳ TODO
+## 📊 MONITORING SETUP
+**Status:** TODO
+- Créer health check endpoint
+- Centraliser logs
+- Alerts sur erreurs
 
-**Immédiat** (avant 21:30)
-1. [ ] Exécuter test_api_direct.py → workflow complet
-2. [ ] Documenter résultats
-3. [ ] Commander les bugs identifiés
-4. [ ] Rapporter à l'user
+## 📝 CHECKLIST DÉPLOIEMENT
+**Status:** TODO
+- Créer document déploiement
+- Pre-flight checks
 
-**Bugs à corriger**
-1. CommandeForm.jsx : formulaire ne rend pas (BUG CRITIQUE)
-   - Suspect : useEffect clients/produits fetch bloqué
-   - À DEBUG : step state, clients array init
-2. CommandeDetail buttons invisible en Playwright
-   - ROOT CAUSE : Playwright localStorage/auth sync issue
-   - SOLUTION : Test par API directement (plus fiable)
-3. Factures, Stock : Endpoints 404 ou permissions fail
+## 🏷️ GIT TAG + DB SNAPSHOT
+**Status:** TODO
+- Créer tag release-1.0.0
+- Snapshot MongoDB
 
-**À Valider**
-- Tous les endpoints GET : ✅ OK (commandes, factures, paiements, clients, produits, stock=404)
-- Création commande : EN TEST
-- Workflow validation/préparation/livraison : EN TEST
-- Facture auto-generation : EN TEST
-- Paiements/Lettrage : À tester
-
-## ENVIRONNEMENT
-
-**Frontend** : http://localhost:3000  
-PID node: 3527, port 3000, logs: /tmp/frontend.log  
-
-**Backend** : http://localhost:8000  
-PID python: (actif), port 8000, venv: /home/user/ERP-FABS-V10/backend/venv  
-
-**DB** : MongoDB fabsci_erp (localhost:27017)  
-- Clients: 1014+
-- Produits: 56
-- Commandes: 2 (test)
-
-**Test User** : pissken@editionsfabsci.com / Admin@2025 (super_admin)
-
-## RAPPORTS À PRODUIRE
-
-À la fin :
-1. JSON audit complet (tous endpoints + boutons)
-2. Markdown rapport bugs + solutions
-3. Liste des fixes appliqués
-4. Recommandations pour futur
-
-## NOTES
-
-- Playwright auth issue = localStorage/context pas synchronisé après login
-- Solution = tester API directement (plus rapide + fiable)
-- CommandeForm bug = bloqueur pour test création, mais backend OK
-- Règle 80/20 : documenter, ne pas recoder sauf critiques
+## PROGRESS
+- [ ] Fix bug 1 (5 min)
+- [ ] Fix bug 2 (5 min)
+- [ ] Fix bug 3 (5 min)
+- [ ] Commit fixes
+- [ ] Setup monitoring
+- [ ] Create deployment checklist
+- [ ] Tag + snapshot
+- [ ] Push
