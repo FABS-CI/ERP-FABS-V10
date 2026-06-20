@@ -38,7 +38,7 @@ from stock_module import build_stock_router, seed_mouvements_stock
 from bons_livraison_module import build_bons_livraison_router, seed_bons_livraison
 from bons_retour_module import build_bons_retour_router, seed_bons_retour
 from comptabilite_module import build_comptabilite_router, seed_comptabilite
-from administration_module import build_utilisateurs_router, build_parametres_router, seed_parametres
+from administration_module import build_utilisateurs_router, build_parametres_router, build_audit_router, seed_parametres
 from recherche_module import build_recherche_router
 from documents_ai_module import build_documents_ai_router, seed_documents_demo
 from analytics_module import build_analytics_router
@@ -973,6 +973,7 @@ api_router.include_router(build_bons_retour_router(db, resolve_user, log_audit_e
 api_router.include_router(build_comptabilite_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_utilisateurs_router(db, resolve_user, hash_password, log_audit_event))
 api_router.include_router(build_parametres_router(db, resolve_user))
+api_router.include_router(build_audit_router(db, resolve_user, log_audit_event))
 api_router.include_router(build_recherche_router(db, resolve_user))
 api_router.include_router(build_documents_ai_router(db, resolve_user))
 api_router.include_router(build_analytics_router(db, resolve_user))

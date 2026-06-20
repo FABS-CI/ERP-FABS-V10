@@ -1,0 +1,236 @@
+{
+  "timestamp": "2026-06-20T10:17:27.117804",
+  "checklists": {
+    "1_technique": {
+      "env_vars": {
+        "exists": true,
+        "lines": 7,
+        "has_db": false,
+        "has_jwt": true,
+        "has_debug": false
+      },
+      "secrets": {
+        "backend_venv": true,
+        "jwt_configured": true
+      },
+      "https": {
+        "port_8000": true
+      },
+      "ssl": {
+        "certs_dir": true,
+        "cert_count": 150
+      },
+      "docker": {
+        "compose_exists": true,
+        "has_mongo": true,
+        "has_backend": true
+      },
+      "nginx": {
+        "installed": false,
+        "running": false
+      },
+      "mongodb": {
+        "running": true,
+        "connected": true,
+        "db_name": "fabsci_erp"
+      },
+      "backups": {
+        "dir_exists": true,
+        "count": 1
+      },
+      "logs": {
+        "dir": true,
+        "audit_log": true,
+        "logrotate": true
+      },
+      "monitoring": {
+        "metrics_endpoint": true,
+        "health_endpoint": true
+      },
+      "error_handling": {
+        "404_handler": true,
+        "error_format": true
+      }
+    },
+    "2_database": {
+      "integrit\u00e9": {
+        "collection_count": 49,
+        "expected_collections": [
+          "clients",
+          "commandes",
+          "factures",
+          "paiements",
+          "produits",
+          "fournisseurs",
+          "approvisionnements",
+          "stock",
+          "users"
+        ],
+        "has_core": true
+      },
+      "index": {
+        "clients": 1,
+        "commandes": 1,
+        "factures": 2
+      },
+      "performance": {
+        "clients_count": 1019,
+        "query_time_ms": 3.07,
+        "acceptable": true
+      },
+      "orphelines": {
+        "commandes_sans_client": 0
+      },
+      "doublons": {
+        "by_email": {
+          "clients_by_email": 1005,
+          "users_by_email": 0
+        }
+      },
+      "sauvegarde": {
+        "latest": "/home/user/ERP-FABS-V10/db_snapshots/snapshot_2026_06_20_release_1_0_0",
+        "exists": true
+      },
+      "restauration": {
+        "script_exists": false,
+        "documented": true
+      }
+    },
+    "3_securite": {
+      "jwt": {
+        "login_ok": true,
+        "token_type": "JWT",
+        "has_token": true
+      },
+      "sessions": {
+        "has_exp": true,
+        "exp_value": 1781979447
+      },
+      "rbac": {
+        "roles_tested": {
+          "super_admin": true,
+          "directeur_general": true,
+          "comptable": true
+        }
+      },
+      "routes": {
+        "unauth_denied": true
+      },
+      "permissions": {
+        "admin_users_access": true
+      },
+      "acces_non_autorise": {},
+      "audit": {
+        "endpoint_exists": false
+      },
+      "assistante_perms": {
+        "can_create_client": true,
+        "cannot_access_admin": true
+      }
+    },
+    "4_fonctionnelle": {
+      "e2e_steps": {
+        "1_client": false
+      },
+      "data_integrity": {},
+      "workflow": {
+        "all_steps_ok": false
+      }
+    },
+    "5_fne": {
+      "facture_fne": {
+        "implementee": true
+      },
+      "avoir_fne": {
+        "implementee": false
+      },
+      "qr_code": {
+        "implementee": true
+      },
+      "signature_fiscale": {
+        "implementee": true
+      },
+      "communication_fne": {
+        "implementee": true
+      },
+      "gestion_erreurs": {
+        "implementee": true
+      }
+    },
+    "6_rollback": {
+      "procedure": "",
+      "temps_estime": "15-30 minutes",
+      "sauvegardes": [
+        "snapshot_2026_06_20_release_1_0_0"
+      ],
+      "etapes": [
+        "1. Arr\u00eater le backend (uvicorn)",
+        "2. Arr\u00eater le frontend (node)",
+        "3. Sauvegarder DB actuelle (snapshot)",
+        "4. Restaurer DB depuis snapshot pr\u00e9-prod",
+        "5. D\u00e9ployer code pr\u00e9-prod",
+        "6. Red\u00e9marrer services",
+        "7. V\u00e9rifier sant\u00e9 (health checks)"
+      ],
+      "risques": [
+        "Data loss (mitigu\u00e9 par snapshots multiples)",
+        "Downtime utilisateurs (15-30 min)",
+        "Transactions en cours pendant rollback (\u00e0 g\u00e9rer manuellement)"
+      ],
+      "validee": true
+    },
+    "7_support": {
+      "p1": {
+        "definition": "Syst\u00e8me compl\u00e8tement indisponible ou data loss imminent",
+        "delai": "15 minutes",
+        "procedure": [
+          "1. D\u00e9clencher alertes H24",
+          "2. Escalade architecte + lead dev",
+          "3. Analyser logs erreurs",
+          "4. D\u00e9cider: fix ou rollback",
+          "5. Ex\u00e9cuter et valider"
+        ]
+      },
+      "p2": {
+        "definition": "Fonctionnalit\u00e9 critique d\u00e9grad\u00e9e",
+        "delai": "1 heure",
+        "procedure": [
+          "1. Assigner au tier 2",
+          "2. Reproduire issue",
+          "3. Proposer workaround si n\u00e9cessaire",
+          "4. Planifier fix"
+        ]
+      },
+      "p3": {
+        "definition": "Bug mineur, d\u00e9gradation mineures",
+        "delai": "4 heures",
+        "procedure": [
+          "1. Documenter issue",
+          "2. Assigner au backlog",
+          "3. Planifier pour sprint suivant"
+        ]
+      },
+      "escalade": [
+        "Tier 1 (Support) \u2192 Tier 2 (Dev) \u2192 Architecture \u2192 Leadership"
+      ],
+      "contacts": [
+        "On-Call Engineer: 24/7",
+        "Escalade: IT Manager",
+        "Executive: CTO"
+      ],
+      "sla": {
+        "p1_response": "15 min",
+        "p1_resolution": "4 heures",
+        "p2_response": "30 min",
+        "p2_resolution": "8 heures",
+        "p3_response": "2 heures"
+      }
+    }
+  },
+  "conformite": 76.4,
+  "risques": [],
+  "reserves": [],
+  "actions_obligatoires": [],
+  "certification": "\ud83d\udfe1 CONFORME AVEC R\u00c9SERVE",
+  "niveau_risque": "\u00c9LEV\u00c9"
+}
