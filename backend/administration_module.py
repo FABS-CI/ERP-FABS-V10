@@ -9,8 +9,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional, List
 import logging
+import uuid
 
-from fastapi import APIRouter, HTTPException, Header, Query, Request
+from fastapi import APIRouter, HTTPException, Header, Query, Request, Body
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Any
@@ -54,6 +55,15 @@ class UtilisateurUpdate(BaseModel):
     actif: Optional[bool] = None
 
 
+class UtilisateurIn(BaseModel):
+    """Schema for creating a new user (admin only)"""
+    email: EmailStr
+    password: str = Field(..., min_length=8, description="Minimum 8 caractères")
+    nom_complet: str = Field(..., min_length=2, max_length=120)
+    role: str = Field(..., description="Un des rôles disponibles")
+    actif: bool = True
+
+
 class UtilisateurOut(BaseModel):
     user_id: str
     email: EmailStr
@@ -73,7 +83,7 @@ class UtilisateurOut(BaseModel):
         return str(v)
 
 
-def build_utilisateurs_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
+def build_utilisateurs_router(db: AsyncIOMotorDatabase, resolve_user, hash_password=None, log_audit_event=None) -> APIRouter:
     router = APIRouter(prefix="/utilisateurs", tags=["utilisateurs"])
 
     @router.get("", response_model=List[UtilisateurOut])
@@ -93,6 +103,58 @@ def build_utilisateurs_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRout
         docs = await cursor.to_list(200)
         
         return [UtilisateurOut(**d) for d in docs]
+
+    @router.post("", response_model=UtilisateurOut, status_code=201)
+    async def create_utilisateur(
+        request: Request,
+        payload: UtilisateurIn = Body(...),
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """Create a new user (super_admin only). Email must be unique."""
+        me = await resolve_user(request, authorization)
+        _ensure(me["role"] == "super_admin", 403, "Réservé au super_admin")
+
+        if payload.role not in ROLES_DISPONIBLES:
+            _ensure(False, 400, f"Rôle invalide. Valeurs autorisées: {ROLES_DISPONIBLES}")
+
+        existing = await db.users.find_one({"email": payload.email.lower()})
+        _ensure(existing is None, 409, "Email déjà utilisé")
+
+        if not hash_password:
+            raise HTTPException(status_code=500, detail="Hash password function not available")
+
+        now = _now_iso()
+        user_doc = {
+            "user_id": f"user_{uuid.uuid4().hex[:12]}",
+            "email": payload.email.lower(),
+            "nom_complet": payload.nom_complet.strip(),
+            "role": payload.role,
+            "actif": payload.actif,
+            "password_hash": hash_password(payload.password),
+            "picture": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.users.insert_one(user_doc)
+        
+        # Log user creation
+        if log_audit_event:
+            await log_audit_event(
+                user_id=me['user_id'],
+                action="CREATE_USER",
+                resource_type="user",
+                resource_id=user_doc['user_id'],
+                details={
+                    "target_email": payload.email,
+                    "target_role": payload.role,
+                    "created_by": me['email']
+                },
+                ip_address=request.client.host if request.client else None,
+                user_email=me['email']
+            )
+        
+        logger.info("✅ User %s created by %s", payload.email, me["email"])
+        return UtilisateurOut(**{k: v for k, v in user_doc.items() if k != "password_hash"})
 
     @router.get("/{user_id}", response_model=UtilisateurOut)
     async def get_utilisateur(

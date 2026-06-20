@@ -16,7 +16,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from sanitizers import sanitize_str
 
 
@@ -128,9 +128,11 @@ async def next_client_reference(db: AsyncIOMotorDatabase) -> str:
 # Schemas
 # ---------------------------------------------------------------------------
 class ClientIn(BaseModel):
-    nom: str = Field(..., min_length=2, max_length=120)
-    type_client: ClientType
-    representant: str = Field(..., min_length=2, max_length=120, description="Nom du représentant (obligatoire)")
+    model_config = ConfigDict(populate_by_name=True)
+    
+    nom: str = Field(..., min_length=2, max_length=120, alias="nom_client")
+    type_client: ClientType = Field(..., alias="categorie")
+    representant: str = Field(default="Non spécifié", min_length=2, max_length=120, description="Nom du représentant")
     representative_id: Optional[str] = None  # legacy — ID du représentant (optionnel)
     telephone: Optional[str] = Field(default=None, max_length=40)
     numero_whatsapp: Optional[str] = Field(default=None, max_length=40, description="Numéro WhatsApp pour envoi Proformas")

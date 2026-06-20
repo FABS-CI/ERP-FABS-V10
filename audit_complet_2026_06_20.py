@@ -213,7 +213,7 @@ class AuditERP:
             print("Step 1: Créer client...")
             client_data = {
                 "nom_client": f"Client Test S1 {datetime.now().timestamp()}",
-                "categorie": "grande_entreprise",
+                "categorie": "librairie",
                 "ville": "Abidjan",
                 "telephone": "0000000001",
                 "email": f"test_s1_{datetime.now().timestamp()}@test.com",
