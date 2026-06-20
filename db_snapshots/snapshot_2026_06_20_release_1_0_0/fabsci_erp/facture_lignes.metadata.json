@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"facture_id":{"$numberInt":"1"}},"name":"idx_facture_lignes_facture_id"}],"uuid":"74ea3a41e4e548c09458f55ee95ec0d2","collectionName":"facture_lignes","type":"collection"}
