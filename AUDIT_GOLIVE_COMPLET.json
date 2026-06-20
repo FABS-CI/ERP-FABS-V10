@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-20T10:17:27.117804",
+  "timestamp": "2026-06-20T10:40:10.835818",
   "checklists": {
     "1_technique": {
       "env_vars": {
@@ -27,7 +27,7 @@
       },
       "nginx": {
         "installed": false,
-        "running": false
+        "running": true
       },
       "mongodb": {
         "running": true,
@@ -69,13 +69,13 @@
         "has_core": true
       },
       "index": {
-        "clients": 1,
+        "clients": 2,
         "commandes": 1,
         "factures": 2
       },
       "performance": {
-        "clients_count": 1019,
-        "query_time_ms": 3.07,
+        "clients_count": 1020,
+        "query_time_ms": 1.4,
         "acceptable": true
       },
       "orphelines": {
@@ -104,7 +104,7 @@
       },
       "sessions": {
         "has_exp": true,
-        "exp_value": 1781979447
+        "exp_value": 1781980811
       },
       "rbac": {
         "roles_tested": {
@@ -124,7 +124,7 @@
         "endpoint_exists": false
       },
       "assistante_perms": {
-        "can_create_client": true,
+        "can_create_client": false,
         "cannot_access_admin": true
       }
     },
@@ -227,7 +227,7 @@
       }
     }
   },
-  "conformite": 76.4,
+  "conformite": 77.7,
   "risques": [],
   "reserves": [],
   "actions_obligatoires": [],
