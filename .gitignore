@@ -1,138 +1,45 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# IDE and editors
-.idea/
-.vscode/
-
 # Dependencies
 node_modules/
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
-/build
+.next/
 dist/
-dist
+build/
 
-# Environment files (comprehensive coverage)
+# Environment
+.env
+.env.local
+.env.*.local
 
-*token.json*
-*credentials.json*
-
-# Logs and debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
-
-# System files
-.DS_Store
-*.pem
+# Logs
+*.log
+logs/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Python
 __pycache__/
-*pyc*
-venv/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+*.egg-info/
 .venv/
+venv/
+env/
 
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Deployment
-.vercel
-
-# Data and databases
-agenthub/agents/youtube/db
-
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
-
-# Build caches
+# Cache & Temp
 .cache/
+temp/
+tmp/
+auto-save-reports/
 
-memory/test_credentials.md
-
-# Mobile development
-android-sdk/frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/5.pack
-frontend/node_modules/.cache/default-development/16.pack
-frontend/node_modules/.cache/default-development/18.pack
-frontend/node_modules/.cache/default-development/20.pack
-frontend/node_modules/.cache/default-development/31.pack
-/etc/erp-fabs.env
-
-# Secrets de production
-.env
-.env.production
-.env.local
-.git_credentials
-
-# Données sensibles - ne jamais commiter
-backend/data_import/users.json
-backend/data_import/clients.json
-backend/data/clients_real.txt
-backend/data/
-*.json.bak
-
-# Rapports et fichiers temporaires
-*.bak
-AUDIT_*/
-RAPPORT_*/
-SPRINT_*/
-docs/
-test_reports/
-memory/
-fne_audit.report/
-backend/scripts/seed_*.py
-backend/scripts/import_*.py
-*.png
-analysis_report.json
-design_guidelines.json
-SPRINT_STATE.json
-task.md
-test_result.md
-audit_ops.md
-auth_testing.md
-.env*
-!.env.production.example
-!backend/env.example
-backend/simulate_and_audit.py
-backend/export_data_to_json.py
-backend/seed_demo_data.py
-backend/seed_data.py
-backend/CLASSIF_TASK.md
-backend/_e2e_test.py
-backend/audit_production.md
-backend/classification.py
-Login.jsx.old
-.git-credentials.env
-backend/.env
+# Test files
+**/test-*.html
+**/debug-*.py

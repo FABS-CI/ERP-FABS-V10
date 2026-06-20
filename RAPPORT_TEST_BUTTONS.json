@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-06-20T08:58:33.559261",
+  "pages_tested": {
+    "/dashboard": {
+      "title": "Tableau de bord",
+      "status": "✅ OK"
+    },
+    "/commandes": {
+      "title": "Liste Commandes",
+      "status": "✅ OK"
+    },
+    "/factures": {
+      "title": "Liste Factures",
+      "status": "✅ OK"
+    },
+    "/paiements": {
+      "title": "Paiements",
+      "status": "✅ OK"
+    },
+    "/stock": {
+      "title": "Stock",
+      "status": "✅ OK"
+    },
+    "/clients": {
+      "title": "Clients",
+      "status": "✅ OK"
+    },
+    "/produits": {
+      "title": "Produits",
+      "status": "✅ OK"
+    },
+    "/commandes/nouvelle": {
+      "title": "Nouvelle Commande",
+      "status": "✅ OK"
+    }
+  },
+  "buttons_tested": {},
+  "workflows": {},
+  "errors": [
+    "Page.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[placeholder*=\\\"Rechercher\\\"]\")\n"
+  ]
+}

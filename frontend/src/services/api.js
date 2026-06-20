@@ -4,18 +4,22 @@
  */
 import axios from "axios";
 import { API_BASE_URL } from "../config/api";
-import { tokenStore } from "../hooks/useAuth";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {
-  const token = tokenStore.get();
+  const token = localStorage.getItem("fabs_token");
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error)
+);
 
 export default api;

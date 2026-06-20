@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-06-20T09:06:12.064097",
+  "endpoints": {
+    "/api/commandes": {
+      "status": 200,
+      "count": "?",
+      "sample": null
+    },
+    "/api/factures": {
+      "status": 200,
+      "count": "?",
+      "sample": null
+    },
+    "/api/paiements": {
+      "status": 200,
+      "count": "?",
+      "sample": null
+    },
+    "/api/clients": {
+      "status": 200,
+      "count": "?",
+      "sample": null
+    },
+    "/api/produits": {
+      "status": 200,
+      "count": "?",
+      "sample": null
+    },
+    "/api/stock": {
+      "status": 404,
+      "count": "?",
+      "sample": null
+    }
+  },
+  "user": {
+    "user_id": "admin_super_001",
+    "email": "pissken@editionsfabsci.com",
+    "nom_complet": "AKE APPIA YVES DORIS",
+    "role": "super_admin",
+    "actif": true,
+    "picture": null
+  },
+  "workflow_create": "✅",
+  "workflow_actions": {
+    "Soumettre": "✅",
+    "Valider": "✅",
+    "Préparer": "✅",
+    "Livrer": "⚠️ 400"
+  },
+  "workflow_facture": "✅"
+}

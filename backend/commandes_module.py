@@ -263,7 +263,7 @@ async def _get_client_nom(db: AsyncIOMotorDatabase, client_id: str) -> Optional[
 
 async def _get_produit_info(db: AsyncIOMotorDatabase, produit_id: str) -> dict:
     produit = await db.produits.find_one(
-        {"$or": [{"product_id": produit_id}, {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]}]},
+        {"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]},
         {"_id": 0, "reference": 1, "titre": 1, "prix_vente": 1,
          "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
     )
@@ -475,10 +475,22 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
 
         # Create lignes
         for ligne in payload.lignes:
+            # Enrichir avec code_article réel du produit
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}]},
+                {"code_article": 1, "titre": 1, "designation": 1, "niveau_scolaire": 1, "matiere": 1, "categorie": 1, "_id": 0}
+            )
+            
             ligne_doc = {
                 "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
                 "commande_id": commande_id,
                 "produit_id": ligne.produit_id,
+                "code_article": prod.get("code_article") if prod else None,  # Code réel FABS-CIxxx
+                "titre": prod.get("titre") if prod else None,
+                "designation": prod.get("designation") if prod else None,
+                "niveau_scolaire": prod.get("niveau_scolaire") if prod else None,
+                "matiere": prod.get("matiere") if prod else None,
+                "categorie": prod.get("categorie") if prod else None,
                 "quantite": ligne.quantite,
                 "prix_unitaire": ligne.prix_unitaire,
                 "remise_ligne": ligne.remise_ligne,
@@ -673,10 +685,22 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             
             # Create new lignes
             for ligne in payload.lignes:
+                # Enrichir avec code_article réel du produit
+                prod = await db.produits.find_one(
+                    {"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}]},
+                    {"code_article": 1, "titre": 1, "designation": 1, "niveau_scolaire": 1, "matiere": 1, "categorie": 1, "_id": 0}
+                )
+                
                 ligne_doc = {
                     "ligne_id": f"ligne_{uuid.uuid4().hex[:12]}",
                     "commande_id": commande_id,
                     "produit_id": ligne.produit_id,
+                    "code_article": prod.get("code_article") if prod else None,  # Code réel FABS-CIxxx
+                    "titre": prod.get("titre") if prod else None,
+                    "designation": prod.get("designation") if prod else None,
+                    "niveau_scolaire": prod.get("niveau_scolaire") if prod else None,
+                    "matiere": prod.get("matiere") if prod else None,
+                    "categorie": prod.get("categorie") if prod else None,
                     "quantite": ligne.quantite,
                     "prix_unitaire": ligne.prix_unitaire,
                     "remise_ligne": ligne.remise_ligne,

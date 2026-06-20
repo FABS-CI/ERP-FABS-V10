@@ -242,30 +242,16 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
         _ensure(bl is not None, 404, "BL introuvable")
         _ensure(bl["statut"] != "livre", 400, "BL déjà livré")
 
-        # Update BL
         now = _now_iso()
-        await db.bons_livraison.update_one(
-            {"bl_id": bl_id},
-            {"$set": {
-                "statut": "livre",
-                "date_livraison_reelle": now[:10],
-                "updated_at": now,
-            }}
-        )
 
-        # Update commande status
-        await db.commandes.update_one(
-            {"commande_id": bl["commande_id"]},
-            {"$set": {"statut": "livree", "date_livraison": now[:10], "updated_at": now}}
-        )
-
-        # Get lignes and create stock movements
+        # Get lignes and create stock movements (AVANT de figer les statuts :
+        # si le stock est insuffisant, on lève 400 sans rien modifier).
         lignes = await db.bl_lignes.find({"bl_id": bl_id}, {"_id": 0}).to_list(100)
         for ligne in lignes:
             _qte = ligne.get("quantite", ligne.get("quantite_commandee", ligne.get("quantite_livree", 0)))
             # C6 fix: décrémentation atomique avec guard stock >= qte pour éviter stock négatif
             updated = await db.produits.find_one_and_update(
-                {"product_id": ligne["produit_id"], "stock_actuel": {"$gte": _qte}},
+                {"produit_id": ligne["produit_id"], "stock_actuel": {"$gte": _qte}},
                 {
                     "$inc": {"stock_actuel": -_qte},
                     "$set": {"updated_at": now},
@@ -276,7 +262,7 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
             if not updated:
                 # Stock insuffisant — lire la valeur actuelle pour le message d'erreur
                 produit_cur = await db.produits.find_one(
-                    {"product_id": ligne["produit_id"]},
+                    {"produit_id": ligne["produit_id"]},
                     {"_id": 0, "stock_actuel": 1, "reference": 1},
                 )
                 stock_dispo = produit_cur.get("stock_actuel", 0) if produit_cur else 0
@@ -289,8 +275,9 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
             stock_avant = stock_apres + _qte
 
             # TICKET-007 — Mettre à jour quantite_livree dans bl_lignes
+            _ligne_key = ligne.get("ligne_bl_id") or ligne.get("ligne_id")
             await db.bl_lignes.update_one(
-                {"ligne_id": ligne["ligne_id"]},
+                {"ligne_bl_id": _ligne_key},
                 {"$set": {
                     "quantite_livree": _qte,
                     "updated_at": now,
@@ -310,6 +297,20 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
                 "created_at": now,
             }
             await db.mouvements_stock.insert_one(mouvement_doc)
+
+        # Déduction stock OK -> on fige les statuts BL + commande
+        await db.bons_livraison.update_one(
+            {"bl_id": bl_id},
+            {"$set": {
+                "statut": "livre",
+                "date_livraison_reelle": now[:10],
+                "updated_at": now,
+            }}
+        )
+        await db.commandes.update_one(
+            {"commande_id": bl["commande_id"]},
+            {"$set": {"statut": "livree", "date_livraison": now[:10], "updated_at": now}}
+        )
 
         # Audit log
         if log_audit_event:
@@ -360,8 +361,8 @@ def build_bons_livraison_router(db: AsyncIOMotorDatabase, resolve_user, log_audi
 
         from pdf_generator import enrich_lignes_for_pdf
         _pids = list({(l.get("produit_id") or l.get("product_id")) for l in lignes if (l.get("produit_id") or l.get("product_id"))})
-        _prods = await db.produits.find({"product_id": {"$in": _pids}}, {"_id": 0}).to_list(1000) if _pids else []
-        enrich_lignes_for_pdf({p["product_id"]: p for p in _prods}, lignes)
+        _prods = await db.produits.find({"produit_id": {"$in": _pids}}, {"_id": 0}).to_list(1000) if _pids else []
+        enrich_lignes_for_pdf({p["produit_id"]: p for p in _prods}, lignes)
 
         cmd = await db.commandes.find_one({"commande_id": bl["commande_id"]}, {"_id": 0, "reference": 1, "client_id": 1})
         commande_ref = cmd.get("reference") if cmd else None

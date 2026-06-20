@@ -19,6 +19,7 @@ function SmartRedirect() {
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
+const DevLogin = lazy(() => import("./pages/DevLogin"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const RHDashboard = lazy(() => import("./pages/RHDashboard"));
 const Employes = lazy(() => import("./pages/Employes"));
@@ -139,6 +140,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
+              <Route path="/dev-login" element={<DevLogin />} />
             
             {/* Protected Routes */}
             <Route path="/" element={<SmartRedirect />} />
@@ -297,6 +299,14 @@ function App() {
             />
             <Route
               path="/commandes/nouvelle"
+              element={
+                <ProtectedRoute moduleKey="commandes">
+                  <CommandeForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/commandes/:id/modifier"
               element={
                 <ProtectedRoute moduleKey="commandes">
                   <CommandeForm />

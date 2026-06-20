@@ -137,6 +137,8 @@ class LigneFactureIn(BaseModel):
     quantite: int = Field(..., gt=0)
     prix_unitaire: float = Field(..., gt=0)
     remise_ligne: float = Field(default=0, ge=0, le=100)
+    niveau_scolaire: Optional[str] = None
+    matiere: Optional[str] = None
 
     @property
     def montant_ht(self) -> float:
@@ -535,6 +537,8 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                 "prix_unitaire": ligne.prix_unitaire,
                 "remise_ligne": ligne.remise_ligne,
                 "montant_ht": ligne.montant_ht,
+            "niveau_scolaire": ligne.niveau_scolaire,
+            "matiere": ligne.matiere,
             }
             await db.facture_lignes.insert_one(ligne_doc)
 
@@ -605,12 +609,12 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         cmd_lignes = await lignes_cursor.to_list(500)
         _ensure(len(cmd_lignes) > 0, 400, "Commande sans lignes")
 
-        # Get product designations
+        # Get product designations with enriched metadata
         lignes_facture = []
         for ligne in cmd_lignes:
             pid = ligne["produit_id"]
             prod = await db.produits.find_one(
-                {"$or": [{"product_id": pid}, {"$or": [{"product_id": pid}, {"produit_id": pid}]}]},
+                {"$or": [{"product_id": pid}, {"produit_id": pid}]},
                 {"_id": 0, "titre": 1, "matiere": 1, "niveau_scolaire": 1, "cycle": 1, "categorie": 1}
             )
             lignes_facture.append(LigneFactureIn(
@@ -619,6 +623,8 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                 quantite=ligne["quantite"],
                 prix_unitaire=ligne["prix_unitaire"],
                 remise_ligne=ligne["remise_ligne"],
+                niveau_scolaire=prod.get("niveau_scolaire") if prod else None,
+                matiere=prod.get("matiere") if prod else None,
             ))
 
         # Create facture — hériter taux_tva de la commande
@@ -676,6 +682,8 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                 "prix_unitaire": ligne.prix_unitaire,
                 "remise_ligne": ligne.remise_ligne,
                 "montant_ht": ligne.montant_ht,
+                "niveau_scolaire": ligne.niveau_scolaire,
+                "matiere": ligne.matiere,
             }
             await db.facture_lignes.insert_one(ligne_doc)
 
@@ -759,6 +767,8 @@ def build_factures_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
                     "prix_unitaire": ligne.prix_unitaire,
                     "remise_ligne": ligne.remise_ligne,
                     "montant_ht": ligne.montant_ht,
+                "niveau_scolaire": ligne.niveau_scolaire,
+                "matiere": ligne.matiere,
                 }
                 await db.facture_lignes.insert_one(ligne_doc)
             

@@ -35,7 +35,7 @@ WRITE_ROLES = {
 }  # responsable_magasinier/secretariat : pas d'accès produits selon matrice
 FINANCIAL_ROLES = {"super_admin", "directeur_general", "comptable"}  # see prix_achat
 
-Categorie = Literal["maternelle", "primaire", "premier_cycle", "second_cycle", "litterature", "livre_commun"]
+Categorie = Literal["maternelle", "primaire", "premier_cycle", "second_cycle", "litterature", "livre_commun", "arts"]
 CATEGORIE_LABELS = {
     "maternelle":     "Maternelle",
     "primaire":       "Primaire",
@@ -43,6 +43,7 @@ CATEGORIE_LABELS = {
     "second_cycle":   "Second cycle",
     "litterature":    "Littérature",
     "livre_commun":   "Livre commun",
+    "arts":           "Arts",
 }
 
 # Normalisation des libellés legacy → littéraux acceptés
@@ -53,6 +54,7 @@ _CATEGORIE_NORMALIZE = {
     "Second cycle": "second_cycle",
     "Littérature": "litterature",
     "Livre commun": "livre_commun",
+    "Arts": "arts",
 }
 
 
@@ -118,7 +120,7 @@ class ProductPatch(BaseModel):
 
 
 class ProductOut(BaseModel):
-    product_id: str
+    product_id: str  # ✓ Add _id field for dropdown keys (FABS-CI79, etc.)
     reference: str
     titre: Optional[str] = None
     auteur: Optional[str] = None
@@ -177,7 +179,8 @@ def compute_stock_status(stock_actuel: int, stock_minimum: int) -> str:
 def project_product(doc: dict, *, see_prix_achat: bool) -> dict:
     if not doc:
         return doc
-    d = {k: v for k, v in doc.items() if k != "_id"}
+    # ✓ INCLUDE _id in response (needed for dropdown keys FABS-CI79, etc.)
+    d = dict(doc)  # Keep all fields including _id
     # Compat : migrer `produit_id` (legacy) → `product_id`
     if "product_id" not in d and "produit_id" in d:
         d["product_id"] = d.pop("produit_id")
@@ -349,7 +352,7 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         see_prix_achat = me["role"] in FINANCIAL_ROLES
         total = await db.produits.count_documents(filt)
         cursor = (
-            db.produits.find(filt, {"_id": 0})
+            db.produits.find(filt)  # ✓ INCLUDE _id in results
             .sort([("reference", 1)])
             .skip((page - 1) * page_size)
             .limit(page_size)

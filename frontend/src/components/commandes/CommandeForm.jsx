@@ -3,9 +3,9 @@
  * Sprint 6
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Save, Send, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
-import { createCommande, checkDoublon, logDoublonDecision } from '../../services/commandesApi';
+import { createCommande, updateCommande, getCommande, checkDoublon, logDoublonDecision } from '../../services/commandesApi';
 import { listClients } from '../../services/clientsApi';
 import { listProducts } from '../../services/produitsApi';
 import DoublonAlert from './DoublonAlert';
@@ -25,12 +25,15 @@ import ClientPicker from './ClientPicker';
 export default function CommandeForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { id: editId } = useParams();
+  const isEdit = Boolean(editId);
   const preloadClientId = searchParams.get('client_id') || '';
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [produits, setProduits] = useState([]);
+  const [loadingProduits, setLoadingProduits] = useState(false);
   const [openProduitIdx, setOpenProduitIdx] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -53,6 +56,46 @@ export default function CommandeForm() {
     fetchClients();
     fetchProduits();
   }, []);
+
+  // Mode édition : précharger la commande existante (brouillon uniquement)
+  useEffect(() => {
+    if (!editId) return;
+    (async () => {
+      try {
+        const cmd = await getCommande(editId);
+        if (cmd.statut && cmd.statut !== 'brouillon') {
+          toast.error('Seules les commandes en brouillon peuvent être modifiées');
+          navigate(`/commandes/${editId}`);
+          return;
+        }
+        setFormData({
+          client_id: cmd.client_id || '',
+          date_livraison_prevue: cmd.date_livraison_prevue
+            ? String(cmd.date_livraison_prevue).slice(0, 10)
+            : '',
+          remise_globale: cmd.remise_globale || 0,
+          notes: cmd.notes || '',
+          lignes: (cmd.lignes || []).map((l) => ({
+            produit_id: l.produit_id || l.product_id || '',
+            quantite: l.quantite || 1,
+            prix_unitaire: l.prix_unitaire || 0,
+            remise_ligne: l.remise_ligne || 0,
+          })),
+        });
+      } catch (error) {
+        toast.error('Impossible de charger la commande à modifier');
+        navigate('/commandes');
+      }
+    })();
+  }, [editId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mode édition : résoudre le client sélectionné une fois la liste clients chargée
+  useEffect(() => {
+    if (!isEdit || !formData.client_id || clients.length === 0) return;
+    if (selectedClient?.client_id === formData.client_id) return;
+    const found = clients.find((c) => c.client_id === formData.client_id);
+    if (found) setSelectedClient(found);
+  }, [isEdit, formData.client_id, clients]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClients = async () => {
     try {
@@ -84,12 +127,16 @@ export default function CommandeForm() {
   };
 
   const fetchProduits = async () => {
+    setLoadingProduits(true);
     try {
       const data = await listProducts({ actif: true, page_size: 100 });
-      setProduits(Array.isArray(data) ? data : (data?.items || []));
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      setProduits(items);
     } catch (error) {
-      toast.error('Erreur chargement produits');
+      toast.error('Erreur chargement produits: ' + (error.response?.data?.detail || error.message));
       setProduits([]);
+    } finally {
+      setLoadingProduits(false);
     }
   };
 
@@ -102,6 +149,9 @@ export default function CommandeForm() {
   // --- Doublon detection debounce (800ms) ---
   const triggerDoublonCheck = useCallback((data) => {
     if (doublonTimerRef.current) clearTimeout(doublonTimerRef.current);
+
+    // Mode édition : on modifie une commande existante, pas de détection de doublon
+    if (isEdit) return;
 
     // Pas assez d'infos pour vérifier
     if (!data.client_id || data.lignes.length === 0) return;
@@ -133,7 +183,7 @@ export default function CommandeForm() {
         console.warn('Doublon check error:', err);
       }
     }, 800);
-  }, [selectedClient]);
+  }, [selectedClient, isEdit]);
 
   // Déclencher le check quand client ou lignes changent
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +227,8 @@ export default function CommandeForm() {
 
       // Auto-populate prix_unitaire when product is selected
       if (field === 'produit_id') {
-        const produit = produits.find(p => p.product_id === value);
+        // Try both product_id (legacy) and reference (current)
+        const produit = produits.find(p => p.product_id === value || p.reference === value);
         if (produit) {
           newLignes[index].prix_unitaire = produit.prix_vente;
         }
@@ -236,11 +287,35 @@ export default function CommandeForm() {
 
     setLoading(true);
     try {
-      const commande = await createCommande(formData, submit);
-      toast.success(submit ? 'Commande soumise avec succès' : 'Brouillon enregistré');
-      navigate(`/commandes/${commande.commande_id}`);
+      // Map lignes to API format: API expects `product_id` (UUID). The UI stores the
+      // product reference (ex: FABS-CI99) in `produit_id`, so resolve it to the real
+      // product_id when the produit has one, else keep the value as-is.
+      const payload = {
+        ...formData,
+        lignes: formData.lignes.map((ligne) => {
+          const produit = produits.find(
+            (p) => p.product_id === ligne.produit_id || p.reference === ligne.produit_id
+          );
+          return {
+            product_id: produit?.product_id || ligne.produit_id,
+            quantite: ligne.quantite,
+            prix_unitaire: ligne.prix_unitaire,
+            remise_ligne: ligne.remise_ligne || 0,
+          };
+        }),
+      };
+      let commande;
+      if (isEdit) {
+        commande = await updateCommande(editId, payload);
+        toast.success('Commande modifiée avec succès');
+        navigate(`/commandes/${editId}`);
+      } else {
+        commande = await createCommande(payload, submit);
+        toast.success(submit ? 'Commande soumise avec succès' : 'Brouillon enregistré');
+        navigate(`/commandes/${commande.commande_id}`);
+      }
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la création');
+      toast.error(error.response?.data?.detail || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création'));
     } finally {
       setLoading(false);
     }
@@ -294,7 +369,7 @@ export default function CommandeForm() {
           Retour
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Nouvelle commande</h1>
+          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">{isEdit ? 'Modifier la commande' : 'Nouvelle commande'}</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Étape {step} sur 3</p>
         </div>
       </div>
@@ -427,7 +502,7 @@ export default function CommandeForm() {
                               >
                                 <span className="truncate">
                                   {ligne.produit_id
-                                    ? produits.find(p => p.product_id === ligne.produit_id)?.titre || 'Sélectionner'
+                                    ? produits.find(p => p.product_id === ligne.produit_id || p.reference === ligne.produit_id)?.titre || 'Sélectionner'
                                     : 'Sélectionner un produit'}
                                 </span>
                                 <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
@@ -437,27 +512,40 @@ export default function CommandeForm() {
                               <Command>
                                 <CommandInput placeholder="Rechercher produit..." />
                                 <CommandList>
-                                  <CommandEmpty>Aucun produit trouvé</CommandEmpty>
-                                  {Array.isArray(produits) && produits.map((produit) => (
-                                    <CommandItem
-                                      key={produit.product_id}
-                                      value={`${produit.titre} ${produit.reference}`}
-                                      onSelect={() => {
-                                        updateLigne(index, 'produit_id', produit.product_id);
-                                        setOpenProduitIdx(null);
-                                      }}
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 shrink-0 ${ligne.produit_id === produit.product_id ? 'opacity-100' : 'opacity-0'}`}
-                                      />
-                                      <div>
-                                        <div className="font-medium">{produit.titre}</div>
-                                        <div className="text-xs text-gray-500 dark:text-white/50">
-                                          {produit.reference} — {formatCurrency(produit.prix_vente)}
-                                        </div>
+                                  {loadingProduits ? (
+                                    <div className="bg-blue-50 dark:bg-blue-950 p-4 text-center text-sm text-blue-600 dark:text-blue-300">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                        Chargement des produits...
                                       </div>
-                                    </CommandItem>
-                                  ))}
+                                    </div>
+                                  ) : produits.length === 0 ? (
+                                    <div className="bg-amber-50 dark:bg-amber-950 p-4 text-center text-sm text-amber-600 dark:text-amber-300">
+                                      Aucun produit trouvé
+                                    </div>
+                                  ) : (
+                                    Array.isArray(produits) && produits.map((produit) => (
+                                      <CommandItem
+                                        key={produit.reference || produit.product_id}
+                                        value={`${produit.titre} ${produit.reference}`}
+                                        onSelect={() => {
+                                          // Use reference as the unique key (FABS-CI79, etc.)
+                                          updateLigne(index, 'produit_id', produit.reference || produit.product_id);
+                                          setOpenProduitIdx(null);
+                                        }}
+                                      >
+                                        <Check
+                                          className={`mr-2 h-4 w-4 shrink-0 ${(ligne.produit_id === produit.reference || ligne.produit_id === produit.product_id) ? 'opacity-100' : 'opacity-0'}`}
+                                        />
+                                        <div>
+                                          <div className="font-medium">{produit.titre}</div>
+                                          <div className="text-xs text-gray-500 dark:text-white/50">
+                                            {produit.reference} — {formatCurrency(produit.prix_vente)}
+                                          </div>
+                                        </div>
+                                      </CommandItem>
+                                    ))
+                                  )}
                                 </CommandList>
                               </Command>
                             </PopoverContent>
@@ -551,7 +639,7 @@ export default function CommandeForm() {
               <h4 className="font-semibold mb-3">Lignes de commande</h4>
               <div className="space-y-2">
                 {formData.lignes.map((ligne, index) => {
-                  const produit = produits.find(p => p.product_id === ligne.produit_id);
+                  const produit = produits.find(p => p.product_id === ligne.produit_id || p.reference === ligne.produit_id);
                   return (
                     <div key={index} className="flex justify-between text-sm">
                       <span>
@@ -647,24 +735,38 @@ export default function CommandeForm() {
                 Précédent
               </Button>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => handleSubmit(false)}
-                  disabled={loading}
-                  data-testid="btn-save-draft"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Enregistrer brouillon
-                </Button>
-                <Button
-                  onClick={() => handleSubmit(true)}
-                  disabled={loading}
-                  className="bg-[#FF6200] hover:bg-[#E55900]"
-                  data-testid="btn-submit"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Soumettre
-                </Button>
+                {isEdit ? (
+                  <Button
+                    onClick={() => handleSubmit(false)}
+                    disabled={loading}
+                    className="bg-[#FF6200] hover:bg-[#E55900]"
+                    data-testid="btn-save-edit"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer les modifications
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleSubmit(false)}
+                      disabled={loading}
+                      data-testid="btn-save-draft"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Enregistrer brouillon
+                    </Button>
+                    <Button
+                      onClick={() => handleSubmit(true)}
+                      disabled={loading}
+                      className="bg-[#FF6200] hover:bg-[#E55900]"
+                      data-testid="btn-submit"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Soumettre
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>

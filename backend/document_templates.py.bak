@@ -79,13 +79,12 @@ TEMPLATE_1_CLASSIQUE = """
         <table>
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Matière</th>
+                    <th>Classe</th>
                     <th>Code Article</th>
-                    <th>Désignation</th>
-                    <th style="text-align: center;">Qté</th>
-                    <th style="text-align: right;">Prix Unitaire</th>
-                    <th style="text-align: right;">Montant</th>
+                    <th>Référence</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th>Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -184,13 +183,12 @@ TEMPLATE_2_MODERNE_BLEU = """
         <table>
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Matière</th>
+                    <th>Classe</th>
                     <th>Code Article</th>
-                    <th>Désignation</th>
-                    <th style="text-align: center;">Qté</th>
-                    <th style="text-align: right;">Prix Unitaire</th>
-                    <th style="text-align: right;">Montant</th>
+                    <th>Référence</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th>Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -273,13 +271,12 @@ TEMPLATE_3_PREMIUM = """
         <table>
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Matière</th>
+                    <th>Classe</th>
                     <th>Code Article</th>
-                    <th>Désignation</th>
-                    <th style="text-align: center;">Qté</th>
-                    <th style="text-align: right;">Prix Unitaire</th>
-                    <th style="text-align: right;">Montant</th>
+                    <th>Référence</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th>Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -365,13 +362,12 @@ TEMPLATE_4_CORPORATE_ORANGE = """
         <table>
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Matière</th>
+                    <th>Classe</th>
                     <th>Code Article</th>
-                    <th>Désignation</th>
-                    <th style="text-align: center;">Qté</th>
-                    <th style="text-align: right;">Prix Unitaire</th>
-                    <th style="text-align: right;">Montant</th>
+                    <th>Référence</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th>Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -465,13 +461,12 @@ TEMPLATE_5_ELEGANT_ADMINISTRATIF = """
         <table>
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Matière</th>
+                    <th>Classe</th>
                     <th>Code Article</th>
-                    <th>Désignation</th>
-                    <th style="text-align: center;">Qté</th>
-                    <th style="text-align: right;">Prix Unitaire</th>
-                    <th style="text-align: right;">Montant</th>
+                    <th>Référence</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th>Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -516,23 +511,17 @@ def format_fcfa(montant: float) -> str:
 
 
 def build_articles_rows(articles: List[Dict]) -> str:
-    """Génère les lignes HTML du tableau d'articles avec Niveau et Matière"""
+    """Génère les lignes HTML du tableau d'articles"""
     rows = []
     for article in articles:
-        # Extraire niveau et matière du produit enrichi
-        niveau = article.get('niveau_scolaire') or article.get('classe', '')
-        matiere = article.get('matiere', '')
-        code_article = str(article.get('code_article') or article.get('produit_id', ''))[:14]
-        
         row = f"""
         <tr>
-            <td><strong>{niveau}</strong></td>
-            <td>{article.get('matiere', '')}</td>
-            <td>{code_article}</td>
+            <td>{article.get('classe', '')}</td>
+            <td>{str(article.get('code_article') or article.get('produit_id', ''))[:14]}</td>
             <td>{article.get('designation', '')}</td>
-            <td style="text-align: center;">{article.get('quantite', 0)}</td>
-            <td style="text-align: right;">{format_fcfa(float(article.get('prix_unitaire', 0)))}</td>
-            <td style="text-align: right;">{format_fcfa(float(article.get('montant_ht', 0)))}</td>
+            <td>{article.get('quantite', 0)}</td>
+            <td>{format_fcfa(float(article.get('prix_unitaire', 0)))}</td>
+            <td>{format_fcfa(float(article.get('montant_ht', 0)))}</td>
         </tr>
         """
         rows.append(row)

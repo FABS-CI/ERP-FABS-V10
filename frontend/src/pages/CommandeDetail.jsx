@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Package, Truck, FileText, AlertCircle, Receipt, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Package, Truck, FileText, AlertCircle, Receipt, Trash2, Pencil } from 'lucide-react';
 import {
   getCommande,
   validerCommande,
@@ -17,6 +17,7 @@ import {
   deleteCommande,
 } from '../services/commandesApi';
 import { generateFactureFromCommande } from '../services/facturesApi';
+import { livrerBon } from '../services/bonsLivraisonApi';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -63,8 +64,8 @@ export default function CommandeDetail() {
     fetchCommande();
   }, [id]);
 
-  const fetchCommande = async () => {
-    setLoading(true);
+  const fetchCommande = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const data = await getCommande(id);
       // S'assurer que les propriétés essentielles sont des tableaux
@@ -75,27 +76,48 @@ export default function CommandeDetail() {
       };
       setCommande(commandeData);
     } catch (error) {
-      toast.error('Erreur lors du chargement de la commande');
-      navigate('/commandes');
+      if (!silent) {
+        toast.error('Erreur lors du chargement de la commande');
+        navigate('/commandes');
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   const handleAction = async (action, actionFn) => {
     setActionLoading(true);
     try {
-      const updated = await actionFn(id);
-      // S'assurer que les propriétés essentielles sont des tableaux
-      const commandeData = {
-        ...updated,
-        lignes: Array.isArray(updated?.lignes) ? updated.lignes : [],
-        historique: Array.isArray(updated?.historique) ? updated.historique : [],
-      };
-      setCommande(commandeData);
+      await actionFn(id);
+      // Les endpoints d'action (valider/preparer/livrer) renvoient une commande SANS
+      // les lignes. On recharge donc la commande complète pour garder lignes + statut.
+      await fetchCommande({ silent: true });
       toast.success(`Commande ${action} avec succès`);
     } catch (error) {
       toast.error(error.response?.data?.detail || `Erreur lors de l'action: ${action}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Livraison : si un (des) bon(s) de livraison existe(nt), on livre via le BL
+  // (déduction de stock garantie). Sinon, fallback sur l'action commande directe.
+  const handleLivrer = async () => {
+    setActionLoading(true);
+    try {
+      const bls = commande?.transformations?.bons_livraison || [];
+      const aLivrer = bls.filter((bl) => bl.statut !== 'livre');
+      if (aLivrer.length > 0) {
+        for (const bl of aLivrer) {
+          await livrerBon(bl.bl_id);
+        }
+      } else {
+        await livrerCommande(id);
+      }
+      await fetchCommande({ silent: true });
+      toast.success('Commande livrée avec succès');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erreur lors de la livraison");
     } finally {
       setActionLoading(false);
     }
@@ -108,14 +130,8 @@ export default function CommandeDetail() {
     }
     setActionLoading(true);
     try {
-      const updated = await annulerCommande(id, cancelMotif);
-      // S'assurer que les propriétés essentielles sont des tableaux
-      const commandeData = {
-        ...updated,
-        lignes: Array.isArray(updated?.lignes) ? updated.lignes : [],
-        historique: Array.isArray(updated?.historique) ? updated.historique : [],
-      };
-      setCommande(commandeData);
+      await annulerCommande(id, cancelMotif);
+      await fetchCommande({ silent: true });
       toast.success('Commande annulée');
       setShowCancelDialog(false);
       setCancelMotif('');
@@ -279,6 +295,18 @@ export default function CommandeDetail() {
             onSendWhatsApp={handleSendWhatsApp}
             onSendEmail={handleSendEmail}
           />
+          {commande.statut === 'brouillon' && (
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/commandes/${id}/modifier`)}
+              disabled={actionLoading}
+              data-testid="btn-modifier"
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Modifier
+            </Button>
+          )}
+
           {commande.statut === 'en_attente' && canValidate() && (
             <Button
               onClick={() => handleAction('validée', validerCommande)}
@@ -305,7 +333,7 @@ export default function CommandeDetail() {
 
           {commande.statut === 'preparee' && canDeliver() && (
             <Button
-              onClick={() => handleAction('livrée', livrerCommande)}
+              onClick={handleLivrer}
               disabled={actionLoading}
               className="bg-green-600 hover:bg-green-700"
               data-testid="btn-livrer"
