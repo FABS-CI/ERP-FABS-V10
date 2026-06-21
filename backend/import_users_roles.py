@@ -152,9 +152,16 @@ def main(apply=False, purge=False):
         deleted_roles = roles_col.delete_many({}).deleted_count
         print(f"🗑️  Purge: {deleted_users} utilisateurs (sauf super_admin), {deleted_roles} rôles supprimés")
     
-    # Insérer les rôles
-    res_roles = roles_col.insert_many(list(roles_by_type.values()))
-    print(f"✅ {len(res_roles.inserted_ids)} rôles insérés")
+    # Insérer les rôles (idempotent : upsert par role_name → pas de doublon)
+    nb_roles = 0
+    for role_doc in roles_by_type.values():
+        roles_col.update_one(
+            {"role_name": role_doc["role_name"]},
+            {"$set": role_doc},
+            upsert=True,
+        )
+        nb_roles += 1
+    print(f"✅ {nb_roles} rôles synchronisés (upsert, pas de doublon)")
     
     # Insérer les utilisateurs (sauf si déjà existants)
     users_to_insert = []
