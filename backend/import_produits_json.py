@@ -12,7 +12,7 @@ DB_NAME = os.getenv("DB_NAME", "fabsci_erp")
 def map_produit(j):
     now = datetime.now(timezone.utc).isoformat()
     return {
-        "produit_id": str(uuid.uuid4()),
+        "product_id": str(uuid.uuid4()),
         "code_article": j.get("code") or j.get("reference") or "",
         "titre": j.get("reference") or j.get("titre") or "",
         "categorie": j.get("categorie") or "premier_cycle",

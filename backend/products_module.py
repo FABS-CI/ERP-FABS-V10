@@ -428,7 +428,7 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
     ):
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
-        doc = await db.produits.find_one({"product_id": product_id}, {"_id": 0})
+        doc = await resolve_produit(db, product_id, {"_id": 0})
         _ensure(doc is not None, 404, "Produit introuvable")
         return ProductOut(**project_product(doc, see_prix_achat=me["role"] in FINANCIAL_ROLES))
 
@@ -496,8 +496,9 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         updates["updated_at"] = _now_iso()
 
         # Get old values for audit
-        old_product = await db.produits.find_one({"product_id": product_id}, {"_id": 0})
+        old_product = await resolve_produit(db, product_id, {"_id": 0})
         _ensure(old_product is not None, 404, "Produit introuvable")
+        product_id = old_product.get("product_id", product_id)
 
         # Si le titre change ET que la classif n'est pas explicitement fournie,
         # re-suggérer matiere/cycle/niveau pour rester cohérent.
@@ -551,8 +552,9 @@ def build_products_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_even
         _ensure(me["role"] in WRITE_ROLES, 403, "Désactivation non autorisée")
         
         # Get old values for audit
-        old_product = await db.produits.find_one({"product_id": product_id}, {"_id": 0})
+        old_product = await resolve_produit(db, product_id, {"_id": 0})
         _ensure(old_product is not None, 404, "Produit introuvable")
+        product_id = old_product.get("product_id", product_id)
         
         result = await db.produits.find_one_and_update(
             {"product_id": product_id},

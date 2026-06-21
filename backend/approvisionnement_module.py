@@ -199,7 +199,7 @@ async def create_approvisionnement(
     
     # Vérifier que tous les produits existent
     for ligne in data.lignes:
-        produit = await db.produits.find_one({"product_id": ligne.produit_id})
+        produit = await db.produits.find_one({"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}]})
         _ensure(produit is not None, 404, f"Produit {ligne.produit_id} introuvable")
     
     approvisionnement_id = str(uuid.uuid4())
@@ -250,7 +250,7 @@ async def valider_approvisionnement(
     
     for ligne in appro["lignes"]:
         # Récupérer le produit actuel
-        produit = await db.produits.find_one({"product_id": ligne["produit_id"]})
+        produit = await db.produits.find_one({"$or": [{"product_id": ligne["produit_id"]}, {"produit_id": ligne["produit_id"]}]})
         if produit:
             stock_avant = produit.get("stock_actuel", 0)
             stock_apres = stock_avant + ligne["quantite"]

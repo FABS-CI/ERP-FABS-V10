@@ -84,7 +84,7 @@ def build_rapports_router(db, resolve_user):
             
             for ligne in lignes:
                 produit_id = ligne.get("produit_id")
-                produit = await db.produits.find_one({"product_id": produit_id}, {"_id": 0})
+                produit = await db.produits.find_one({"$or": [{"product_id": produit_id}, {"produit_id": produit_id}]}, {"_id": 0})
                 
                 if not produit:
                     continue

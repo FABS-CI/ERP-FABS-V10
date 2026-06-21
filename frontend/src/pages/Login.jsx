@@ -304,25 +304,35 @@ export default function Login() {
         @media (max-width: 1024px) {
           .login-page-shell { padding-left: 8%; justify-content: center; }
         }
-        /* Mobile : carte centrée, fond assombri uniformément, padding réduit */
+        /* Mobile : on GARDE le branding + l'image des livres visibles en haut,
+           la carte vient en dessous. Fond visible (pas assombri uniformément). */
         @media (max-width: 768px) {
           .login-page-root {
             background-position: center top;
+            background-size: cover;
+            display: block !important;
+          }
+          .login-mobile-branding {
+            display: flex !important;
           }
           .login-page-shell {
             padding-left: 0 !important;
             padding-right: 0 !important;
-            justify-content: center !important;
-            align-items: center;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
           }
           .login-card-box {
-            padding: 32px 22px;
+            padding: 30px 22px;
             max-width: 100%;
           }
+          /* Overlay léger juste pour la lisibilité globale, image toujours visible */
           .login-overlay-mobile {
-            background: rgba(8,16,28,0.78) !important;
+            background: linear-gradient(180deg, rgba(13,27,42,0.30) 0%, rgba(13,27,42,0.55) 100%) !important;
           }
         }
+        /* Le branding mobile est masqué sur desktop (l'image de fond suffit) */
+        .login-mobile-branding { display: none; }
         @media (max-width: 380px) {
           .login-card-box { padding: 26px 16px; }
         }
@@ -348,6 +358,32 @@ export default function Login() {
           background: "radial-gradient(circle, rgba(249,115,22,0.06) 0%, transparent 70%)",
           filter: "blur(50px)", pointerEvents: "none",
         }} />
+
+      {/* ── Branding mobile (logo + nom + slogan), visible uniquement < 768px ── */}
+      <div
+        className="login-mobile-branding relative z-10 w-full max-w-sm flex-col items-center text-center"
+        style={{ marginBottom: 22, gap: 8 }}
+      >
+        <div
+          style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: "linear-gradient(135deg,#F97316,#FB923C)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 10px 30px rgba(249,115,22,0.45)",
+          }}
+        >
+          <span style={{ fontSize: 32, fontWeight: 800, color: "#fff", fontFamily: "Inter, sans-serif" }}>F</span>
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "0.04em", textShadow: "0 2px 12px rgba(0,0,0,0.7)", marginTop: 4 }}>
+          ÉDITIONS FABS-CI
+        </h2>
+        <p style={{ fontSize: 13, color: "#E2E8F0", textShadow: "0 1px 8px rgba(0,0,0,0.7)" }}>
+          Plateforme de gestion complète de l'entreprise
+        </p>
+        <p style={{ fontSize: 12, fontStyle: "italic", color: "#FBBF24", textShadow: "0 1px 8px rgba(0,0,0,0.7)" }}>
+          Une innovation pour une école de qualité
+        </p>
+      </div>
 
       {/* Carte login */}
       <div
