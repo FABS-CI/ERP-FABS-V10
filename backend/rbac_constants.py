@@ -77,7 +77,7 @@ MODULE_PERMISSIONS = {
         "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 2,
         "directeur_commercial": 1,  # RBAC 2026-06-17: read only
-        "gestionnaire_stock": 1,
+        "gestionnaire_stock": 0,
         "responsable_magasinier": 1,
         "secretariat": 2,
         "service_logistique": 0,
@@ -110,7 +110,7 @@ MODULE_PERMISSIONS = {
         "directeur_general": 0,  # RBAC 2026-06-17
         "comptable": 0,  # RBAC 2026-06-17: comptable retiré
         "directeur_commercial": 1,  # RBAC 2026-06-17: read only
-        "gestionnaire_stock": 1,  # RBAC 2026-06-17: read only (était 2)
+        "gestionnaire_stock": 0,  # RBAC 2026-06-17: read only (était 2)
         "responsable_magasinier": 1,
         "secretariat": 0,
         "service_logistique": 2,
