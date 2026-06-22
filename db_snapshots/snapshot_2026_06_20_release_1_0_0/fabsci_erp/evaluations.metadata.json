@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"evaluation_id":{"$numberInt":"1"}},"name":"evaluation_id_1","unique":true},{"v":{"$numberInt":"2"},"key":{"employe_id":{"$numberInt":"1"}},"name":"employe_id_1"}],"uuid":"84e02c0fca774f629f9dd4ca9ae52800","collectionName":"evaluations","type":"collection"}

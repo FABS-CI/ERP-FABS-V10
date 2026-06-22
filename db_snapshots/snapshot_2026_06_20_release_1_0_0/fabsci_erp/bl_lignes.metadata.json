@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"bl_id":{"$numberInt":"1"}},"name":"idx_bl_lignes_bl_id"}],"uuid":"6b88920d3ea34e808242a6054353d7a3","collectionName":"bl_lignes","type":"collection"}
