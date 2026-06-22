@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("fabsci.stock")
 
-READ_ROLES  = {"super_admin", "directeur_general", "gestionnaire_stock", "responsable_magasinier", "service_logistique"}
+READ_ROLES  = {"super_admin", "directeur_general", "gestionnaire_stock", "responsable_magasinier"}
 WRITE_ROLES = {"super_admin", "directeur_general", "gestionnaire_stock"}
 
 TypeMouvement = Literal["entree", "sortie", "ajustement", "retour", "specimen_gratuit", "inventaire", "transfert"]
