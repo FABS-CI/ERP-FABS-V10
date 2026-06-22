@@ -261,7 +261,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
 
-        produit = await db.produits.find_one({"produit_id": payload.produit_id}, {"_id": 0})
+        produit = await db.produits.find_one(
+            {"$or": [{"product_id": payload.produit_id}, {"produit_id": payload.produit_id}]},
+            {"_id": 0}
+        )
         _ensure(produit is not None, 404, "Produit introuvable")
 
         stock_avant = produit.get("stock_actuel", 0)
@@ -271,7 +274,7 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
             stock_apres = max(0, stock_avant - payload.quantite)
 
         await db.produits.update_one(
-            {"produit_id": payload.produit_id},
+            {"$or": [{"product_id": payload.produit_id}, {"produit_id": payload.produit_id}]},
             {"$set": {"stock_actuel": stock_apres, "updated_at": _now_iso()}}
         )
 
@@ -618,7 +621,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         lignes = await lignes_cursor.to_list(500)
         lignes_out = []
         for ligne in lignes:
-            prod = await db.produits.find_one({"produit_id": ligne["produit_id"]}, {"_id": 0, "reference": 1, "titre": 1})
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": ligne["produit_id"]}, {"produit_id": ligne["produit_id"]}]},
+                {"_id": 0, "reference": 1, "titre": 1}
+            )
             lignes_out.append({
                 "ligne_id": ligne["ligne_id"],
                 "produit_id": ligne["produit_id"],
@@ -649,7 +655,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         lignes_out = []
         total_ecart = 0
         for ligne in payload.lignes:
-            produit = await db.produits.find_one({"produit_id": ligne.produit_id}, {"_id": 0})
+            produit = await db.produits.find_one(
+                {"$or": [{"product_id": ligne.produit_id}, {"produit_id": ligne.produit_id}]},
+                {"_id": 0}
+            )
             _ensure(produit is not None, 404, f"Produit {ligne.produit_id} introuvable")
 
             quantite_theorique = produit.get("stock_actuel", 0)
@@ -732,7 +741,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         for ligne in lignes:
             if ligne["ecart"] != 0:
                 mouvement_id = f"mvt_{uuid.uuid4().hex[:12]}"
-                produit = await db.produits.find_one({"produit_id": ligne["produit_id"]}, {"_id": 0})
+                produit = await db.produits.find_one(
+                    {"$or": [{"product_id": ligne["produit_id"]}, {"produit_id": ligne["produit_id"]}]},
+                    {"_id": 0}
+                )
                 stock_avant = produit.get("stock_actuel", 0) if produit else 0
                 stock_apres = ligne["quantite_comptee"]
 
@@ -774,7 +786,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         updated = await db.inventaires.find_one({"inventaire_id": inventaire_id}, {"_id": 0})
         lignes_out = []
         for ligne in lignes:
-            prod = await db.produits.find_one({"produit_id": ligne["produit_id"]}, {"_id": 0})
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": ligne["produit_id"]}, {"produit_id": ligne["produit_id"]}]},
+                {"_id": 0}
+            )
             lignes_out.append({
                 "ligne_id": ligne["ligne_id"],
                 "produit_id": ligne["produit_id"],
@@ -883,7 +898,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
         me = await resolve_user(request, authorization)
         _ensure(me["role"] in WRITE_ROLES, 403, "Accès refusé")
 
-        produit = await db.produits.find_one({"produit_id": payload.produit_id}, {"_id": 0})
+        produit = await db.produits.find_one(
+            {"$or": [{"product_id": payload.produit_id}, {"produit_id": payload.produit_id}]},
+            {"_id": 0}
+        )
         _ensure(produit is not None, 404, "Produit introuvable")
         _ensure(
             payload.depot_source != payload.depot_destination,
@@ -1066,7 +1084,10 @@ def build_stock_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_event=N
 
         enriched = []
         for r in result:
-            prod = await db.produits.find_one({"produit_id": r["_id"]}, {"_id": 0})
+            prod = await db.produits.find_one(
+                {"$or": [{"product_id": r["_id"]}, {"produit_id": r["_id"]}]},
+                {"_id": 0}
+            )
             if prod:
                 enriched.append({
                     "produit_id": r["_id"],

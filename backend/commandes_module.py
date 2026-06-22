@@ -330,6 +330,7 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
         authorization: Optional[str] = Header(default=None),
         statut: Optional[Statut] = None,
         client_id: Optional[str] = None,
+        produit_id: Optional[str] = None,
         date_debut: Optional[str] = None,
         date_fin: Optional[str] = None,
         q: Optional[str] = None,
@@ -344,6 +345,8 @@ def build_commandes_router(db: AsyncIOMotorDatabase, resolve_user, log_audit_eve
             filters["statut"] = statut
         if client_id:
             filters["client_id"] = client_id
+        if produit_id:
+            filters["lignes_commande.produit_id"] = produit_id
         if date_debut or date_fin:
             date_filter = {}
             if date_debut:

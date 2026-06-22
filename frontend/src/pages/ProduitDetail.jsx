@@ -170,14 +170,8 @@ export default function ProduitDetail() {
                 </dl>
               </div>
             )}
-            {tab !== "info" && (
-              <div data-testid={`produit-detail-empty-${tab}`} className="bg-white dark:bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-10 text-center">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#FF6200] font-semibold">Bientôt</p>
-                <p className="text-sm text-gray-600 dark:text-white/60 mt-2">
-                  Cet onglet sera alimenté quand les modules {tab === "mouvements" ? "Stock (Sprint 9)" : "Commandes (Sprint 6)"} seront livrés.
-                </p>
-              </div>
-            )}
+            {tab === "mouvements" && <OngletMouvementsStock productId={id} />}
+            {tab === "commandes" && <OngletHistoriqueCommandes productId={id} />}
           </div>
         </div>
       </div>
@@ -185,6 +179,210 @@ export default function ProduitDetail() {
       <ProductFormDialog open={edit} onClose={() => setEdit(false)} product={product}
         onSaved={(saved) => { setProduct(saved); setEdit(false); }} />
     </DashboardLayout>
+  );
+}
+
+// ============ ONGLET MOUVEMENTS STOCK ============
+function OngletMouvementsStock({ productId }) {
+  const [mouvements, setMouvements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const limit = 20;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/stock/mouvements?produit_id=${productId}&type=${typeFilter}&skip=${page * limit}&limit=${limit}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMouvements(data.items || []);
+        }
+      } catch (e) {
+        console.error('Erreur mouvements:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [productId, typeFilter, page]);
+
+  const typeColors = {
+    entree: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
+    sortie: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
+    retour: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
+    ajustement: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Filtres */}
+      <div className="flex gap-2">
+        <select 
+          value={typeFilter} 
+          onChange={(e) => { setTypeFilter(e.target.value); setPage(0); }}
+          className="px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-[#0b1e30] text-sm"
+        >
+          <option value="">Tous les types</option>
+          <option value="entree">Entrée</option>
+          <option value="sortie">Sortie</option>
+          <option value="retour">Retour</option>
+          <option value="ajustement">Ajustement</option>
+        </select>
+      </div>
+
+      {/* Tableau */}
+      <div className="bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Chargement...</div>
+        ) : mouvements.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">Aucun mouvement trouvé</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Date</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Type</th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-white/70">Quantité</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Motif</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Utilisateur</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Référence</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+              {mouvements.map((m) => (
+                <tr key={m.mouvement_id} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">{new Date(m.created_at).toLocaleString("fr-FR")}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${typeColors[m.type_mouvement] || 'bg-gray-100'}`}>
+                      {m.type_mouvement}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">{m.quantite}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-white/70 text-xs">{m.motif || "—"}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-white/70 text-xs">{m.utilisateur || "—"}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-white/70 text-xs font-mono">{m.commande_id || m.bl_id || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {mouvements.length > 0 && (
+        <div className="flex justify-between items-center">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="px-3 py-2 bg-gray-200 dark:bg-white/10 rounded disabled:opacity-50">Précédent</button>
+          <span className="text-sm text-gray-600 dark:text-white/60">Page {page + 1}</span>
+          <button onClick={() => setPage(page + 1)} className="px-3 py-2 bg-gray-200 dark:bg-white/10 rounded">Suivant</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ ONGLET HISTORIQUE COMMANDES ============
+function OngletHistoriqueCommandes({ productId }) {
+  const [commandes, setCommandes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statutFilter, setStatutFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const limit = 20;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/commandes?produit_id=${productId}&statut=${statutFilter}&skip=${page * limit}&limit=${limit}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCommandes(data.items || []);
+        }
+      } catch (e) {
+        console.error('Erreur commandes:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [productId, statutFilter, page]);
+
+  const statutColors = {
+    brouillon: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100",
+    confirmee: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
+    en_cours: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
+    livree: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
+    annulee: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Filtres */}
+      <div className="flex gap-2">
+        <select 
+          value={statutFilter} 
+          onChange={(e) => { setStatutFilter(e.target.value); setPage(0); }}
+          className="px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-[#0b1e30] text-sm"
+        >
+          <option value="">Tous les statuts</option>
+          <option value="brouillon">Brouillon</option>
+          <option value="confirmee">Confirmée</option>
+          <option value="en_cours">En cours</option>
+          <option value="livree">Livrée</option>
+          <option value="annulee">Annulée</option>
+        </select>
+      </div>
+
+      {/* Tableau */}
+      <div className="bg-white dark:bg-[#0b1e30]/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Chargement...</div>
+        ) : commandes.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">Aucune commande trouvée</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Commande</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Client</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Date</th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-white/70">Quantité</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-white/70">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+              {commandes.map((c) => (
+                <tr key={c.commande_id} className="hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer">
+                  <td className="px-4 py-3 font-mono text-xs text-[#FF6200]">{c.reference || c.commande_id}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">{c.client_nom || c.client_id}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-white/70 text-sm">{new Date(c.date_commande).toLocaleDateString("fr-FR")}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">{c.quantite_produit || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${statutColors[c.statut] || 'bg-gray-100'}`}>
+                      {c.statut}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {commandes.length > 0 && (
+        <div className="flex justify-between items-center">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="px-3 py-2 bg-gray-200 dark:bg-white/10 rounded disabled:opacity-50">Précédent</button>
+          <span className="text-sm text-gray-600 dark:text-white/60">Page {page + 1}</span>
+          <button onClick={() => setPage(page + 1)} className="px-3 py-2 bg-gray-200 dark:bg-white/10 rounded">Suivant</button>
+        </div>
+      )}
+    </div>
   );
 }
 
