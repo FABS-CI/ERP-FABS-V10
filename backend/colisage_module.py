@@ -20,10 +20,11 @@ logger = logging.getLogger("fabsci.colisage")
 
 READ_ROLES = [
     "super_admin", "admin", "gestionnaire", "preparateur",
-    "directeur_commercial", "directeur_general", "comptable", "livreur"
+    "directeur_commercial", "directeur_general", "comptable", "livreur",
+    "responsable_magasinier"
 ]
-WRITE_ROLES = ["super_admin", "admin", "gestionnaire", "preparateur"]
-VALIDATE_ROLES = ["super_admin", "admin", "gestionnaire"]
+WRITE_ROLES = ["super_admin", "admin", "gestionnaire", "preparateur", "responsable_magasinier"]
+VALIDATE_ROLES = ["super_admin", "admin", "gestionnaire", "responsable_magasinier"]
 DELETE_ROLES = ["super_admin", "admin"]
 DELIVERY_ROLES = ["super_admin", "admin", "gestionnaire", "livreur"]
 

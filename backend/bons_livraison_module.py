@@ -20,7 +20,7 @@ from sanitizers import sanitize_str
 
 logger = logging.getLogger("fabsci.bons_livraison")
 
-READ_ROLES = {"super_admin", "directeur_general", "service_logistique", "responsable_magasinier", "comptable", "directeur_commercial"}
+READ_ROLES = {"super_admin", "directeur_general", "service_logistique", "comptable", "directeur_commercial"}
 WRITE_ROLES = {"super_admin", "directeur_general", "service_logistique", "comptable", "directeur_commercial"}
 
 StatutBL = Literal["en_preparation", "pret", "livre", "annule"]

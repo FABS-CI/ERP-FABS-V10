@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("fabsci.bons_retour")
 
-READ_ROLES = {"super_admin", "directeur_general", "service_logistique", "responsable_magasinier", "comptable", "gestionnaire_stock"}
+READ_ROLES = {"super_admin", "directeur_general", "service_logistique", "comptable", "gestionnaire_stock"}
 WRITE_ROLES = {"super_admin", "directeur_general", "service_logistique", "comptable", "gestionnaire_stock"}
 
 StatutBR = Literal["en_attente", "valide", "avoir_genere", "annule"]
