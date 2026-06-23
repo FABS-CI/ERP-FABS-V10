@@ -57,7 +57,7 @@ export default function Dashboard() {
               Tableau de bord
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-[#0A2540] dark:text-white mt-1">
-              Bonjour, {user?.nom_complet?.split(" ")[0] || "Bienvenue"}.
+              Bonjour, {user?.nom_complet?.split(" ").pop() || "Bienvenue"}.
             </h1>
             <p className="text-sm text-gray-600 dark:text-white/60 mt-1">
               Vue d'ensemble de l'activité — Année scolaire {COMPANY.anneeScolaire}.
