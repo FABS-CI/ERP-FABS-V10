@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import ClientFormDialog from "../components/clients/ClientFormDialog";
 import { getClient, disableClient, TYPE_COLOR } from "../services/clientsApi";
 import { getCommandes } from "../services/commandesApi";
@@ -385,7 +386,7 @@ export default function ClientDetail() {
               {canCommande && client.actif && (
                 <button
                   onClick={() => navigate(`/commandes/nouvelle?client_id=${client.client_id}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-[#FF6200] hover:bg-[#E55900]"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-[#E55900]"
                   data-testid="btn-nouvelle-commande"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
@@ -573,7 +574,7 @@ function QuickAction({ icon: Icon, label, onClick, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10 hover:bg-[#FF6200]/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#0A2540] dark:text-white/80 bg-gray-50 dark:bg-white dark:bg-[#0b1e30]/5 border border-gray-200 dark:border-white/10 hover:bg-blue-600/5 hover:border-[#FF6200]/30 hover:text-[#FF6200] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <Icon className="w-3.5 h-3.5" />
       {label}
@@ -665,7 +666,7 @@ function PaiementQuickDialog({ client, onClose, onCreated }) {
               Annuler
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2 rounded-lg bg-[#FF6200] hover:bg-[#E65800] text-white text-sm font-semibold transition disabled:opacity-50">
+              className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition disabled:opacity-50">
               {loading ? "Enregistrement…" : "Enregistrer"}
             </button>
           </div>
@@ -1168,7 +1169,7 @@ function HistoriqueTab({ client, data, loading }) {
             const Icon = ACTION_ICONS[actionKey] || Clock;
             return (
               <div key={log.audit_id || i} className="flex items-start gap-3 px-5 py-3">
-                <div className="w-7 h-7 rounded-full bg-[#FF6200]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-blue-600/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Icon className="w-3.5 h-3.5 text-[#FF6200]" />
                 </div>
                 <div className="flex-1 min-w-0">

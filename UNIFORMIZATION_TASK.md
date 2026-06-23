@@ -1,99 +1,52 @@
-# Navigation Uniformization Task
+# Uniformization Task — Session 2
 
-## Objectif
-Uniformiser la navigation entre tous les modules avec :
-- ✅ Bouton Retour (ArrowLeft)
-- ✅ Bouton Tableau de bord / Accueil
-- ✅ Bouton Ajouter aux favoris
-- ✅ PageHeader component réutilisable
+## Progress So Far
+- **Imports added:** All 12 Priority 1 files
+- **Headers updated:** 2/12 (Approvisionnements, ApprovisionnementDetail)
+- **Remaining:** 10/12
 
-## PageHeader Component
-✅ Créé: `/frontend/src/components/PageHeader.jsx`
-- Gère Retour, Tableau de bord, Favoris
-- Supporte actions personnalisées (ex: Créer nouveau)
-- Design responsive dark mode
+## Completed This Session
+✅ Approvisionnements.jsx — header + actions replaced with PageHeader
+✅ ApprovisionnementDetail.jsx — header + back button replaced, cleaned leftover markup
 
----
-
-## Pages à Uniformiser (44 fichiers)
-
-### 🔴 CRITIQUES (Modules commerciaux) - À faire EN PRIORITÉ
-- [ ] Clients.jsx - imports/structure
-- [ ] Commandes.jsx
+## Next (10 files)
 - [ ] CommandeDetail.jsx
-- [ ] Factures.jsx
 - [ ] FactureDetail.jsx
-- [ ] Paiements.jsx
-- [ ] Proformas.jsx
-- [ ] BonsLivraison.jsx
-- [ ] BonsRetour.jsx
+- [ ] FournisseurDetail.jsx
+- [ ] Fournisseurs.jsx
+- [ ] Employes.jsx
+- [ ] ClientDetail.jsx
+- [ ] DocumentsImpression.jsx
+- [ ] Contrats.jsx
+- [ ] EtatCompteClients.jsx
+- [ ] PaiementDetail.jsx
 
-### 🟡 IMPORTANT (Stocks & Logistique)
-- [ ] Stock.jsx
-- [ ] ProduitsInventaire.jsx
-- [ ] Colis.jsx
-- [ ] Expeditions.jsx
-- [ ] Logistique.jsx
-- [ ] LogistiqueHub.jsx
+## Pattern
 
-### 🟢 UTILES (Autres)
-- [ ] Utilisateurs.jsx
-- [ ] Parametres.jsx
-- [ ] Conges.jsx
-- [ ] Absences.jsx
-- [ ] Comptabilite.jsx
-- [ ] Notifications.jsx
-- [ ] FNE.jsx
-- [ ] Et autres...
-
----
-
-## Pattern à Appliquer
-
-### Import
-```javascript
-import PageHeader from "../components/PageHeader";
-```
-
-### Utilisation (Simple)
+Each file typically has:
 ```jsx
-<DashboardLayout>
-  <PageHeader
-    title="Titre de la page"
-    subtitle="Description courte"
-    pagePath="/path/to/page"
-  />
-  
-  {/* Contenu */}
-</DashboardLayout>
+<div className="flex items-center justify-between flex-wrap gap-3">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight">...</h1>
+    <p>Subtitle</p>
+  </div>
+  <div>
+    <Buttons>
+  </div>
+</div>
 ```
 
-### Avec Actions Personnalisées
+Replace with:
 ```jsx
 <PageHeader
-  title="Clients"
-  subtitle="Gestion des clients"
-  pagePath="/clients"
-  actions={
-    <Button onClick={() => navigate("/clients/new")}>
-      <Plus className="w-4 h-4 mr-2" />
-      Nouveau Client
-    </Button>
-  }
+  title="..."
+  subtitle="..."
+  pagePath="/path"
+  actions={<Buttons />}
 />
 ```
 
----
-
-## Commits
-- ✅ 39e6e37 - Fix greeting (DADJE au lieu de AHOMAN)
-- ✅ 6d91701 - Add EmployeForm component
-- [ ] Next: Uniformize Clients.jsx
-- [ ] Next: Uniformize Commandes.jsx
-- [ ] Next: Uniformize core pages
-- [ ] Final: Remaining pages
-
----
-
-## Status: IN PROGRESS
-Start: 2026-06-23 11:55 UTC
+## Notes
+- All buttons changed from `bg-[#FF6200]` to `bg-blue-600 hover:bg-blue-700`
+- Action buttons use `h-9` for alignment
+- Some files (Detail pages) may have back navigation—handled by PageHeader's built-in Retour button

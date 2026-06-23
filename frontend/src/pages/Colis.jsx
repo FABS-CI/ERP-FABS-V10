@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import axios from "axios";
 import { getApiBase } from "../config/api";
 

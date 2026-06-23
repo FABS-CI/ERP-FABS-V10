@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { useAuth } from "../hooks/useAuth";
 import { can } from "../constants/permissions";
 import { getApprovisionnement, validerApprovisionnement } from "../services/approvisionnementApi";
@@ -89,51 +90,31 @@ export default function ApprovisionnementDetail() {
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="appro-detail">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <Button variant="ghost" onClick={() => navigate("/approvisionnements")} data-testid="btn-back">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Retour Approvisionnements
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={load} data-testid="btn-refresh">
-              <RefreshCw className="h-4 w-4 mr-2" /> Rafraîchir
-            </Button>
-            {canWrite && isDraft && (
-              <Button
-                onClick={handleValider}
-                disabled={validating}
-                className="bg-[#10B981] hover:bg-[#10B981]/90 text-white"
-                data-testid="btn-valider"
-              >
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                {validating ? "Validation…" : "Valider et recevoir"}
+        <PageHeader
+          title={appro.reference || "Approvisionnement"}
+          subtitle={`Détail — ${STATUT_LABELS[appro.statut] || appro.statut || "Chargement…"}`}
+          pagePath="/approvisionnements"
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={load} size="sm" data-testid="btn-refresh">
+                <RefreshCw className="h-4 w-4 mr-2" /> Rafraîchir
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Titre */}
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-[#FF6200] flex items-center justify-center shrink-0">
-            <Inbox className="h-7 w-7 text-white" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#0A2540] dark:text-white font-mono">
-              {appro.reference}
-            </h1>
-            <div className="flex items-center gap-3 mt-1 text-sm flex-wrap">
-              <Badge className={STATUT_COLORS[appro.statut] || "bg-gray-400 text-white"}>
-                {STATUT_LABELS[appro.statut] || appro.statut}
-              </Badge>
-              <span className="text-muted-foreground">Créé le {appro.created_at?.slice(0, 19).replace("T", " ")}</span>
-              {appro.valide_le && (
-                <span className="text-[#10B981] inline-flex items-center gap-1">
-                  <CheckCircle2 className="h-4 w-4" /> Validé le {appro.valide_le.slice(0, 19).replace("T", " ")}
-                </span>
+              {canWrite && isDraft && (
+                <Button
+                  onClick={handleValider}
+                  disabled={validating}
+                  className="bg-green-600 hover:bg-green-700 text-white h-9"
+                  data-testid="btn-valider"
+                >
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  {validating ? "Validation…" : "Valider et recevoir"}
+                </Button>
               )}
             </div>
-          </div>
-        </div>
+          }
+        />
+
+        {/* Cards Info */}
 
         {/* Cards Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

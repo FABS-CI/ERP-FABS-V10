@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import axios from "axios";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { TYPE_CLIENTS } from "../services/clientsApi";
 
 // ─────────────────────────────────────────────────────────────────

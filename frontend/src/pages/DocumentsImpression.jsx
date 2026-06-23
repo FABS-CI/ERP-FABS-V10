@@ -7,6 +7,7 @@ import { FileText, Settings, Upload, Trash2, Eye, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Label } from "../components/ui/label";

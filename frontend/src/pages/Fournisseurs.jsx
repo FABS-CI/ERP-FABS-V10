@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "../components/ui/dialog";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { useAuth } from "../hooks/useAuth";
 import { can } from "../constants/permissions";
 import {
@@ -127,7 +128,7 @@ export default function Fournisseurs() {
           </div>
           {canWrite && (
             <Button
-              className="bg-[#FF6200] hover:bg-[#FF6200]/90 text-white"
+              className="bg-blue-600 hover:bg-blue-600/90 text-white"
               onClick={openCreate}
               data-testid="btn-create-fournisseur"
             >
@@ -196,7 +197,7 @@ export default function Fournisseurs() {
                 {!search && canWrite && (
                   <Button
                     onClick={openCreate}
-                    className="mt-4 bg-[#FF6200] hover:bg-[#FF6200]/90 text-white"
+                    className="mt-4 bg-blue-600 hover:bg-blue-600/90 text-white"
                     data-testid="btn-empty-create"
                   >
                     <Plus className="h-4 w-4 mr-2" /> Créer le premier fournisseur
@@ -354,7 +355,7 @@ export default function Fournisseurs() {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#FF6200] hover:bg-[#FF6200]/90 text-white"
+                className="bg-blue-600 hover:bg-blue-600/90 text-white"
                 data-testid="btn-save"
               >
                 {saving ? "Enregistrement…" : editing ? "Mettre à jour" : "Créer"}

@@ -19,6 +19,7 @@ import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from "../components/PageHeader";
 import DocumentActionBar from '../components/document/DocumentActionBar';
 import LignesTable from '../components/document/LignesTable';
 
@@ -601,7 +602,7 @@ export default function FactureDetail() {
             <Button
               onClick={handleGenererAvoir}
               disabled={actionLoading || !avoirData.montant || avoirData.motif.length < 10}
-              className="bg-[#FF6200] hover:bg-[#E55900]"
+              className="bg-blue-600 hover:bg-[#E55900]"
               data-testid="btn-confirm-avoir"
             >
               Générer l'avoir

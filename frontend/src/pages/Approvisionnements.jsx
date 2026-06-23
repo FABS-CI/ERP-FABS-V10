@@ -23,6 +23,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "../components/ui/dialog";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import API_BASE_URL from "../config/api";
 import { useAuth } from "../hooks/useAuth";
 import { can } from "../constants/permissions";
@@ -158,27 +159,22 @@ export default function Approvisionnements() {
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="approvisionnements-page">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-              <Inbox className="h-8 w-8 text-[#FF6200]" />
-              Approvisionnements
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Bons d&apos;achat fournisseurs &mdash; réceptions et mise à jour stock
-            </p>
-          </div>
-          {canWrite && (
-            <Button
-              className="bg-[#FF6200] hover:bg-[#FF6200]/90 text-white"
-              onClick={openCreate}
-              data-testid="btn-create"
-            >
-              <Plus className="h-4 w-4 mr-2" /> Nouvel approvisionnement
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Approvisionnements"
+          subtitle="Bons d'achat fournisseurs — réceptions et mise à jour stock"
+          pagePath="/approvisionnements"
+          actions={
+            canWrite && (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+                onClick={openCreate}
+                data-testid="btn-create"
+              >
+                <Plus className="h-4 w-4 mr-2" /> Nouvel approvisionnement
+              </Button>
+            )
+          }
+        />
 
         {/* KPI */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -14,6 +14,7 @@ import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import API_BASE_URL from "../config/api";
 import { useAuth } from "../hooks/useAuth";
 import { can } from "../constants/permissions";
@@ -107,7 +108,7 @@ export default function FournisseurDetail() {
 
         {/* Titre */}
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-[#FF6200] flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
             <Building2 className="h-7 w-7 text-white" />
           </div>
           <div className="flex-1">

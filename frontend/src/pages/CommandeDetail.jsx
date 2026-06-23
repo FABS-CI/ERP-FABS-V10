@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import { can } from '../constants/permissions';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from "../components/PageHeader";
 import DocumentActionBar from '../components/document/DocumentActionBar';
 
 const STATUT_CONFIG = {
@@ -251,36 +252,12 @@ export default function CommandeDetail() {
   return (
     <DashboardLayout>
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/commandes')}
-            data-testid="btn-retour"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">
-              {commande.reference}
-            </h1>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge className={`${STATUT_CONFIG[commande.statut].color} text-white`}>
-                {STATUT_CONFIG[commande.statut].label}
-              </Badge>
-              {commande.montant_total > 500000 && (
-                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                  Validation DG requise
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title={commande.reference}
+        subtitle={`Détail — ${STATUT_CONFIG[commande.statut].label}`}
+        pagePath="/commandes"
+        actions={
+          <div className="flex flex-wrap gap-2">
           <DocumentActionBar
             documentType="Bon de Commande"
             documentId={commande.commande_id}
@@ -348,7 +325,7 @@ export default function CommandeDetail() {
             <Button
               onClick={handleGenerateFacture}
               disabled={actionLoading}
-              className="bg-[#FF6200] hover:bg-[#E65800] text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="btn-generer-facture"
             >
               <Receipt className="h-4 w-4 mr-2" />
@@ -394,7 +371,8 @@ export default function CommandeDetail() {
             </Button>
           )}
         </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Info */}
