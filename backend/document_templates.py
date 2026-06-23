@@ -22,6 +22,7 @@ TEMPLATE_1_CLASSIQUE = """
         .logo { max-width: 120px; max-height: 80px; }
         .company-info { margin-top: 10px; }
         .company-name { font-size: 16px; font-weight: bold; color: #0A2540; }
+        .company-slogan { font-size: 8px; color: #666; font-style: italic; margin-top: 3px; }
         .company-details { font-size: 9px; color: #666; line-height: 1.4; }
         .invoice-info { text-align: right; flex: 1; }
         .invoice-title { font-size: 24px; font-weight: bold; color: #FF6200; margin-bottom: 10px; }
@@ -49,6 +50,7 @@ TEMPLATE_1_CLASSIQUE = """
             {logo_html}
             <div class="company-info">
                 <div class="company-name">{company_name}</div>
+                <div class="company-slogan">{company_slogan}</div>
                 <div class="company-details">
                     {company_address}<br>
                     {company_phone}<br>
@@ -129,6 +131,7 @@ TEMPLATE_2_MODERNE_BLEU = """
         .header-banner { background: linear-gradient(135deg, #0A2540 0%, #2563EB 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; }
         .logo { max-width: 100px; max-height: 70px; margin: 0 auto; display: block; }
         .company-name { font-size: 18px; font-weight: bold; color: white; margin-top: 10px; }
+        .company-slogan { font-size: 10px; color: #E5E7EB; font-style: italic; margin-top: 5px; }
         .invoice-title { font-size: 28px; font-weight: bold; color: #0A2540; margin: 20px 0; }
         .invoice-card { background: #F8FAFC; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #0A2540; }
         .invoice-label { font-weight: bold; color: #0A2540; font-size: 10px; text-transform: uppercase; }
@@ -151,6 +154,7 @@ TEMPLATE_2_MODERNE_BLEU = """
     <div class="header-banner">
         {logo_html}
         <div class="company-name">{company_name}</div>
+        <div class="company-slogan">{company_slogan}</div>
     </div>
     
     <div class="header">
@@ -228,6 +232,7 @@ TEMPLATE_3_PREMIUM = """
         .header { text-align: center; margin-bottom: 40px; }
         .logo { max-width: 120px; max-height: 90px; margin: 0 auto 20px; display: block; }
         .company-name { font-size: 22px; font-weight: bold; color: #0A2540; letter-spacing: 2px; }
+        .company-slogan { font-size: 11px; color: #6B7280; font-style: italic; margin-top: 5px; }
         .company-divider { width: 100px; height: 3px; background: #FF6200; margin: 15px auto; }
         .invoice-block { text-align: center; border: 3px double #0A2540; padding: 30px; margin: 30px auto; max-width: 400px; }
         .invoice-title { font-size: 26px; font-weight: bold; color: #FF6200; margin-bottom: 10px; }
@@ -250,6 +255,7 @@ TEMPLATE_3_PREMIUM = """
     <div class="header">
         {logo_html}
         <div class="company-name">{company_name}</div>
+        <div class="company-slogan">{company_slogan}</div>
         <div class="company-divider"></div>
     </div>
     
@@ -318,6 +324,7 @@ TEMPLATE_4_CORPORATE_ORANGE = """
         .header-content { display: flex; justify-content: space-between; align-items: center; }
         .logo { max-width: 100px; max-height: 70px; }
         .company-name { font-size: 18px; font-weight: bold; color: white; }
+        .company-slogan { font-size: 9px; color: #FFE4CC; font-style: italic; display: block; margin-top: 5px; }
         .invoice-ref { font-size: 16px; font-weight: bold; color: white; }
         .client-section { background: #F3F4F6; padding: 20px; margin-bottom: 20px; }
         .client-title { font-size: 14px; font-weight: bold; color: #FF6200; margin-bottom: 15px; }
@@ -338,7 +345,10 @@ TEMPLATE_4_CORPORATE_ORANGE = """
         <div class="header-content">
             <div style="display: flex; align-items: center; gap: 15px;">
                 {logo_html}
-                <div class="company-name">{company_name}</div>
+                <div>
+                    <div class="company-name">{company_name}</div>
+                    <div class="company-slogan">{company_slogan}</div>
+                </div>
             </div>
             <div class="invoice-ref">N° {reference}</div>
         </div>
@@ -440,6 +450,7 @@ TEMPLATE_5_ELEGANT_ADMINISTRATIF = """
             <div class="column-title">Coordonnées Société</div>
             <div class="column-content">
                 <strong>{company_name}</strong><br>
+                <em style="font-size: 9px; color: #6B7280;">{company_slogan}</em><br>
                 {company_address}<br>
                 {company_phone}<br>
                 {company_email}
@@ -579,6 +590,7 @@ def render_template(
     html = template.format(
         logo_html=logo_html or '<div style="width: 100px; height: 70px; background: #FF6200; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">LOGO</div>',
         company_name=company_info.get('nom', 'EDITIONS FABS-CI'),
+        company_slogan=company_info.get('slogan', 'Une innovation pour une école de qualité'),
         company_address=company_info.get('adresse', 'BP 693'),
         company_phone=company_info.get('telephone', '+225 07 59 73 71 23'),
         company_email=company_info.get('email', 'edition693fabs@gmail.com'),

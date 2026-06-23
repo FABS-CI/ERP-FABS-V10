@@ -318,7 +318,7 @@ async def seed_parametres(db: AsyncIOMotorDatabase) -> int:
         },
         {
             "cle": "entreprise_slogan",
-            "valeur": "Les livres sont des fenêtres par lesquelles on regarde le monde",
+            "valeur": "Une innovation pour une école de qualité",
             "description": "Slogan de l'entreprise",
             "updated_at": now
         },

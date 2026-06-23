@@ -65,15 +65,15 @@ class TaxType(str, Enum):
 # ============================================================================
 
 class FNEInvoiceItem(BaseModel):
-    """Ligne d'article pour l'API DGI"""
-    taxes: List[str] = Field(default=["TVA"])
-    customTaxes: List[Dict[str, Any]] = Field(default_factory=list)
+    """Ligne d'article pour l'API DGI [C4: taxes MUST have default]"""
     reference: str
     description: str
     quantity: float = Field(gt=0)
     amount: float = Field(ge=0)
     discount: float = Field(default=0, ge=0)
     measurementUnit: str = "pcs"
+    taxes: List[str] = Field(default=["TVA"])  # [C4] DEFAULT REQUIRED
+    customTaxes: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class FNESignRequest(BaseModel):

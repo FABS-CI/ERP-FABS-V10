@@ -212,8 +212,7 @@ export default function DocumentDetail() {
                   <div>
                     <CardTitle className="text-2xl">EDITIONS FABS-CI</CardTitle>
                     <CardDescription className="text-gray-200 mt-1">
-                      « Les livres sont des fenêtres par lesquelles on regarde le
-                      monde »
+                      Une innovation pour une école de qualité
                     </CardDescription>
                   </div>
                   <Badge

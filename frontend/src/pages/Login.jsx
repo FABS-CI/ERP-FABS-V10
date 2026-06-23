@@ -381,7 +381,7 @@ export default function Login() {
           Plateforme de gestion complète de l'entreprise
         </p>
         <p style={{ fontSize: 12, fontStyle: "italic", color: "#FBBF24", textShadow: "0 1px 8px rgba(0,0,0,0.7)" }}>
-          Une innovation pour une école de qualité
+          {COMPANY.slogan}
         </p>
       </div>
 

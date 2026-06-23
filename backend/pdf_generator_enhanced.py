@@ -225,6 +225,7 @@ def generate_pdf_with_template(
     if not company_info:
         company_info = {
             "nom": "EDITIONS FABS-CI",
+            "slogan": "Une innovation pour une école de qualité",
             "adresse": "BP 693",
             "telephone": "+225 07 59 73 71 23",
             "email": "edition693fabs@gmail.com",

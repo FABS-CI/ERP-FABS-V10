@@ -37,6 +37,7 @@ from reportlab.platypus import (
 # CONSTANTES FABS-CI
 # ═══════════════════════════════════════════════════════════════════
 FABS_NAME  = "EDITIONS FABS-CI"
+FABS_SLOGAN = "Une innovation pour une école de qualité"
 FABS_ADDR  = "Adresse :  BP 693"
 FABS_PHONE = "Phone : +225 0759737123"
 FABS_EMAIL = "Email : edition693fabs@gmail.com"
@@ -302,12 +303,17 @@ def _draw_header(canvas, doc, title: str, date_str: str, heure_str: str,
     canvas.setFont("Helvetica-Bold", 11)
     canvas.drawString(TXT_X, TOP_Y, FABS_NAME)
 
+    # ─── Slogan (italique, gris foncé) ──────────────────────────
+    canvas.setFillColor(colors.HexColor("#555555"))
+    canvas.setFont("Helvetica-Oblique", 8)
+    canvas.drawString(TXT_X, TOP_Y - 0.30 * cm, FABS_SLOGAN)
+
     # ─── Adresse / Phone / Email (identique sur les 8 modèles) ────
     canvas.setFillColor(colors.black)
     canvas.setFont("Helvetica", 8.5)
-    canvas.drawString(TXT_X, TOP_Y - 0.50 * cm, FABS_ADDR)
-    canvas.drawString(TXT_X, TOP_Y - 0.95 * cm, FABS_PHONE)
-    canvas.drawString(TXT_X, TOP_Y - 1.40 * cm, FABS_EMAIL)
+    canvas.drawString(TXT_X, TOP_Y - 0.70 * cm, FABS_ADDR)
+    canvas.drawString(TXT_X, TOP_Y - 1.15 * cm, FABS_PHONE)
+    canvas.drawString(TXT_X, TOP_Y - 1.60 * cm, FABS_EMAIL)
 
     # ─── Date + Heure (droite, noir) ──────────────────────────────
     canvas.setFillColor(colors.black)

@@ -242,6 +242,7 @@ class FNEService:
         Transforme une facture au format JSON conforme FNE DGI
         
         Format conforme aux spécifications officielles de la DGI
+        Inclut corrections C1, C2, C3, C4
         """
         fne_data = invoice.model_dump()
         
@@ -249,17 +250,46 @@ class FNEService:
         fne_data["pointOfSale"] = self.config.point_of_sale
         fne_data["establishment"] = self.config.establishment
 
-        # Corriger le mapping paymentMethod ERP → DGI (C4)
-        fne_data["paymentMethod"] = map_payment_method(fne_data.get("paymentMethod", "cash"))
-
-        # Injecter NCC entreprise depuis config si absent (C1)
-        if not fne_data.get("companyNcc") and self.config.company_ncc:
-            fne_data["companyNcc"] = self.config.company_ncc
-
-        # S'assurer que chaque item a bien un champ taxes (C5)
+        # [C4] S'assurer que chaque item a bien un champ taxes (AVANT les autres transformations)
         for item in fne_data.get("items", []):
-            if not item.get("taxes"):
+            if "taxes" not in item or not item["taxes"]:
                 item["taxes"] = ["TVA"]
+                logger.info(f"Item taxes defaulted to TVA for {item.get('reference')}")
+
+        # [C1] Injecter NCC entreprise depuis config si absent
+        if not fne_data.get("clientNcc") and self.config.company_ncc:
+            fne_data["clientNcc"] = self.config.company_ncc
+            logger.info(f"[C1] NCC injected from config: {self.config.company_ncc}")
+
+        # [C2] Smart template fallback selon client_type et NCC
+        has_ncc = bool(fne_data.get("clientNcc"))
+        client_type = fne_data.get("client_type", "entreprise").lower()
+        current_template = fne_data.get("template", "B2B")
+        
+        if client_type == "particulier":
+            fne_data["template"] = "B2C"  # Particulier toujours B2C (pas de NCC)
+            if current_template != "B2C":
+                logger.info(f"[C2] Template changed B2B → B2C (client type: particulier)")
+        elif client_type == "gouvernement":
+            fne_data["template"] = "B2G"
+            if current_template != "B2G":
+                logger.info(f"[C2] Template changed → B2G (client type: gouvernement)")
+        elif client_type == "international":
+            fne_data["template"] = "B2F"
+            if current_template != "B2F":
+                logger.info(f"[C2] Template changed → B2F (client type: international)")
+        elif current_template == "B2B" and not has_ncc:
+            # B2B requires NCC - fallback to B2C if no NCC
+            fne_data["template"] = "B2C"
+            logger.warning(f"[C2] B2B template requires NCC, fallback to B2C (NCC absent)")
+
+        # [C3] Corriger le mapping paymentMethod ERP → DGI avec validation
+        dgi_method = map_payment_method(fne_data.get("paymentMethod", "cash"))
+        VALID_DGI_PAYMENT_METHODS = {"cash", "card", "check", "mobile-money", "transfer", "deferred"}
+        if dgi_method not in VALID_DGI_PAYMENT_METHODS:
+            logger.error(f"[C3] Invalid DGI payment method: {dgi_method}, defaulting to cash")
+            dgi_method = "cash"
+        fne_data["paymentMethod"] = dgi_method
 
         return fne_data
     
@@ -423,6 +453,12 @@ class FNEService:
                 verification_token = response.get("token")
                 qr_code = await self.generate_qr_code(verification_token)
                 
+                # [C5] Mark response as from real DGI API
+                response_with_metadata = response.copy()
+                response_with_metadata["source"] = "dgi_api"  # Mark as REAL API response
+                response_with_metadata["certified_at"] = datetime.now(timezone.utc).isoformat()
+                response_with_metadata["api_version"] = "fne_2025"
+                
                 await self.update_fne_metadata(
                     invoice.reference,
                     {
@@ -430,10 +466,28 @@ class FNEService:
                         "fne_id": fne_id,
                         "qr_code": qr_code,
                         "verification_token": verification_token,
-                        "response_payload": response,
+                        "response_payload": response_with_metadata,
                         "validated_at": datetime.now(timezone.utc).isoformat()
                     }
                 )
+                
+                # [C5] Log to audit trail
+                audit_log = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "invoice_id": invoice.reference,
+                    "action": "fne_certification_success",
+                    "source": "dgi_api",
+                    "ncc": response.get("ncc"),
+                    "reference": response.get("reference"),
+                    "token": response.get("token"),
+                    "http_status": 200,
+                    "response_summary": {
+                        "status": response.get("invoice", {}).get("status"),
+                        "amount": response.get("invoice", {}).get("amount"),
+                    }
+                }
+                await self.db.fne_logs.insert_one(audit_log)
+                logger.info(f"[C5] Audit log created for invoice {invoice.reference}")
                 
                 return FNEResponse(
                     success=True,
@@ -443,7 +497,8 @@ class FNEService:
                         "qr_code": qr_code,
                         "verification_token": verification_token,
                         "ncc": response.get("ncc"),
-                        "balance_sticker": response.get("balance_sticker")
+                        "balance_sticker": response.get("balance_sticker"),
+                        "source": "dgi_api"  # Confirm source to caller
                     }
                 )
             else:
@@ -455,6 +510,18 @@ class FNEService:
                         "error_message": response.get("message", "Facture rejetée")
                     }
                 )
+                
+                # [C5] Log rejection
+                audit_log = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "invoice_id": invoice.reference,
+                    "action": "fne_certification_rejected",
+                    "source": "dgi_api",
+                    "http_status": 200,
+                    "error_message": response.get("message", "Facture rejetée"),
+                    "response_summary": response
+                }
+                await self.db.fne_logs.insert_one(audit_log)
                 
                 return FNEResponse(
                     success=False,
