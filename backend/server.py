@@ -69,6 +69,7 @@ from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
 from signing_service import RequestSigningService, SIGNING_REQUIRED_METHODS, SIGNING_EXEMPT_PATHS
 from encryption_service import encryption_service, ENCRYPTED_FIELDS_BY_COLLECTION
 from output_encoding_service import OutputEncodingService, ENCODING_CONFIG
+from rbac_service import RBACService, Role, Permission, UserScope, check_access_policy
 
 # ============================================================================
 # CONFIGURATION
