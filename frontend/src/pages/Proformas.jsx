@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import { can } from '../constants/permissions';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from "../components/PageHeader";
 
 const STATUT_CONFIG = {
   brouillon:           { label: 'Brouillon',        color: 'bg-gray-400 text-white' },
@@ -92,24 +93,23 @@ export default function Proformas() {
     <DashboardLayout>
       <div className="space-y-6" data-testid="proformas-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Proformas</h1>
-            <p className="text-muted-foreground mt-1">
-              Devis et propositions commerciales &mdash; workflow complet jusqu&apos;à la conversion en facture
-            </p>
-          </div>
-          {canWrite && (
-            <Button
-              data-testid="proforma-create-btn"
-              onClick={() => navigate('/proformas/new')}
-              className="bg-[#FF6200] hover:bg-[#FF6200]/90 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle proforma
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Proformas"
+          subtitle="Devis et propositions commerciales"
+          pagePath="/proformas"
+          actions={
+            canWrite && (
+              <Button
+                data-testid="proforma-create-btn"
+                onClick={() => navigate('/proformas/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvelle
+              </Button>
+            )
+          }
+        />
 
         {/* KPI */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

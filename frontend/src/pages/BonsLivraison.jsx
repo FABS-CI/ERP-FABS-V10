@@ -8,6 +8,7 @@ import { Plus, Truck, CheckCircle, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -84,17 +85,18 @@ export default function BonsLivraison() {
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="bons-livraison-page">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Bons de livraison</h1>
-            <p className="text-gray-600 dark:text-white/60 mt-1">Gestion des livraisons FABS-BL-26-27</p>
-          </div>
-          {canWrite && (
-            <Button onClick={() => setShowForm(true)} className="bg-[#FF6200] hover:bg-[#E55900] text-white" data-testid="btn-nouveau-bl">
-              <Plus className="h-4 w-4 mr-2" /> Nouveau BL
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Bons de Livraison"
+          subtitle="Gestion des livraisons FABS-BL"
+          pagePath="/bons-livraison"
+          actions={
+            canWrite && (
+              <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white h-9" data-testid="btn-nouveau-bl">
+                <Plus className="h-4 w-4 mr-2" /> Nouveau
+              </Button>
+            )
+          }
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
