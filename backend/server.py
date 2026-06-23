@@ -71,6 +71,7 @@ from encryption_service import encryption_service, ENCRYPTED_FIELDS_BY_COLLECTIO
 from output_encoding_service import OutputEncodingService, ENCODING_CONFIG
 from rbac_service import RBACService, Role, Permission, UserScope, check_access_policy
 from audit_service import AuditService, AuditAction, AuditLevel, AuditEvent
+from rate_limiting_service import RateLimitingService, RateLimitTier, get_user_tier
 
 # ============================================================================
 # CONFIGURATION
@@ -126,6 +127,9 @@ logger.info("✅ Request Signing Service initialized (HMAC-SHA256)")
 
 # Audit Service (initialized later after db connection)
 audit_service = None  # Will be set after app creation
+
+# Rate Limiting Service (initialized later after redis connection)
+rate_limiting_service = None  # Will be set after app creation
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
 PASSWORD_REGEX = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
@@ -660,6 +664,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 if audit_service is None:
     audit_service = AuditService(db)
     logger.info("✅ Enhanced Audit Service initialized")
+
+# Initialize rate limiting service
+if rate_limiting_service is None:
+    rate_limiting_service = RateLimitingService(redis_client)
+    logger.info("✅ Advanced Rate Limiting Service initialized")
 
 # Add GZip middleware for compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -1338,6 +1347,66 @@ async def get_suspicious_ips(
         "threshold": threshold,
         "count": len(ips),
         "suspicious_ips": ips
+    }
+
+
+@api_router.get("/ratelimit/status")
+async def get_rate_limit_status(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    """Get user's current rate limit status (Phase 3.3.6)."""
+    me = await resolve_user(request, authorization)
+    user_id = me.get("user_id")
+    user_tier = get_user_tier(me)
+    
+    limits = await rate_limiting_service.get_user_limits(user_id, user_tier)
+    return {
+        "status": "ok",
+        "user_id": user_id,
+        "tier": user_tier.value,
+        "limits": limits
+    }
+
+
+@api_router.post("/ratelimit/block-ip")
+async def block_ip(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    ip_address: str = Query(...),
+    duration_minutes: int = Query(60, ge=1, le=10080),
+    reason: str = Query("Suspicious activity"),
+):
+    """Block an IP address temporarily — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    result = await rate_limiting_service.block_ip(ip_address, duration_minutes, reason)
+    return {
+        "status": "ok" if result else "error",
+        "ip_address": ip_address,
+        "duration_minutes": duration_minutes,
+        "reason": reason
+    }
+
+
+@api_router.post("/ratelimit/reset-user")
+async def reset_user_rate_limits(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    user_id: str = Query(...),
+):
+    """Reset rate limits for a user — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    result = await rate_limiting_service.reset_user_limits(user_id)
+    return {
+        "status": "ok" if result else "not_found",
+        "user_id": user_id,
+        "reset": result
     }
 
 
