@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import { can } from '../constants/permissions';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from '../components/PageHeader';
 
 const STATUT_CONFIG = {
   brouillon: { label: 'Brouillon', color: 'bg-gray-500' },
@@ -188,37 +189,37 @@ export default function Factures() {
     <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Factures</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestion et suivi des factures
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportFactures}
-            disabled={exporting || factures.length === 0}
-            title="Exporter toutes les factures en CSV"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {exporting ? 'Export...' : 'Export CSV'}
-          </Button>
-          {canWrite && (
+      <PageHeader
+        title="Factures"
+        subtitle="Gestion et suivi des factures"
+        pagePath="/factures"
+        actions={
+          <>
             <Button
-              onClick={() => navigate('/commandes')}
-              className="bg-[#FF6200] hover:bg-[#E55900] text-white"
-              data-testid="btn-nouvelle-facture"
-              title="Une facture se génère depuis une commande validée"
+              variant="outline"
+              size="sm"
+              onClick={handleExportFactures}
+              disabled={exporting || factures.length === 0}
+              title="Exporter en CSV"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Générer depuis une commande
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? 'Export...' : 'Export'}
             </Button>
-          )}
-        </div>
-      </div>
+            {canWrite && (
+              <Button
+                onClick={() => navigate('/commandes')}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="btn-nouvelle-facture"
+                title="Depuis une commande validée"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Générer
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

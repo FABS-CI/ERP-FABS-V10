@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import { can } from '../constants/permissions';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from '../components/PageHeader';
 
 const STATUT_CONFIG = {
   brouillon: { label: 'Brouillon', color: 'bg-gray-500' },
@@ -199,35 +200,35 @@ export default function Commandes() {
     <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0A2540] dark:text-white">Commandes</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestion du cycle de vie des commandes
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExportCommandes}
-            disabled={exporting || loading}
-            data-testid="btn-export-commandes"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {exporting ? 'Export…' : 'Export CSV'}
-          </Button>
-          {canWrite && (
-          <Button
-            onClick={() => navigate('/commandes/nouvelle')}
-            className="bg-[#FF6200] hover:bg-[#E55900] text-white"
-            data-testid="btn-nouvelle-commande"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle commande
-          </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Commandes"
+        subtitle="Gestion du cycle de vie des commandes"
+        pagePath="/commandes"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={handleExportCommandes}
+              disabled={exporting || loading}
+              data-testid="btn-export-commandes"
+              className="h-9"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? 'Export…' : 'Export'}
+            </Button>
+            {canWrite && (
+            <Button
+              onClick={() => navigate('/commandes/nouvelle')}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+              data-testid="btn-nouvelle-commande"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle
+            </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

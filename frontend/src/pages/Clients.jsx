@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import ClientFormDialog from "../components/clients/ClientFormDialog";
 import SortTh from "../components/ui/SortTh";
 import { TYPE_CLIENTS, TYPE_COLOR, listClients, disableClient } from "../services/clientsApi";
@@ -117,39 +118,33 @@ export default function Clients() {
     <DashboardLayout>
       <div data-testid="clients-page" className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between mb-6 gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#FF6200] font-semibold">
-              Module Clients
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-[#0A2540] dark:text-white mt-1">
-              Base clients
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-white/60 mt-1">
-              {data.total} client{data.total > 1 ? "s" : ""}{actif === "true" ? " actif" + (data.total > 1 ? "s" : "") : ""} dans la base.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <button
-              onClick={handleExport}
-              disabled={exporting || loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white dark:bg-[#0b1e30]/5 text-[#0A2540] dark:text-white text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white dark:bg-[#0b1e30]/10 transition disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              {exporting ? "Export…" : "Export CSV"}
-            </button>
-            {canWrite && (
+        <PageHeader
+          title="Clients"
+          subtitle={`${data.total} client${data.total > 1 ? "s" : ""} dans la base`}
+          pagePath="/clients"
+          actions={
+            <>
               <button
-                data-testid="clients-new-btn"
-                onClick={() => { setEditing(null); setDialogOpen(true); }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FF6200] hover:bg-[#E65800] text-white text-sm font-semibold shadow-md hover:shadow-lg transition"
+                onClick={handleExport}
+                disabled={exporting || loading}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b1e30]/5 text-gray-700 dark:text-white text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50"
               >
-                <Plus className="w-4 h-4" />
-                Nouveau client
+                <Download className="w-4 h-4" />
+                Export
               </button>
-            )}
-          </div>
-        </div>
+              {canWrite && (
+                <button
+                  data-testid="clients-new-btn"
+                  onClick={() => { setEditing(null); setDialogOpen(true); }}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nouveau
+                </button>
+              )}
+            </>
+          }
+        />
 
         {/* Filters */}
         <div
