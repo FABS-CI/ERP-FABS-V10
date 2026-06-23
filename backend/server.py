@@ -68,6 +68,7 @@ from paie_module import router as paie_router
 from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
 from signing_service import RequestSigningService, SIGNING_REQUIRED_METHODS, SIGNING_EXEMPT_PATHS
 from encryption_service import encryption_service, ENCRYPTED_FIELDS_BY_COLLECTION
+from output_encoding_service import OutputEncodingService, ENCODING_CONFIG
 
 # ============================================================================
 # CONFIGURATION
@@ -318,6 +319,53 @@ class RequestSigningMiddleware(BaseHTTPMiddleware):
                     raise HTTPException(status_code=401, detail="Request signature validation error")
         
         response = await call_next(request)
+        return response
+
+
+class OutputEncodingMiddleware(BaseHTTPMiddleware):
+    """Encode JSON responses to prevent XSS (Phase 3.3.3)"""
+    
+    async def dispatch(self, request: Request, call_next):
+        # Skip for non-JSON endpoints
+        if request.method in ["HEAD", "OPTIONS"]:
+            return await call_next(request)
+        
+        response = await call_next(request)
+        
+        # Only encode JSON responses
+        content_type = response.headers.get("content-type", "")
+        if "application/json" in content_type and ENCODING_CONFIG["enabled"]:
+            try:
+                # Read response body
+                body = b""
+                async for chunk in response.body_iterator:
+                    body += chunk
+                
+                # Decode JSON
+                json_data = json.loads(body)
+                
+                # Encode for safety
+                safe_json = OutputEncodingService.encode_json_response(
+                    json_data,
+                    escape_strings=ENCODING_CONFIG.get("escape_strings", True)
+                )
+                
+                # Create new response with encoded content
+                from fastapi.responses import Response
+                return Response(
+                    content=safe_json,
+                    status_code=response.status_code,
+                    headers=dict(response.headers),
+                    media_type="application/json"
+                )
+            
+            except json.JSONDecodeError:
+                # Not JSON or already encoded, return as-is
+                pass
+            except Exception as e:
+                logger.error(f"Output encoding failed: {e}")
+                # Return original response on error
+        
         return response
 
 
@@ -614,6 +662,9 @@ app.add_middleware(CSRFValidationMiddleware)
 
 # Add request signing middleware (Phase 3.3)
 app.add_middleware(RequestSigningMiddleware)
+
+# Add output encoding middleware (Phase 3.3.3)
+app.add_middleware(OutputEncodingMiddleware)
 
 # Prometheus metrics — désactivé en production (faille sécurité : exposition publique)
 # Pour activer en dev uniquement : PROMETHEUS_ENABLED=true dans .env
