@@ -23,6 +23,7 @@ const DevLogin = lazy(() => import("./pages/DevLogin"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const RHDashboard = lazy(() => import("./pages/RHDashboard"));
 const Employes = lazy(() => import("./pages/Employes"));
+const EmployeForm = lazy(() => import("./pages/EmployeForm"));
 const Departements = lazy(() => import("./pages/Departements"));
 const Fonctions = lazy(() => import("./pages/Fonctions"));
 const CategoriesPro = lazy(() => import("./pages/CategoriesPro"));
@@ -730,8 +731,8 @@ function App() {
             <Route path="/bons-livraison/:id" element={<Navigate to="/livraisons" replace />} />
             <Route path="/documents/analytics" element={<Navigate to="/documents" replace />} />
             <Route path="/documents/upload" element={<Navigate to="/documents" replace />} />
-            <Route path="/rh/employes/new" element={<Navigate to="/rh/employes" replace />} />
-            <Route path="/rh/employes/:id/edit" element={<Navigate to="/rh/employes" replace />} />
+            <Route path="/rh/employes/new" element={<ProtectedRoute><EmployeForm /></ProtectedRoute>} />
+            <Route path="/rh/employes/:id/edit" element={<ProtectedRoute><EmployeForm /></ProtectedRoute>} />
 
             {/* Documents AI */}
             <Route
