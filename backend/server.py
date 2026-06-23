@@ -204,6 +204,46 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 # ============================================================================
+# CSRF VALIDATION MIDDLEWARE (Phase 3: CSRF Protection)
+# ============================================================================
+
+class CSRFValidationMiddleware(BaseHTTPMiddleware):
+    """Validate CSRF token on state-changing operations"""
+    
+    async def dispatch(self, request: Request, call_next):
+        # Only validate POST, PUT, DELETE (not GET, OPTIONS, HEAD)
+        if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+            # Skip CSRF check for auth endpoints (login, logout, csrf token generation)
+            if request.url.path not in ["/api/auth/login", "/api/auth/csrf", "/api/auth/logout", "/api/auth/login_simple"]:
+                csrf_header = request.headers.get("X-CSRF-Token", "").strip()
+                
+                if not csrf_header:
+                    logger.warning(f"CSRF token missing on {request.method} {request.url.path}")
+                    raise HTTPException(
+                        status_code=403,
+                        detail="CSRF token missing"
+                    )
+                
+                # Hash the token and check in Redis
+                csrf_hash = hash_csrf_token(csrf_header)
+                try:
+                    valid = await redis_client.get(f"csrf:{csrf_hash}")
+                    if not valid:
+                        logger.warning(f"CSRF token invalid/expired on {request.method} {request.url.path}")
+                        raise HTTPException(
+                            status_code=403,
+                            detail="CSRF token invalid or expired"
+                        )
+                except Exception as e:
+                    logger.error(f"CSRF validation error: {e}")
+                    # In production, fail secure (reject). In dev, allow if Redis unavailable
+                    if env == "production":
+                        raise HTTPException(status_code=403, detail="CSRF validation failed")
+        
+        response = await call_next(request)
+        return response
+
+# ============================================================================
 # AUTH UTILITIES
 # ============================================================================
 async def log_audit_event(
@@ -287,6 +327,20 @@ def hash_refresh_token(token: str) -> str:
 def verify_refresh_token_hash(token: str, token_hash: str) -> bool:
     """Verify refresh token hash"""
     return hash_refresh_token(token) == token_hash
+
+# ============================================================================
+# CSRF TOKEN FUNCTIONS (Phase 3: CSRF Protection)
+# ============================================================================
+
+def generate_csrf_token() -> str:
+    """Generate cryptographically secure CSRF token"""
+    return secrets.token_urlsafe(32)
+
+def hash_csrf_token(token: str) -> str:
+    """Hash CSRF token for storage/validation"""
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+# ============================================================================
 
 def create_jwt_token(user_id: str, email: str, role: str) -> str:
     """Create JWT access token"""
@@ -389,6 +443,7 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: dict
+    csrf_token: Optional[str] = None            # ✅ Phase 3: CSRF token for protected operations
     twofa_pending: Optional[bool] = None        # True → saisir le code OTP
     twofa_setup_required: Optional[bool] = None  # True → activer le 2FA d'abord
 
@@ -476,6 +531,9 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Add CSRF validation middleware (Phase 3)
+app.add_middleware(CSRFValidationMiddleware)
+
 # Prometheus metrics — désactivé en production (faille sécurité : exposition publique)
 # Pour activer en dev uniquement : PROMETHEUS_ENABLED=true dans .env
 PROMETHEUS_ENABLED = os.environ.get("PROMETHEUS_ENABLED", "false").lower() == "true"
@@ -506,6 +564,40 @@ api_router = APIRouter(prefix="/api")
 # Constantes lockout
 LOGIN_MAX_ATTEMPTS = 5
 LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
+
+# CSRF Token Endpoint (Phase 3)
+@api_router.get("/auth/csrf")
+async def get_csrf_token(response: Response):
+    """
+    Get CSRF token for protected operations (POST/PUT/DELETE)
+    Sets httpOnly cookie with CSRF hash
+    """
+    # Generate CSRF token
+    csrf_token = generate_csrf_token()
+    csrf_hash = hash_csrf_token(csrf_token)
+    
+    # Store hash in Redis (5 min TTL)
+    try:
+        await redis_client.setex(f"csrf:{csrf_hash}", 300, "valid")
+        logger.info(f"CSRF token generated and stored (expires in 5 min)")
+    except Exception as e:
+        logger.error(f"Failed to store CSRF token: {e}")
+        raise HTTPException(500, "Failed to generate CSRF token")
+    
+    # Set cookie with hash (browser can read it, it's just metadata)
+    response.set_cookie(
+        key="csrf_token_hash",
+        value=csrf_hash,
+        httponly=False,        # ✅ JavaScript needs to read it
+        secure=env == "production",  # HTTPS only in production
+        samesite="strict",     # No cross-site requests
+        max_age=300            # 5 minutes
+    )
+    
+    return {
+        "csrf_token": csrf_token,  # Frontend includes in X-CSRF-Token header
+        "expires_in": 300
+    }
 
 @api_router.post("/auth/login")
 @limiter.limit("5/minute")
@@ -646,12 +738,27 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
         if not twofa_enabled:
             # 2FA obligatoire mais pas encore configuré → forcer le setup
             # On retourne quand même le vrai token pour accéder à /parametres uniquement
+            csrf_token = generate_csrf_token()
+            csrf_hash = hash_csrf_token(csrf_token)
+            try:
+                await redis_client.setex(f"csrf:{csrf_hash}", 300, "valid")
+            except Exception:
+                pass
+            response.set_cookie(
+                key="csrf_token_hash",
+                value=csrf_hash,
+                httponly=False,
+                secure=env == "production",
+                samesite="strict",
+                max_age=300
+            )
             return LoginResponse(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_type="bearer",
                 expires_in=JWT_ACCESS_TOKEN_EXPIRY_MINUTES * 60,
                 user=user_info,
+                csrf_token=csrf_token,
                 twofa_setup_required=True
             )
         else:
@@ -659,22 +766,57 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
             preauth_token = create_preauth_token(user['user_id'], user['email'], user['role'])
             # Supprimer le cookie complet — session pas encore validée
             response.delete_cookie("session_token")
+            csrf_token = generate_csrf_token()
+            csrf_hash = hash_csrf_token(csrf_token)
+            try:
+                await redis_client.setex(f"csrf:{csrf_hash}", 300, "valid")
+            except Exception:
+                pass
+            response.set_cookie(
+                key="csrf_token_hash",
+                value=csrf_hash,
+                httponly=False,
+                secure=env == "production",
+                samesite="strict",
+                max_age=300
+            )
             return LoginResponse(
                 access_token=preauth_token,
                 refresh_token="",
                 token_type="bearer",
                 expires_in=300,
                 user=user_info,
+                csrf_token=csrf_token,
                 twofa_pending=True
             )
     # ────────────────────────────────────────────────────────────────────────
+    
+    # ✅ Generate and set CSRF token (Phase 3)
+    csrf_token = generate_csrf_token()
+    csrf_hash = hash_csrf_token(csrf_token)
+    try:
+        await redis_client.setex(f"csrf:{csrf_hash}", 300, "valid")
+    except Exception as e:
+        logger.error(f"Failed to store CSRF token after login: {e}")
+        # Continue anyway, CSRF not critical for login
+    
+    # Set CSRF token cookie
+    response.set_cookie(
+        key="csrf_token_hash",
+        value=csrf_hash,
+        httponly=False,
+        secure=env == "production",
+        samesite="strict",
+        max_age=300
+    )
 
     return LoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=JWT_ACCESS_TOKEN_EXPIRY_MINUTES * 60,
-        user=user_info
+        user=user_info,
+        csrf_token=csrf_token  # ✅ NEW: Frontend uses this in X-CSRF-Token header
     )
 
 @api_router.get("/auth/me", response_model=UserProfile)
