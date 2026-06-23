@@ -6,6 +6,8 @@ FastAPI + Motor (MongoDB) + JWT Auth + RBAC
 import os
 import logging
 import asyncio
+import hashlib
+import secrets
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
@@ -19,9 +21,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-#from slowapi import Limiter, _rate_limit_exceeded_handler
-#from slowapi.util import get_remote_address
-#from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from dotenv import load_dotenv
@@ -78,10 +80,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("fabsci.server")
 
-# MongoDB
+# MongoDB (FIX #5: CONNECTION POOLING OPTIMIZED)
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 db_name = os.environ.get('DB_NAME', 'fabsci_erp')
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    maxPoolSize=20,           # Max connections in pool
+    minPoolSize=5,            # Min connections to maintain
+    maxIdleTimeMS=60000,      # Close idle connections after 60s
+    serverSelectionTimeoutMS=5000,  # 5s timeout for server selection
+    connectTimeoutMS=10000    # 10s timeout for new connections
+)
 db = client[db_name]
 
 # Redis Config
@@ -271,6 +280,14 @@ def verify_password(password: str, hashed: str) -> bool:
     """Verify password against bcrypt hash"""
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
+def hash_refresh_token(token: str) -> str:
+    """Hash refresh token using SHA256 before storage (FIX #3)"""
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+def verify_refresh_token_hash(token: str, token_hash: str) -> bool:
+    """Verify refresh token hash"""
+    return hash_refresh_token(token) == token_hash
+
 def create_jwt_token(user_id: str, email: str, role: str) -> str:
     """Create JWT access token"""
     exp = datetime.now(timezone.utc) + timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRY_MINUTES)
@@ -447,11 +464,11 @@ class RefreshTokenRequest(BaseModel):
 # ============================================================================
 # FASTAPI APP
 # ============================================================================
-# Rate limiter setup
-#limiter = Limiter(key_func=get_remote_address)
+# Rate limiter setup — REACTIVATED FOR PRODUCTION SECURITY
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="ERP EDITIONS FABS-CI API", version="1.0.0")
-# app.state.limiter = limiter
-# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add GZip middleware for compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -491,6 +508,7 @@ LOGIN_MAX_ATTEMPTS = 5
 LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
 
 @api_router.post("/auth/login")
+@limiter.limit("5/minute")
 async def login(request: Request, response: Response, credentials: LoginRequest = Body(...)):
     """
     Login with email/password
@@ -578,9 +596,10 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
     access_token = create_jwt_token(user['user_id'], user['email'], user['role'])
     refresh_token = create_refresh_token(user['user_id'])
     
-    # Store refresh token in database
+    # Store refresh token hash in database (FIX #3: HASHED, NOT PLAINTEXT)
+    refresh_token_hash = hash_refresh_token(refresh_token)
     refresh_token_doc = {
-        "refresh_token": refresh_token,
+        "refresh_token_hash": refresh_token_hash,  # ✅ HASHED
         "user_id": user['user_id'],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "expires_at": (datetime.now(timezone.utc) + timedelta(days=JWT_REFRESH_TOKEN_EXPIRY_DAYS)).isoformat(),
