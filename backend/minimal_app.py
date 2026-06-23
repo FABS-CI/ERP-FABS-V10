@@ -17,8 +17,8 @@ app.add_middleware(
 )
 
 # Sync MongoDB
-client = MongoClient('mongodb://localhost:27017/fabs_ci')
-db = client['fabs_ci']
+client = MongoClient('mongodb://localhost:27017/fabsci_erp')
+db = client['fabsci_erp']
 
 class LoginRequest(BaseModel):
     email: str
