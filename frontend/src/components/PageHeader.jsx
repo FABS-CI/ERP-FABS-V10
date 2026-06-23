@@ -5,7 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownTrigger,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useEffect, useState } from "react";
 
@@ -89,11 +89,11 @@ export default function PageHeader({
 
         {/* Menu actions */}
         <DropdownMenu>
-          <DropdownTrigger asChild>
+          <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-10 w-10">
               <MoreVertical className="w-4 h-4" />
             </Button>
-          </DropdownTrigger>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             {showHomeButton && (
               <DropdownMenuItem onClick={handleHome}>
