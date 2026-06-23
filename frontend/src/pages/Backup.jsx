@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 
 /* ─── helpers ─────────────────────────────────────────── */
 const fmtSize = (bytes = 0) => {

@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "../components/ui/dialog";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 
 export default function CategoriesPro() {
   const [categories, setCategories] = useState([]);

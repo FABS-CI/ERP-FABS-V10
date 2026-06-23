@@ -22,6 +22,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from "../components/PageHeader";
 import DocumentActionBar from '../components/document/DocumentActionBar';
 
 const STATUT_CONFIG = {

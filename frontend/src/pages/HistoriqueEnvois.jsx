@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mail, MessageCircle, Filter, RefreshCw, Search } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PageHeader from "../components/PageHeader";
 import { Button } from '../components/ui/button';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';

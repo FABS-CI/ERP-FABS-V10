@@ -20,6 +20,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import API_BASE_URL from "../config/api";
 import {
   getDashboardGlobal, forecastVentes, forecastDepenses, analyseRentabiliteClient,

@@ -3,6 +3,7 @@ import { BarChart3, Package, Download, FileText, Filter, X, TrendingUp, PieChart
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { getRapportVentes, getRapportStock, exportToCSV, formatCurrency } from "../services/rapportsApi";
 
 const COLORS = ["#FF6200", "#0A2540", "#2E7D32", "#C62828", "#7C3AED", "#F59E0B", "#10B981", "#EF4444"];

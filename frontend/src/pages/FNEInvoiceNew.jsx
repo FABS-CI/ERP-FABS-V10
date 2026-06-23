@@ -12,6 +12,7 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import { submitFNEInvoice } from "../services/fneApi";
 
 const EMPTY_ITEM = { reference: "", description: "", quantity: 1, amount: 0, discount: 0, measurementUnit: "unité", taxes: ["TVA"] };

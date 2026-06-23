@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "../components/ui/dialog";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import API_BASE_URL from "../config/api";
 import { calculerPaie, creerBulletin, listerBulletins } from "../services/paieApi";
 

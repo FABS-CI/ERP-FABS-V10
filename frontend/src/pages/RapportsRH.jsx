@@ -3,6 +3,7 @@ import { BarChart3, Users, Briefcase, Calendar, TrendingUp, Download } from "luc
 import { getRHDashboard } from "../services/rhApi";
 import { Button } from "../components/ui/button";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 
 export default function RapportsRH() {
   const [stats, setStats] = useState(null);

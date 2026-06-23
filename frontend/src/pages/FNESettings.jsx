@@ -18,6 +18,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import {
   getFNESettings, updateFNESettings, pingDGI,
   testSignInvoice, testSignB2B, testSignB2G,

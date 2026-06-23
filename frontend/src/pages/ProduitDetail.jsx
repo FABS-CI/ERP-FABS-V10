@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import PageHeader from "../components/PageHeader";
 import ProductFormDialog from "../components/products/ProductFormDialog";
 import StockBadge from "../components/products/StockBadge";
 import { CATEGORIES_MAP, getProduct, disableProduct } from "../services/produitsApi";
