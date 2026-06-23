@@ -72,6 +72,7 @@ from output_encoding_service import OutputEncodingService, ENCODING_CONFIG
 from rbac_service import RBACService, Role, Permission, UserScope, check_access_policy
 from audit_service import AuditService, AuditAction, AuditLevel, AuditEvent
 from rate_limiting_service import RateLimitingService, RateLimitTier, get_user_tier
+from secrets_rotation_service import SecretsRotationService, SecretType, RotationPolicy, init_secrets_rotation
 
 # ============================================================================
 # CONFIGURATION
@@ -130,6 +131,9 @@ audit_service = None  # Will be set after app creation
 
 # Rate Limiting Service (initialized later after redis connection)
 rate_limiting_service = None  # Will be set after app creation
+
+# Secrets Rotation Service (initialized later after db connection)
+secrets_rotation_service = None  # Will be set after app creation
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
 PASSWORD_REGEX = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
@@ -669,6 +673,11 @@ if audit_service is None:
 if rate_limiting_service is None:
     rate_limiting_service = RateLimitingService(redis_client)
     logger.info("✅ Advanced Rate Limiting Service initialized")
+
+# Initialize secrets rotation service
+if secrets_rotation_service is None:
+    secrets_rotation_service = SecretsRotationService(db, audit_service)
+    logger.info("✅ Secrets Rotation Service initialized")
 
 # Add GZip middleware for compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -1408,6 +1417,49 @@ async def reset_user_rate_limits(
         "user_id": user_id,
         "reset": result
     }
+
+
+@api_router.get("/security/secrets-status")
+async def get_secrets_status(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    """Get rotation status for all secrets (Phase 3.3.7) — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    status = await secrets_rotation_service.get_all_secrets_status()
+    return status
+
+
+@api_router.post("/security/rotate-secret")
+async def rotate_secret(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    secret_type: str = Query(...),
+    reason: str = Query("Manual rotation", min_length=1),
+):
+    """Rotate a secret immediately (Phase 3.3.7) — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    try:
+        secret_enum = SecretType(secret_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid secret type. Valid types: {[s.value for s in SecretType]}"
+        )
+    
+    result = await secrets_rotation_service.rotate_secret(
+        secret_type=secret_enum,
+        user_id=me.get("user_id"),
+        reason=reason,
+    )
+    
+    return result
 
 
 @api_router.get("/health/details")
