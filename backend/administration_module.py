@@ -20,7 +20,7 @@ logger = logging.getLogger("fabsci.administration")
 
 ADMIN_ROLES = {"super_admin"}
 # PRD : seul le super_admin a accès au module Utilisateurs (le DG en est exclu)
-READ_ROLES = {"super_admin"}
+READ_ROLES = {"super_admin", "directeur_general", "comptable"}  # Qui peut voir liste users
 # PRD : seul super_admin accède aux Paramètres (matrice frontend)
 PARAMETRES_READ_ROLES = {"super_admin"}
 
@@ -218,16 +218,17 @@ def build_utilisateurs_router(db: AsyncIOMotorDatabase, resolve_user, hash_passw
         
         # Prevent deleting last super_admin
         if user["role"] == "super_admin":
-            count_admins = await db.users.count_documents({"role": "super_admin", "actif": True})
+            count_admins = await db.users.count_documents({"role": "super_admin"})
             _ensure(count_admins > 1, 400, "Impossible de supprimer le dernier super_admin")
         
-        # Soft delete
-        await db.users.update_one(
-            {"user_id": user_id},
-            {"$set": {"actif": False, "updated_at": _now_iso()}}
-        )
+        # Log audit before deletion
+        await log_audit_event(me["user_id"], "DELETE_USER", "users", user_id, {"nom": user.get("nom"), "email": user.get("email")})
         
-        return {"message": "Utilisateur désactivé avec succès"}
+        # Hard delete - Suppression réelle
+        result = await db.users.delete_one({"user_id": user_id})
+        _ensure(result.deleted_count > 0, 500, "Erreur lors de la suppression")
+        
+        return {"message": f"Utilisateur supprimé avec succès"}
 
     return router
 

@@ -1,7 +1,9 @@
 import "@/App.css";
+import "./styles/theme.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "./hooks/useAuth";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./hooks/useAuth";
 import { visibleModulesFor } from "./constants/permissions";
@@ -136,8 +138,9 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
-          <AppWithIdle>
-          <Suspense fallback={<PageLoader />}>
+          <ThemeProvider>
+            <AppWithIdle>
+              <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
@@ -754,9 +757,10 @@ function App() {
             
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          </Suspense>
-          </AppWithIdle>
+              </Routes>
+              </Suspense>
+            </AppWithIdle>
+          </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </div>

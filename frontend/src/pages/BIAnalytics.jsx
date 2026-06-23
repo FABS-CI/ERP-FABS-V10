@@ -118,17 +118,35 @@ export default function BIAnalytics() {
   // ──────────────── Data transformations ────────────────
   const topClientsChart = useMemo(() => {
     if (!dashboard?.ventes?.top_clients) return [];
-    return dashboard.ventes.top_clients.slice(0, 7).map(([id, montant]) => ({
-      name: clientsMap[id] || `Client ${id.slice(-6)}`,
-      montant: Math.round(montant),
+    const data = dashboard.ventes.top_clients;
+    // Vérifier si c'est un array ou un object
+    let entries = [];
+    if (Array.isArray(data)) {
+      entries = data;
+    } else if (data && typeof data === 'object') {
+      entries = Object.entries(data);
+    }
+    if (!Array.isArray(entries)) return [];
+    return entries.slice(0, 7).map(([id, montant]) => ({
+      name: clientsMap[id] || `Client ${String(id).slice(-6)}`,
+      montant: Math.round(montant || 0),
     }));
   }, [dashboard, clientsMap]);
 
   const topProduitsChart = useMemo(() => {
     if (!dashboard?.ventes?.top_produits) return [];
-    return dashboard.ventes.top_produits.slice(0, 7).map(([id, qty]) => ({
-      name: produitsMap[id] || `Produit ${(id || "?").slice(-6)}`,
-      quantite: qty,
+    const data = dashboard.ventes.top_produits;
+    // Vérifier si c'est un array ou un object
+    let entries = [];
+    if (Array.isArray(data)) {
+      entries = data;
+    } else if (data && typeof data === 'object') {
+      entries = Object.entries(data);
+    }
+    if (!Array.isArray(entries)) return [];
+    return entries.slice(0, 7).map(([id, qty]) => ({
+      name: produitsMap[id] || `Produit ${String(id || "?").slice(-6)}`,
+      quantite: qty || 0,
     }));
   }, [dashboard, produitsMap]);
 
@@ -144,11 +162,17 @@ export default function BIAnalytics() {
 
   const forecastChart = useMemo(() => {
     if (!forecastV?.previsions) return [];
-    return forecastV.previsions.map((p) => ({
-      mois: p.mois || p.label || "?",
-      ventes: Math.round(p.prevision || p.valeur || 0),
-      depenses: 0,
-    }));
+    const prev = forecastV.previsions;
+    const entries = Array.isArray(prev) ? prev : Object.entries(prev || {});
+    return entries.map((p, idx) => {
+      // p peut être un object ou un [key, value]
+      const item = Array.isArray(p) && typeof p[0] === 'string' ? { mois: p[0], valeur: p[1] } : p;
+      return {
+        mois: item.mois || item.label || item[0] || `Mois +${idx + 1}`,
+        ventes: Math.round(item.prevision || item.valeur || item[1] || 0),
+        depenses: 0,
+      };
+    });
   }, [forecastV]);
 
   const periodLabel = PERIODES.find((p) => p.value === jours)?.label || `${jours} jours`;

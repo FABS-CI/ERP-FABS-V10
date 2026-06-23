@@ -1,0 +1,397 @@
+/**
+ * Theme CSS Variables — Thème dynamique par module
+ * 
+ * Les variables --theme-* sont injectées par ThemeContext
+ * et changent dynamiquement au navigation entre modules
+ * 
+ * Transition fluide 0.3s fade pour tous les changements
+ */
+
+:root {
+  /* Couleurs de thème — injectées dynamiquement */
+  --theme-primary: #3B82F6;
+  --theme-light: rgba(59, 130, 246, 0.12);
+  --theme-lighter: rgba(59, 130, 246, 0.20);
+  --theme-dark: #1e40af;
+  --theme-darker: #1d3a8a;
+  --theme-accent: #3B82F6;
+}
+
+/* ── Transition fluide lors du changement de thème ─────────────────── */
+* {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* ── Header avec couleur de thème ─────────────────────────────────── */
+.theme-header {
+  background: var(--theme-primary);
+  color: white;
+  box-shadow: 0 2px 8px var(--theme-light);
+}
+
+.theme-header-text {
+  color: white;
+  font-weight: 600;
+}
+
+/* ── Sidebar avec accent de thème ────────────────────────────────── */
+.theme-sidebar {
+  border-right: 2px solid var(--theme-light);
+}
+
+.theme-sidebar-group-header {
+  color: var(--theme-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.theme-sidebar-item-active {
+  background: var(--theme-light);
+  border-left: 4px solid var(--theme-primary);
+  color: var(--theme-dark);
+}
+
+.theme-sidebar-item-active svg {
+  color: var(--theme-primary);
+}
+
+.theme-sidebar-icon {
+  color: var(--theme-primary);
+}
+
+/* ── Boutons avec couleur de thème ──────────────────────────────── */
+.btn-theme-primary {
+  background-color: var(--theme-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-theme-primary:hover {
+  background-color: var(--theme-dark);
+  box-shadow: 0 4px 12px var(--theme-light);
+}
+
+.btn-theme-primary:active {
+  background-color: var(--theme-darker);
+}
+
+.btn-theme-outline {
+  background-color: transparent;
+  border: 2px solid var(--theme-primary);
+  color: var(--theme-primary);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.btn-theme-outline:hover {
+  background-color: var(--theme-light);
+  border-color: var(--theme-dark);
+  color: var(--theme-dark);
+}
+
+.btn-theme-ghost {
+  background-color: transparent;
+  color: var(--theme-primary);
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.btn-theme-ghost:hover {
+  background-color: var(--theme-light);
+  color: var(--theme-dark);
+}
+
+/* ── Badges & Labels avec couleur de thème ──────────────────────── */
+.badge-theme {
+  background-color: var(--theme-light);
+  color: var(--theme-dark);
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  display: inline-block;
+}
+
+.badge-theme-solid {
+  background-color: var(--theme-primary);
+  color: white;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  display: inline-block;
+}
+
+.badge-theme-outline {
+  background-color: transparent;
+  border: 1px solid var(--theme-primary);
+  color: var(--theme-primary);
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  display: inline-block;
+}
+
+/* ── Indicateurs & Status ─────────────────────────────────────────── */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--theme-primary);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--theme-primary);
+  margin-right: 0.5rem;
+}
+
+/* ── Onglets avec couleur de thème ──────────────────────────────── */
+.tab-item-active {
+  border-bottom: 3px solid var(--theme-primary);
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+.tab-item-inactive {
+  color: #9CA3AF;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-item-inactive:hover {
+  color: var(--theme-dark);
+  border-bottom-color: var(--theme-light);
+}
+
+/* ── Liens avec couleur de thème ────────────────────────────────– */
+.link-theme {
+  color: var(--theme-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.link-theme:hover {
+  color: var(--theme-dark);
+  text-decoration: underline;
+}
+
+.link-theme-active {
+  color: var(--theme-dark);
+  font-weight: 700;
+  border-bottom: 2px solid var(--theme-primary);
+}
+
+/* ── Cartes statistiques ─────────────────────────────────────────── */
+.stat-card {
+  border-left: 4px solid var(--theme-primary);
+  background: linear-gradient(135deg, white, var(--theme-light));
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--theme-light);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 16px var(--theme-light);
+  transform: translateY(-2px);
+}
+
+.stat-card-icon {
+  color: var(--theme-primary);
+  width: 2rem;
+  height: 2rem;
+}
+
+.stat-card-value {
+  color: var(--theme-dark);
+  font-weight: 700;
+  font-size: 1.875rem;
+  margin: 0.5rem 0;
+}
+
+.stat-card-label {
+  color: #6B7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ── Formulaires ────────────────────────────────────────────────── */
+.form-input-theme:focus {
+  border-color: var(--theme-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--theme-light);
+}
+
+.form-label-theme {
+  color: var(--theme-dark);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.form-error-theme {
+  color: #EF4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.form-success-theme {
+  color: var(--theme-primary);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* ── Icônes avec couleur de thème ───────────────────────────────── */
+.icon-theme {
+  color: var(--theme-primary);
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 2;
+}
+
+.icon-theme-large {
+  color: var(--theme-primary);
+  width: 2rem;
+  height: 2rem;
+}
+
+/* ── Graphiques (pour ApexCharts, Chart.js, etc.) ──────────────── */
+.chart-theme {
+  --chart-color-primary: var(--theme-primary);
+  --chart-color-light: var(--theme-light);
+  --chart-color-dark: var(--theme-dark);
+}
+
+/* ── Dark mode support ───────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .theme-header {
+    background: var(--theme-primary);
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), var(--theme-light));
+    border: 1px solid var(--theme-light);
+  }
+
+  .btn-theme-outline {
+    border-color: var(--theme-accent);
+  }
+
+  .form-input-theme:focus {
+    border-color: var(--theme-accent);
+  }
+}
+
+/* ── Breadcrumbs ────────────────────────────────────────────────── */
+.breadcrumb-theme {
+  color: #9CA3AF;
+}
+
+.breadcrumb-theme-active {
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+.breadcrumb-separator {
+  color: #D1D5DB;
+  margin: 0 0.5rem;
+}
+
+/* ── Animations de couleur ─────────────────────────────────────── */
+@keyframes theme-fade-in {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.theme-fade-in {
+  animation: theme-fade-in 0.3s ease-in-out;
+}
+
+/* ── Loading states avec couleur de thème ────────────────────────── */
+.loading-spinner {
+  border-color: var(--theme-light);
+  border-top-color: var(--theme-primary);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 4px solid;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Alerts & Notifications ───────────────────────────────────── */
+.alert-theme-info {
+  background-color: var(--theme-light);
+  border-left: 4px solid var(--theme-primary);
+  color: var(--theme-dark);
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.alert-theme-success {
+  background-color: #D1FAE5;
+  border-left: 4px solid #10B981;
+  color: #047857;
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.alert-theme-warning {
+  background-color: #FEF3C7;
+  border-left: 4px solid #F59E0B;
+  color: #92400E;
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.alert-theme-error {
+  background-color: #FEE2E2;
+  border-left: 4px solid #EF4444;
+  color: #991B1B;
+  padding: 1rem;
+  border-radius: 0.375rem;
+}

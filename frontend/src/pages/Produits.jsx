@@ -16,6 +16,7 @@ import { useSortableData } from "../hooks/useSortableData";
 import { exportCsv } from "../utils/exportCsv";
 import { formatFCFA } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
+import { useCustomPermissions } from "../hooks/useCustomPermissions";
 
 const WRITE_ROLES = new Set([
   "super_admin", "directeur_general", "directeur_commercial",
@@ -26,8 +27,12 @@ const FINANCIAL_ROLES = new Set(["super_admin", "directeur_general", "comptable"
 export default function Produits() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const canWrite = WRITE_ROLES.has(role);
+  const customPerms = useCustomPermissions();
+  const canWrite = WRITE_ROLES.has(role) && customPerms.canModifyProduits;
+  const canModify = customPerms.canModifyProduits;
+  const canDisable = customPerms.canDisableProduits;
   const seePrixAchat = FINANCIAL_ROLES.has(role);
+  const hideStock = customPerms.hideStockQuantity;
 
   const [q, setQ] = useState("");
   const [categorie, setCategorie] = useState("");
@@ -258,14 +263,18 @@ export default function Produits() {
                       <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         {canWrite && p.actif && (
                           <div className="inline-flex items-center gap-1">
-                            <button data-testid={`produits-edit-${p.reference}`} onClick={() => { setEditing(p); setDialogOpen(true); }}
-                              className="p-1.5 rounded hover:bg-[#FF6200]/10 text-[#0A2540] dark:text-white/80" title="Modifier">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button data-testid={`produits-disable-${p.reference}`} onClick={() => handleDisable(p)}
-                              className="p-1.5 rounded hover:bg-[#C62828]/10 text-[#C62828]" title="Désactiver">
-                              <PowerOff className="w-3.5 h-3.5" />
-                            </button>
+                            {canModify && (
+                              <button data-testid={`produits-edit-${p.reference}`} onClick={() => { setEditing(p); setDialogOpen(true); }}
+                                className="p-1.5 rounded hover:bg-[#FF6200]/10 text-[#0A2540] dark:text-white/80" title="Modifier">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canDisable && (
+                              <button data-testid={`produits-disable-${p.reference}`} onClick={() => handleDisable(p)}
+                                className="p-1.5 rounded hover:bg-[#C62828]/10 text-[#C62828]" title="Désactiver">
+                                <PowerOff className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

@@ -17,11 +17,15 @@ import { exportCsv } from "../utils/exportCsv";
 import { formatFCFA } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
 import { can } from "../constants/permissions";
+import { useCustomPermissions } from "../hooks/useCustomPermissions";
 
 export default function Clients() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const canWrite = can(role, "clients") && ["super_admin", "directeur_general", "directeur_commercial", "secretariat"].includes(role);
+  const customPerms = useCustomPermissions();
+  const canWrite = can(role, "clients") && ["super_admin", "directeur_general", "directeur_commercial", "secretariat"].includes(role) && customPerms.canCreateClients;
+  const canModify = customPerms.canModifyClients;
+  const canDisable = customPerms.canDisableClients;
 
   const [q, setQ] = useState("");
   const [typeClient, setTypeClient] = useState("");
@@ -273,22 +277,26 @@ export default function Clients() {
                       >
                         {canWrite && c.actif && (
                           <div className="inline-flex items-center gap-1">
-                            <button
-                              data-testid={`clients-edit-${c.reference}`}
-                              onClick={() => { setEditing(c); setDialogOpen(true); }}
-                              className="p-1.5 rounded hover:bg-[#FF6200]/10 text-[#0A2540] dark:text-white/80"
-                              title="Modifier"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              data-testid={`clients-disable-${c.reference}`}
-                              onClick={() => handleDisable(c)}
-                              className="p-1.5 rounded hover:bg-[#C62828]/10 text-[#C62828]"
-                              title="Désactiver"
-                            >
-                              <PowerOff className="w-3.5 h-3.5" />
-                            </button>
+                            {canModify && (
+                              <button
+                                data-testid={`clients-edit-${c.reference}`}
+                                onClick={() => { setEditing(c); setDialogOpen(true); }}
+                                className="p-1.5 rounded hover:bg-[#FF6200]/10 text-[#0A2540] dark:text-white/80"
+                                title="Modifier"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canDisable && (
+                              <button
+                                data-testid={`clients-disable-${c.reference}`}
+                                onClick={() => handleDisable(c)}
+                                className="p-1.5 rounded hover:bg-[#C62828]/10 text-[#C62828]"
+                                title="Désactiver"
+                              >
+                                <PowerOff className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         )}
                         {!canWrite && <MoreHorizontal className="w-3.5 h-3.5 text-gray-400 inline" />}

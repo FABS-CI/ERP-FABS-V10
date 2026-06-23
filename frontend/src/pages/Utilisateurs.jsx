@@ -4,7 +4,7 @@
  * activer/désactiver les utilisateurs.
  */
 import React, { useState, useEffect } from "react";
-import { UserCog, Edit, Plus, KeyRound } from "lucide-react";
+import { UserCog, Edit, Plus, KeyRound, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -24,6 +24,7 @@ import {
   updateUtilisateur,
   createUtilisateurWithPassword,
   resetUserPassword,
+  deleteUtilisateur,
 } from "../services/utilisateursApi";
 import { useAuth } from "../hooks/useAuth";
 
@@ -78,6 +79,19 @@ export default function Utilisateurs() {
       fetchUsers();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Erreur");
+    }
+  };
+
+  const handleDeleteUser = async (u) => {
+    if (!window.confirm(`⚠️  Êtes-vous sûr de vouloir supprimer le compte de "${u.nom || u.email}" ?\n\nCette action est IRRÉVERSIBLE.`)) {
+      return;
+    }
+    try {
+      await deleteUtilisateur(u.user_id);
+      toast.success(`Utilisateur "${u.nom || u.email}" supprimé`);
+      fetchUsers();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur suppression utilisateur");
     }
   };
 
@@ -152,6 +166,9 @@ export default function Utilisateurs() {
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => setResettingUser(u)} data-testid={`btn-reset-pw-${u.email}`}>
                                 <KeyRound className="h-3 w-3 mr-1" /> Mot de passe
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800" onClick={() => handleDeleteUser(u)} data-testid={`btn-delete-${u.email}`}>
+                                <Trash2 className="h-3 w-3 mr-1" /> Supprimer
                               </Button>
                             </div>
                           )}
