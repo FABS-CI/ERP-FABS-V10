@@ -1,0 +1,208 @@
+# Backend Deployment with security hardening
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fabsci-backend
+  namespace: fabsci
+  labels:
+    app: fabsci
+    component: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: fabsci
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: fabsci
+        component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: fabsci-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: backend
+        image: fabsci/backend:latest
+        imagePullPolicy: Always
+        
+        # Security Context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_BIND_SERVICE
+        
+        # Ports
+        ports:
+        - name: http
+          containerPort: 8002
+          protocol: TCP
+        - name: https
+          containerPort: 8443
+          protocol: TCP
+        
+        # Environment
+        env:
+        - name: ENVIRONMENT
+          value: production
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              name: fabsci-secrets
+              key: mongo-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: fabsci-secrets
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: fabsci-secrets
+              key: jwt-secret
+        - name: TLS_ENABLED
+          value: "true"
+        - name: TLS_CERT_PATH
+          value: /etc/fabsci/tls/tls.crt
+        - name: TLS_KEY_PATH
+          value: /etc/fabsci/tls/tls.key
+        
+        # Volumes
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: var-tmp
+          mountPath: /var/tmp
+        - name: logs
+          mountPath: /app/logs
+        - name: tls-certs
+          mountPath: /etc/fabsci/tls
+          readOnly: true
+        
+        # Liveness Probe
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness Probe
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Resources
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+      
+      # Volumes
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      - name: tls-certs
+        secret:
+          secretName: fabsci-tls
+          defaultMode: 0400
+      
+      # Pod Disruption Budget
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - fabsci
+                - key: component
+                  operator: In
+                  values:
+                  - backend
+              topologyKey: kubernetes.io/hostname
+      
+      # Tolerations
+      tolerations:
+      - key: workload
+        operator: Equal
+        value: fabsci
+        effect: NoSchedule
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fabsci-backend
+  namespace: fabsci
+  labels:
+    app: fabsci
+    component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: fabsci
+    component: backend
+  ports:
+  - name: http
+    port: 8002
+    targetPort: http
+    protocol: TCP
+  - name: https
+    port: 8443
+    targetPort: https
+    protocol: TCP
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fabsci-backend-pdb
+  namespace: fabsci
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: fabsci
+      component: backend

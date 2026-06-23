@@ -1,0 +1,81 @@
+# Phase 3.6: Deployment Hardening
+# Kubernetes Namespace and RBAC
+
+---
+# Create namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fabsci
+  labels:
+    app: fabsci
+    env: production
+
+---
+# Network Policy - Deny all ingress by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-ingress
+  namespace: fabsci
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+---
+# Allow ingress from nginx ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-ingress
+  namespace: fabsci
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: ingress-nginx
+
+---
+# Service Account for backend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fabsci-backend
+  namespace: fabsci
+
+---
+# Role for backend (read-only)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fabsci-backend-role
+  namespace: fabsci
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["fabsci-secrets"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fabsci-backend-rolebinding
+  namespace: fabsci
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fabsci-backend-role
+subjects:
+  - kind: ServiceAccount
+    name: fabsci-backend
+    namespace: fabsci
