@@ -67,6 +67,7 @@ from rapports_module import build_rapports_router
 from paie_module import router as paie_router
 from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
 from signing_service import RequestSigningService, SIGNING_REQUIRED_METHODS, SIGNING_EXEMPT_PATHS
+from encryption_service import encryption_service, ENCRYPTED_FIELDS_BY_COLLECTION
 
 # ============================================================================
 # CONFIGURATION
@@ -1173,6 +1174,23 @@ async def get_public_key():
         "algorithm": "HMAC-SHA256",
         "public_key": RequestSigningService.derive_public_key(SIGNING_KEY),
         "description": "Use this to verify request signatures. Clients should sign requests with X-Signature header."
+    }
+
+
+@api_router.get("/security/encryption-fields")
+async def get_encryption_fields(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    """List encrypted fields per collection (Phase 3.3.2) — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    return {
+        "status": "ok",
+        "encrypted_fields_by_collection": ENCRYPTED_FIELDS_BY_COLLECTION,
+        "message": "Data-at-rest encryption is active for sensitive fields"
     }
 
 
