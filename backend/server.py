@@ -73,6 +73,7 @@ from rbac_service import RBACService, Role, Permission, UserScope, check_access_
 from audit_service import AuditService, AuditAction, AuditLevel, AuditEvent
 from rate_limiting_service import RateLimitingService, RateLimitTier, get_user_tier
 from secrets_rotation_service import SecretsRotationService, SecretType, RotationPolicy, init_secrets_rotation
+from tls_config_service import TLSConfigService, init_tls_config
 
 # ============================================================================
 # CONFIGURATION
@@ -134,6 +135,7 @@ rate_limiting_service = None  # Will be set after app creation
 
 # Secrets Rotation Service (initialized later after db connection)
 secrets_rotation_service = None  # Will be set after app creation
+tls_config_service = None  # Will be set after app creation
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
 PASSWORD_REGEX = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
@@ -678,6 +680,10 @@ if rate_limiting_service is None:
 if secrets_rotation_service is None:
     secrets_rotation_service = SecretsRotationService(db, audit_service)
     logger.info("✅ Secrets Rotation Service initialized")
+
+if tls_config_service is None:
+    tls_config_service = TLSConfigService(audit_service)
+    logger.info("✅ TLS Configuration Service initialized")
 
 # Add GZip middleware for compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -1460,6 +1466,65 @@ async def rotate_secret(
     )
     
     return result
+
+
+# ============================================================================
+# PHASE 3.4 - TLS/HTTPS SECURITY ENDPOINTS
+# ============================================================================
+
+@api_router.get("/security/tls-status")
+async def get_tls_status(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    """Get TLS configuration and certificate status (Phase 3.4) — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    if not tls_config_service:
+        raise HTTPException(status_code=503, detail="TLS service not initialized")
+    
+    status = tls_config_service.get_tls_status()
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "tls_status": status,
+    }
+
+
+@api_router.post("/security/validate-certificate")
+async def validate_tls_certificate(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    """Validate TLS certificate chain (Phase 3.4) — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    if not tls_config_service:
+        raise HTTPException(status_code=503, detail="TLS service not initialized")
+    
+    is_valid = tls_config_service.validate_certificate_chain()
+    cert_metadata = tls_config_service.get_cert_metadata()
+    
+    # Log validation
+    audit_service.log(
+        user_id=me.get("user_id"),
+        action="TLS_CERT_VALIDATION",
+        resource_type="security",
+        details={
+            "is_valid": is_valid,
+            "certificate": cert_metadata,
+        },
+        level="INFO"
+    )
+    
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "is_valid": is_valid,
+        "certificate": cert_metadata,
+    }
 
 
 @api_router.get("/health/details")
