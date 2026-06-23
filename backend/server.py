@@ -70,6 +70,7 @@ from signing_service import RequestSigningService, SIGNING_REQUIRED_METHODS, SIG
 from encryption_service import encryption_service, ENCRYPTED_FIELDS_BY_COLLECTION
 from output_encoding_service import OutputEncodingService, ENCODING_CONFIG
 from rbac_service import RBACService, Role, Permission, UserScope, check_access_policy
+from audit_service import AuditService, AuditAction, AuditLevel, AuditEvent
 
 # ============================================================================
 # CONFIGURATION
@@ -122,6 +123,9 @@ JWT_REFRESH_TOKEN_EXPIRY_DAYS = int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRY_DAY
 SIGNING_KEY = os.environ.get('SIGNING_KEY', JWT_SECRET)
 signing_service = RequestSigningService(SIGNING_KEY)
 logger.info("✅ Request Signing Service initialized (HMAC-SHA256)")
+
+# Audit Service (initialized later after db connection)
+audit_service = None  # Will be set after app creation
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
 PASSWORD_REGEX = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
@@ -651,6 +655,11 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="ERP EDITIONS FABS-CI API", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Initialize audit service
+if audit_service is None:
+    audit_service = AuditService(db)
+    logger.info("✅ Enhanced Audit Service initialized")
 
 # Add GZip middleware for compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -1243,6 +1252,92 @@ async def get_encryption_fields(
         "status": "ok",
         "encrypted_fields_by_collection": ENCRYPTED_FIELDS_BY_COLLECTION,
         "message": "Data-at-rest encryption is active for sensitive fields"
+    }
+
+
+@api_router.get("/audit/user-log")
+async def get_user_audit_log(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    limit: int = Query(50, ge=1, le=500),
+    skip: int = Query(0, ge=0),
+):
+    """Get audit log for current user (Phase 3.3.5)."""
+    me = await resolve_user(request, authorization)
+    user_id = me.get("user_id")
+    
+    logs = await audit_service.get_user_audit_log(user_id, limit=limit, skip=skip)
+    return {
+        "status": "ok",
+        "user_id": user_id,
+        "count": len(logs),
+        "logs": logs
+    }
+
+
+@api_router.get("/audit/resource-log")
+async def get_resource_audit_log(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    resource_type: str = Query(...),
+    resource_id: str = Query(...),
+    limit: int = Query(50, ge=1, le=500),
+):
+    """Get audit log for specific resource — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    logs = await audit_service.get_resource_audit_log(resource_type, resource_id, limit=limit)
+    return {
+        "status": "ok",
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "count": len(logs),
+        "logs": logs
+    }
+
+
+@api_router.get("/audit/critical-events")
+async def get_critical_events(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    hours: int = Query(24, ge=1, le=2160),
+    limit: int = Query(100, ge=1, le=500),
+):
+    """Get critical security events — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    events = await audit_service.get_critical_events(hours=hours, limit=limit)
+    return {
+        "status": "ok",
+        "hours": hours,
+        "count": len(events),
+        "events": events
+    }
+
+
+@api_router.get("/audit/suspicious-ips")
+async def get_suspicious_ips(
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+    hours: int = Query(24, ge=1, le=2160),
+    threshold: int = Query(5, ge=1, le=100),
+):
+    """Get IPs with multiple failed login attempts — super_admin only."""
+    me = await resolve_user(request, authorization)
+    if me.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Accès réservé au super_admin")
+    
+    ips = await audit_service.get_suspicious_ips(hours=hours, failure_threshold=threshold)
+    return {
+        "status": "ok",
+        "hours": hours,
+        "threshold": threshold,
+        "count": len(ips),
+        "suspicious_ips": ips
     }
 
 
