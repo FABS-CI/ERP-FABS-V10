@@ -247,10 +247,15 @@ def _now_iso() -> str:
 
 
 def _project_client(doc: dict) -> dict:
-    """Strip MongoDB _id, ensure consistent shape."""
+    """Strip MongoDB _id, ensure consistent shape, add defaults for legacy docs."""
     if not doc:
         return doc
     doc = {k: v for k, v in doc.items() if k != "_id"}
+    # Provide defaults for legacy clients missing these fields
+    if "reference" not in doc or not doc["reference"]:
+        doc["reference"] = doc.get("client_id", "REF-UNKNOWN")
+    if "type_client" not in doc or not doc["type_client"]:
+        doc["type_client"] = "autre"
     return doc
 
 
@@ -338,7 +343,7 @@ def build_clients_router(
             .skip((page - 1) * page_size)
             .limit(page_size)
         )
-        items = [ClientOut(**d) async for d in cursor]
+        items = [ClientOut(**_project_client(d)) async for d in cursor]
         return ClientListOut(items=items, total=total, page=page, page_size=page_size)
 
     # ---- DUPLICATES ------------------------------------------------------
@@ -364,7 +369,7 @@ def build_clients_router(
         _ensure(me["role"] in READ_ROLES, 403, "Accès refusé")
         doc = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
         _ensure(doc is not None, 404, "Client introuvable")
-        return ClientOut(**doc)
+        return ClientOut(**_project_client(doc))
 
     # ---- CREATE ----------------------------------------------------------
     @router.post("", response_model=ClientOut, status_code=201)
