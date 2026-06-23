@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./api";  // ✅ PHASE 3.2: Use centralized api instance (HttpOnly + CSRF)
 
 const API = "/api";
 
@@ -16,14 +16,9 @@ export const CATEGORIES_MAP = Object.fromEntries(
   CATEGORIES.map((c) => [c.value, c])
 );
 
-// Helper to get token from localStorage
-function getToken() {
-  return localStorage.getItem('fabs_token');
-}
-
-// Helper to make request with token
+// ✅ PHASE 3.2: Helper to make request with centralized api instance
+// (Handles HttpOnly cookies + CSRF automatically)
 async function apiCall(method, url, data = null, params = null) {
-  const token = getToken();
   const config = {
     method,
     url: API + url,
@@ -31,9 +26,8 @@ async function apiCall(method, url, data = null, params = null) {
   };
   
   if (data) config.data = data;
-  if (token) config.headers = { 'Authorization': `Bearer ${token}` };
   
-  const res = await axios(config);
+  const res = await api(config);
   return res.data;
 }
 

@@ -136,10 +136,9 @@ const Backup = () => {
     restoreMut.mutate(id);
   };
   const handleDownload = (id) => {
-    const token = localStorage.getItem("fabs_token") || "";
     const url = `/api/backup/backups/${id}/download`;
-    // Téléchargement via lien temporaire avec token en header
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    // ✅ PHASE 3.2: Browser auto-sends HttpOnly session_token cookie
+    fetch(url, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error("Erreur téléchargement");
         return res.blob();

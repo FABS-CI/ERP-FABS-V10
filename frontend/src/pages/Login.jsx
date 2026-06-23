@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, Shield, AlertCircle, ShieldAlert } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth, csrfStore } from "../hooks/useAuth";
 import { COMPANY } from "../constants/company";
 import { verify2FA } from "../services/twoFAApi";
-import { tokenStore } from "../hooks/useAuth";
 
 function formatApiErrorDetail(detail) {
   if (detail == null) return "Une erreur est survenue. Veuillez réessayer.";
@@ -250,10 +249,8 @@ export default function Login() {
     setOtpError("");
     try {
       const result = await verify2FA(code);
-      if (result.access_token) {
-        // Échanger le token pré-auth contre le vrai token
-        tokenStore.set(result.access_token);
-      }
+      // ✅ CSRF token is auto-extracted by useAuth hook
+      // Browser automatically stores session_token in HttpOnly cookie
       // Finaliser la session
       setUser(pendingUserData);
       Promise.allSettled([import("./Dashboard"), import("./Clients"), import("./Commandes"), import("./Factures")]);
@@ -270,8 +267,8 @@ export default function Login() {
   };
 
   const handleBack = () => {
-    // Effacer le token pré-auth
-    tokenStore.clear();
+    // ✅ Clear CSRF token when returning to login
+    csrfStore.clear();
     setPendingUserData(null);
     setOtpError("");
     setError("");

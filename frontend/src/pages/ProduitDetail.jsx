@@ -195,8 +195,9 @@ function OngletMouvementsStock({ productId }) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // ✅ PHASE 3.2: fetch with credentials to include HttpOnly cookies
         const res = await fetch(`/api/stock/mouvements?produit_id=${productId}&type=${typeFilter}&skip=${page * limit}&limit=${limit}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          credentials: "include"
         });
         if (res.ok) {
           const data = await res.json();
@@ -297,8 +298,9 @@ function OngletHistoriqueCommandes({ productId }) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // ✅ PHASE 3.2: fetch with credentials to include HttpOnly cookies
         const res = await fetch(`/api/commandes?produit_id=${productId}&statut=${statutFilter}&skip=${page * limit}&limit=${limit}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          credentials: "include"
         });
         if (res.ok) {
           const data = await res.json();

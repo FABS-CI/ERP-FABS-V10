@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronRight, User, MapPin, Phone, Tag,
 } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
+import api from "../services/api";  // ✅ PHASE 3.2: Use centralized api instance (HttpOnly + CSRF)
 
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageHeader from "../components/PageHeader";
@@ -103,10 +103,9 @@ export default function EtatCompteClients() {
     clearTimeout(clientSearchTimeout.current);
     clientSearchTimeout.current = setTimeout(async () => {
       try {
-        const token = localStorage.getItem("fabs_token");
-        const r = await axios.get(`${API}/clients`, {
+        // ✅ PHASE 3.2: api instance handles cookies + CSRF automatically
+        const r = await api.get(`${API}/clients`, {
           params: { q: v, page_size: 8 },
-          headers: { Authorization: `Bearer ${token}` },
         });
         setClientSuggestions(r.data.items || []);
         setShowSuggestions(true);
@@ -129,12 +128,9 @@ export default function EtatCompteClients() {
     setPreviewError(null);
     setPreviewData(null);
     try {
-      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
-      // On utilise l'endpoint PDF mais on demande JSON en passant format=json
-      const r = await axios.get(`${API}/rapports/etat-compte-clients/data?${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // ✅ PHASE 3.2: api instance handles cookies + CSRF automatically
+      const r = await api.get(`${API}/rapports/etat-compte-clients/data?${qs}`);
       setPreviewData(r.data);
       setExpandedClients({});
     } catch (e) {
@@ -150,10 +146,10 @@ export default function EtatCompteClients() {
   const handleExportPdf = useCallback(async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
+      // ✅ PHASE 3.2: fetch with credentials to include HttpOnly cookies
       const res = await fetch(`${API}/rapports/etat-compte-clients?${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -180,10 +176,10 @@ export default function EtatCompteClients() {
   const handlePrint = useCallback(async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("fabs_token");
       const qs = buildParams();
+      // ✅ PHASE 3.2: fetch with credentials to include HttpOnly cookies
       const res = await fetch(`${API}/rapports/etat-compte-clients?${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Erreur serveur");
       const blob = await res.blob();

@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./api";  // ✅ PHASE 3.2: Use centralized api instance (HttpOnly + CSRF)
 import { getApiBase } from '../config/api';
 
 const API = getApiBase("/notifications");
@@ -22,12 +22,13 @@ class NotificationWebSocketManager {
    * Callbacks: onMessage(payload), onConnect(), onDisconnect()
    */
   connect(onMessage, onConnect = null, onDisconnect = null) {
-    const token = localStorage.getItem("session_token") || sessionStorage.getItem("session_token");
+    // ✅ PHASE 3.2: Browser automatically sends HttpOnly cookies on WebSocket
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsHost = window.location.host;
-    const wsUrl = `${wsProtocol}//${wsHost}/api/notifications/ws${token ? `?token=${token}` : ""}`;
+    const wsUrl = `${wsProtocol}//${wsHost}/api/notifications/ws`;
 
     try {
+      // ✅ WebSocket automatically includes HttpOnly cookies (no query param needed)
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
@@ -126,75 +127,75 @@ export const notificationWsManager = new NotificationWebSocketManager();
 
 // Notifications
 export const listNotifications = async (filters = {}) => {
-  const response = await axios.get(`${API}`, { params: filters });
+  const response = await api.get(`${API}`, { params: filters });
   return response.data;
 };
 
 export const listUnreadNotifications = async () => {
-  const response = await axios.get(`${API}/non-lues`);
+  const response = await api.get(`${API}/non-lues`);
   return response.data;
 };
 
 export const countUnread = async () => {
-  const response = await axios.get(`${API}/count`);
+  const response = await api.get(`${API}/count`);
   return response.data;
 };
 
 export const markAsRead = async (notificationId) => {
-  const response = await axios.patch(`${API}/${notificationId}/lire`);
+  const response = await api.patch(`${API}/${notificationId}/lire`);
   return response.data;
 };
 
 export const markAllAsRead = async () => {
-  const response = await axios.patch(`${API}/tout-lire`);
+  const response = await api.patch(`${API}/tout-lire`);
   return response.data;
 };
 
 export const deleteNotification = async (notificationId) => {
-  const response = await axios.delete(`${API}/${notificationId}`);
+  const response = await api.delete(`${API}/${notificationId}`);
   return response.data;
 };
 
 // Préférences
 export const getPreferences = async () => {
-  const response = await axios.get(`${API}/preferences`);
+  const response = await api.get(`${API}/preferences`);
   return response.data;
 };
 
 export const updatePreferences = async (data) => {
-  const response = await axios.put(`${API}/preferences`, data);
+  const response = await api.put(`${API}/preferences`, data);
   return response.data;
 };
 
 // Email Templates (Admin)
 export const listEmailTemplates = async () => {
-  const response = await axios.get(`${API}/templates`);
+  const response = await api.get(`${API}/templates`);
   return response.data;
 };
 
 export const createEmailTemplate = async (data) => {
-  const response = await axios.post(`${API}/templates`, data);
+  const response = await api.post(`${API}/templates`, data);
   return response.data;
 };
 
 export const updateEmailTemplate = async (templateId, data) => {
-  const response = await axios.put(`${API}/templates/${templateId}`, data);
+  const response = await api.put(`${API}/templates/${templateId}`, data);
   return response.data;
 };
 
 export const deleteEmailTemplate = async (templateId) => {
-  const response = await axios.delete(`${API}/templates/${templateId}`);
+  const response = await api.delete(`${API}/templates/${templateId}`);
   return response.data;
 };
 
 // Email Logs (Admin)
 export const listEmailLogs = async (filters = {}) => {
-  const response = await axios.get(`${API}/logs`, { params: filters });
+  const response = await api.get(`${API}/logs`, { params: filters });
   return response.data;
 };
 
 // Test
 export const sendTestNotification = async () => {
-  const response = await axios.post(`${API}/test`);
+  const response = await api.post(`${API}/test`);
   return response.data;
 };
