@@ -66,6 +66,7 @@ from proformas_module import build_proformas_router
 from rapports_module import build_rapports_router
 from paie_module import router as paie_router
 from scripts.seed_comptabilite import seed_journaux_et_plan_comptable
+from signing_service import RequestSigningService, SIGNING_REQUIRED_METHODS, SIGNING_EXEMPT_PATHS
 
 # ============================================================================
 # CONFIGURATION
@@ -112,6 +113,12 @@ if not JWT_SECRET:
 JWT_ALGORITHM = 'HS256'
 JWT_ACCESS_TOKEN_EXPIRY_MINUTES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRY_MINUTES', '480'))
 JWT_REFRESH_TOKEN_EXPIRY_DAYS = int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRY_DAYS', '7'))
+
+# Request Signing Service (Phase 3.3 Security)
+# Use JWT_SECRET as base key for signing (in production, use separate SIGNING_KEY from .env)
+SIGNING_KEY = os.environ.get('SIGNING_KEY', JWT_SECRET)
+signing_service = RequestSigningService(SIGNING_KEY)
+logger.info("✅ Request Signing Service initialized (HMAC-SHA256)")
 
 # Password validation regex (min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special)
 PASSWORD_REGEX = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
@@ -242,6 +249,76 @@ class CSRFValidationMiddleware(BaseHTTPMiddleware):
         
         response = await call_next(request)
         return response
+
+class RequestSigningMiddleware(BaseHTTPMiddleware):
+    """Validate request signatures to prevent tampering (Phase 3.3)"""
+    
+    async def dispatch(self, request: Request, call_next):
+        # Only validate mutation requests (POST, PUT, DELETE, PATCH)
+        if request.method in SIGNING_REQUIRED_METHODS:
+            # Skip signature check for exempt paths
+            if request.url.path not in SIGNING_EXEMPT_PATHS and not any(
+                request.url.path.startswith(exempt) for exempt in SIGNING_EXEMPT_PATHS
+            ):
+                try:
+                    # Read headers
+                    timestamp_header = request.headers.get("X-Timestamp", "").strip()
+                    signature_header = request.headers.get("X-Signature", "").strip()
+                    client_id = request.headers.get("X-Client-Id", "unknown")
+                    
+                    if not timestamp_header or not signature_header:
+                        logger.warning(
+                            f"Request signature headers missing on {request.method} {request.url.path} "
+                            f"from {request.client.host if request.client else 'unknown'}"
+                        )
+                        raise HTTPException(
+                            status_code=401,
+                            detail="Request signature required (X-Timestamp, X-Signature)"
+                        )
+                    
+                    # Parse timestamp
+                    try:
+                        timestamp = int(timestamp_header)
+                    except ValueError:
+                        logger.warning(f"Invalid timestamp format: {timestamp_header}")
+                        raise HTTPException(status_code=401, detail="Invalid X-Timestamp format")
+                    
+                    # Read and hash body
+                    body = await request.body()
+                    body_hash = RequestSigningService.hash_body(body)
+                    
+                    # Validate signature
+                    is_valid, reason = signing_service.validate_signature(
+                        method=request.method,
+                        path=request.url.path,
+                        timestamp=timestamp,
+                        body_hash=body_hash,
+                        provided_signature=signature_header,
+                        max_age_seconds=300  # 5 minute window
+                    )
+                    
+                    if not is_valid:
+                        logger.warning(
+                            f"Request signature validation failed: {request.method} {request.url.path} "
+                            f"({reason}) - Client: {client_id}, IP: {request.client.host if request.client else 'unknown'}"
+                        )
+                        raise HTTPException(
+                            status_code=401,
+                            detail=f"Request signature validation failed: {reason}"
+                        )
+                    
+                    # Signature valid, continue
+                    logger.debug(f"✅ Request signature valid: {request.method} {request.url.path}")
+                    
+                except HTTPException:
+                    raise
+                except Exception as e:
+                    logger.error(f"Request signing validation error: {e}")
+                    raise HTTPException(status_code=401, detail="Request signature validation error")
+        
+        response = await call_next(request)
+        return response
+
 
 # ============================================================================
 # AUTH UTILITIES
@@ -533,6 +610,9 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add CSRF validation middleware (Phase 3)
 app.add_middleware(CSRFValidationMiddleware)
+
+# Add request signing middleware (Phase 3.3)
+app.add_middleware(RequestSigningMiddleware)
 
 # Prometheus metrics — désactivé en production (faille sécurité : exposition publique)
 # Pour activer en dev uniquement : PROMETHEUS_ENABLED=true dans .env
@@ -1084,6 +1164,16 @@ async def health():
         return {"status": "ok"}
     except Exception:
         raise HTTPException(status_code=503, detail={"status": "unhealthy"})
+
+
+@api_router.get("/public-key")
+async def get_public_key():
+    """Get server's public key for request signing (Phase 3.3)."""
+    return {
+        "algorithm": "HMAC-SHA256",
+        "public_key": RequestSigningService.derive_public_key(SIGNING_KEY),
+        "description": "Use this to verify request signatures. Clients should sign requests with X-Signature header."
+    }
 
 
 @api_router.get("/health/details")
