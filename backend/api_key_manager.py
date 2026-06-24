@@ -150,7 +150,7 @@ class APIKeyManager:
         self.logger.info(f"API key generated", extra={
             "key_id": api_key.key_id,
             "user_id": user_id,
-            "name": name,
+            "key_name": name,
             "permissions": permissions,
             "expires_in_days": expires_in_days
         })

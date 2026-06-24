@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-06-24T16:27:33.741412",
+  "tests": [
+    {
+      "name": "1. SessionManager.create_session()",
+      "passed": true,
+      "error": "",
+      "details": "Session: c64bbb79-983f-4018-9d73-8f991270d5b5",
+      "timestamp": "2026-06-24T16:27:33.769580"
+    },
+    {
+      "name": "2. APIKeyManager.generate_key()",
+      "passed": false,
+      "error": "\"Attempt to overwrite 'name' in LogRecord\"",
+      "details": "",
+      "timestamp": "2026-06-24T16:27:33.776517"
+    },
+    {
+      "name": "3. RedisClient.is_connected()",
+      "passed": true,
+      "error": "",
+      "details": "Redis health check OK",
+      "timestamp": "2026-06-24T16:27:34.087101"
+    },
+    {
+      "name": "4. PrometheusMetrics",
+      "passed": false,
+      "error": "PrometheusMetrics.set_active_sessions() missing 1 required positional argument: 'count'",
+      "details": "",
+      "timestamp": "2026-06-24T16:27:34.128271"
+    },
+    {
+      "name": "5. GrafanaDashboards.get_api_performance_dashboard()",
+      "passed": true,
+      "error": "",
+      "details": "Dashboard: N/A",
+      "timestamp": "2026-06-24T16:27:34.129508"
+    },
+    {
+      "name": "6. AlertManager",
+      "passed": false,
+      "error": "AlertManager.queue_alert() got an unexpected keyword argument 'severity'",
+      "details": "",
+      "timestamp": "2026-06-24T16:27:34.131660"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 3,
+    "failed": 3
+  }
+}

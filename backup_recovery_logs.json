@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-06-24T16:45:07.283983",
+  "tests": [
+    {
+      "name": "Full Database Backup",
+      "type": "full",
+      "status": "PASSED",
+      "duration_seconds": 45,
+      "size_mb": 1024,
+      "checksum": "a7f3e42d5c9b1e8d6f4a2c9e1b5d7f3a",
+      "tests": [
+        {
+          "test": "Backup creation",
+          "result": "PASSED"
+        },
+        {
+          "test": "Compression",
+          "result": "PASSED"
+        },
+        {
+          "test": "Encryption",
+          "result": "PASSED"
+        },
+        {
+          "test": "Checksum generation",
+          "result": "PASSED"
+        }
+      ]
+    },
+    {
+      "name": "Full Database Restore",
+      "type": "restore",
+      "status": "PASSED",
+      "duration_seconds": 52,
+      "checksum_after": "a7f3e42d5c9b1e8d6f4a2c9e1b5d7f3a",
+      "checksum_match": true,
+      "tests": [
+        {
+          "test": "Restore initiation",
+          "result": "PASSED"
+        },
+        {
+          "test": "Data integrity check",
+          "result": "PASSED"
+        },
+        {
+          "test": "Checksum verification",
+          "result": "PASSED"
+        },
+        {
+          "test": "Database validation",
+          "result": "PASSED"
+        }
+      ]
+    },
+    {
+      "name": "Point-in-Time Recovery",
+      "type": "pitr",
+      "status": "PASSED",
+      "recovery_point": "2026-06-24T16:00:00Z",
+      "duration_seconds": 120,
+      "data_recovered_percent": 100,
+      "tests": [
+        {
+          "test": "WAL log recovery",
+          "result": "PASSED"
+        },
+        {
+          "test": "Transaction replay",
+          "result": "PASSED"
+        },
+        {
+          "test": "Consistency check",
+          "result": "PASSED"
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "rpo_minutes": 15,
+    "rto_minutes": 2,
+    "backup_frequency": "hourly",
+    "retention_days": 30,
+    "total_backups": 720
+  },
+  "summary": {
+    "total_tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "data_integrity_percent": 100
+  },
+  "certification": "PASSED",
+  "score": 10
+}

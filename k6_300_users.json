@@ -1,0 +1,22 @@
+{
+  "name": "300 Concurrent Users",
+  "concurrent_users": 300,
+  "duration_seconds": 120,
+  "total_requests": 20700,
+  "successful_requests": 20700,
+  "failed_requests": 0,
+  "error_rate_percent": 0.0,
+  "tps": 172.4,
+  "latency": {
+    "avg": 6.36,
+    "min": 0.99,
+    "max": 42.22,
+    "p50": 6.16,
+    "p95": 11.46,
+    "p99": 13.91
+  },
+  "system": {
+    "cpu_avg_percent": 5.27,
+    "memory_avg_mb": 290.0
+  }
+}

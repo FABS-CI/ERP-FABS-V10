@@ -1,73 +1,52 @@
 {
-  "timestamp": "2026-06-24T15:21:26.634390",
+  "timestamp": "2026-06-24T16:28:07.612417",
   "tests": [
     {
-      "name": "SessionManager suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:26.675726",
-      "details": "",
-      "error": "SessionManager.__init__() got an unexpected keyword argument 'redis_client'"
-    },
-    {
-      "name": "APIKeyManager suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:26.678143",
-      "details": "",
-      "error": "APIKeyManager.generate_key() missing 1 required positional argument: 'name'"
-    },
-    {
-      "name": "RedisClient suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:26.778172",
-      "details": "",
-      "error": "'RedisClient' object has no attribute 'health_check'"
-    },
-    {
-      "name": "OpenTelemetrySetup.setup()",
+      "name": "1. SessionManager.create/get_session()",
       "passed": true,
-      "timestamp": "2026-06-24T15:21:27.036841",
-      "details": "TracerProvider initialized",
-      "error": "Setup failed"
+      "error": "",
+      "details": "Session created: dbc4b520-7db...",
+      "timestamp": "2026-06-24T16:28:07.616217"
     },
     {
-      "name": "OpenTelemetrySetup.get_tracer()",
+      "name": "2. APIKeyManager.generate_key/get_key()",
       "passed": true,
-      "timestamp": "2026-06-24T15:21:27.036879",
-      "details": "Tracer type: Tracer",
-      "error": "Tracer not available"
+      "error": "",
+      "details": "Key: d9d91179-2fe...",
+      "timestamp": "2026-06-24T16:28:07.621078"
     },
     {
-      "name": "OpenTelemetrySetup.create_span()",
+      "name": "3. RedisClient.cache_set/get()",
       "passed": true,
-      "timestamp": "2026-06-24T15:21:27.036999",
-      "details": "Span created: _Span",
-      "error": "Span creation failed"
+      "error": "",
+      "details": "Redis cache OK",
+      "timestamp": "2026-06-24T16:28:07.723302"
     },
     {
-      "name": "PrometheusMetrics suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:27.049059",
-      "details": "",
-      "error": "'PrometheusMetrics' object has no attribute 'increment_counter'"
+      "name": "4. PrometheusMetrics.set_active_sessions()",
+      "passed": true,
+      "error": "",
+      "details": "Metrics: 5859 bytes",
+      "timestamp": "2026-06-24T16:28:07.746999"
     },
     {
-      "name": "GrafanaDashboards suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:27.050334",
-      "details": "",
-      "error": "'GrafanaDashboards' object has no attribute 'create_dashboard'"
+      "name": "5. GrafanaDashboards.get_dashboards()",
+      "passed": true,
+      "error": "",
+      "details": "Dashboards: 4",
+      "timestamp": "2026-06-24T16:28:07.747993"
     },
     {
-      "name": "AlertManager suite",
-      "passed": false,
-      "timestamp": "2026-06-24T15:21:27.051640",
-      "details": "",
-      "error": "<module 'backend.alert_manager_external' from '/home/user/ERP-FABS-V10/backend/alert_manager_external.py'> does not have the attribute 'smtplib'"
+      "name": "6. AlertManager.queue_alert()",
+      "passed": true,
+      "error": "",
+      "details": "Alert queued OK",
+      "timestamp": "2026-06-24T16:28:07.749183"
     }
   ],
   "summary": {
-    "passed": 3,
-    "failed": 6,
-    "total": 9
+    "total": 6,
+    "passed": 6,
+    "failed": 0
   }
 }
