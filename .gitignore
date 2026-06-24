@@ -1,36 +1,45 @@
-# Dependencies
-node_modules/
-.next/
-dist/
-build/
-
 # Environment
 .env
 .env.local
 .env.*.local
-.env.production
-backend/.env.production
+*.key
 *.pem
-ca-key.pem
-ca.pem
-localhost*.pem
 
-# Logs
-*.log
-logs/
-pip-log.txt
-pip-delete-this-directory.txt
+# Secrets & Credentials
+.git_auth
+secrets.json
+credentials.json
+.aws/
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
 .pytest_cache/
 .coverage
-*.egg-info/
-.venv/
-venv/
-env/
+htmlcov/
 
 # IDE
 .vscode/
@@ -40,14 +49,42 @@ env/
 *~
 .DS_Store
 
-# Cache & Temp
-.cache/
-temp/
-tmp/
-auto-save-reports/
+# Logs
+*.log
+logs/
+test_results/
+
+# Data & Backups
+backups/
+*.bak
+*.backup
+data/local/
+db_data/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+dist/
+build/
 
 # Test files
-**/test-*.html
-**/debug-*.py
-.env.github
-.git_auth
+*_test.py
+test_*.py
+*_results.json
+*_test.json
+performance_load_test.py
+security_owasp_audit.py
+resilience_testing.py
+backup_recovery_testing.py
+validate_*.py
+complete_business_validation.py
+performance_profiler.py
+pre_validation_check.py
+
+# Temporary
+/tmp/
+*.tmp
+*.temp
