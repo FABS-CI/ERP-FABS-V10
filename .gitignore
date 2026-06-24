@@ -50,3 +50,4 @@ auto-save-reports/
 **/test-*.html
 **/debug-*.py
 .env.github
+.git_auth
