@@ -1,0 +1,45 @@
+================================================================================
+TOUR 1 — VALIDATION MÉTIER BASELINE
+================================================================================
+
+OBJECTIVE:
+  Establish proof that all end-to-end workflows function correctly
+  Current Validation Métier Score: 0/10 (BLOCKING)
+  Target: 4-6/10 after execution
+
+STATUS: ✅ READY FOR EXECUTION
+
+ARTIFACTS CREATED:
+  ✅ complete_business_validation.py (584 lines, 33 tests)
+  ✅ run_validation.sh (test runner with auto-start)
+  ✅ TOUR_1_AUDIT_FRAMEWORK.md (scoring criteria)
+  ✅ TOUR_1_EXECUTION_SUMMARY.md (detailed plan)
+  ✅ TOUR_1_ACTION.md (quick reference)
+  ✅ pre_validation_check.py (health check)
+  ✅ TOUR_1_COMPLETE.md (full documentation)
+
+TOTAL: 1,277 lines of code + docs
+
+QUICK EXECUTION:
+  cd /home/user/ERP-FABS-V10
+  bash run_validation.sh
+
+  Duration: 3-5 minutes
+  Output: VALIDATION_REPORT.md
+
+EXPECTED OUTCOME:
+  ✅ 20-25 tests pass (60-75%)
+  ⚠️ 8-13 tests may fail (expected for baseline)
+  ✅ No fatal crashes
+  ✅ Validation Métier score: 3-5/10
+  ✅ Overall score: 7.0-7.5/10
+
+NEXT STEP AFTER EXECUTION:
+  1. Review VALIDATION_REPORT.md
+  2. Identify top 20 N+1 queries for TOUR 2
+  3. Plan performance optimization fixes
+  4. Execute TOUR 2 (Performance: 4→8)
+
+STATUS: READY FOR IMMEDIATE EXECUTION ✅
+
+================================================================================

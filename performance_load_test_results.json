@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-06-24T15:50:55.667086",
+  "scenarios": {
+    "50_users": {
+      "successful_requests": 5250,
+      "failed_requests": 0,
+      "total_requests": 5250,
+      "tps": 43.34592387935616,
+      "latency_stats": {
+        "mean_ms": 3.636970111301967,
+        "p50_ms": 3.1464099884033203,
+        "p95_ms": 7.280588150024414,
+        "p99_ms": 10.033130645751953,
+        "min_ms": 1.1172294616699219,
+        "max_ms": 24.57427978515625
+      },
+      "system_metrics": {
+        "avg_cpu_percent": 2.2062068965517243,
+        "max_cpu_percent": 20.0,
+        "avg_memory_mb": 152.71179956896552,
+        "max_memory_mb": 496.90234375
+      },
+      "error_rate_percent": 0.0,
+      "duration_seconds": 121.118655
+    },
+    "100_users": {
+      "successful_requests": 10000,
+      "failed_requests": 0,
+      "total_requests": 10000,
+      "tps": 83.00448753801335,
+      "latency_stats": {
+        "mean_ms": 3.5262093782424926,
+        "p50_ms": 3.0014514923095703,
+        "p95_ms": 7.02667236328125,
+        "p99_ms": 9.768962860107422,
+        "min_ms": 1.1324882507324219,
+        "max_ms": 40.05551338195801
+      },
+      "system_metrics": {
+        "avg_cpu_percent": 2.2062068965517243,
+        "max_cpu_percent": 20.0,
+        "avg_memory_mb": 152.71179956896552,
+        "max_memory_mb": 496.90234375
+      },
+      "error_rate_percent": 0.0,
+      "duration_seconds": 120.475414
+    },
+    "300_users": {
+      "successful_requests": 25500,
+      "failed_requests": 0,
+      "total_requests": 25500,
+      "tps": 211.58519729382036,
+      "latency_stats": {
+        "mean_ms": 4.355773364796358,
+        "p50_ms": 2.935171127319336,
+        "p95_ms": 8.34202766418457,
+        "p99_ms": 45.27449607849121,
+        "min_ms": 1.0528564453125,
+        "max_ms": 105.77821731567383
+      },
+      "system_metrics": {
+        "avg_cpu_percent": 2.2062068965517243,
+        "max_cpu_percent": 20.0,
+        "avg_memory_mb": 152.71179956896552,
+        "max_memory_mb": 496.90234375
+      },
+      "error_rate_percent": 0.0,
+      "duration_seconds": 120.518828
+    }
+  }
+}

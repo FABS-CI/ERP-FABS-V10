@@ -8,6 +8,12 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
+backend/.env.production
+*.pem
+ca-key.pem
+ca.pem
+localhost*.pem
 
 # Logs
 *.log

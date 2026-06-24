@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-06-24T15:43:34.546056",
+  "scenarios": {
+    "redis_failure": {
+      "test_name": "Redis Failure & Recovery",
+      "start_time": "2026-06-24T15:43:34.546083",
+      "events": [
+        {
+          "timestamp": "2026-06-24T15:43:34.549540",
+          "event": "baseline_health_check",
+          "status": "healthy"
+        },
+        {
+          "timestamp": "2026-06-24T15:43:34.564064",
+          "event": "redis_not_found",
+          "note": "May be container/cluster mode"
+        },
+        {
+          "timestamp": "2026-06-24T15:44:04.650597",
+          "event": "outage_period",
+          "duration_seconds": 30,
+          "successful_requests": 30,
+          "failed_requests": 0
+        }
+      ],
+      "end_time": "2026-06-24T15:44:04.650638",
+      "total_duration_seconds": 0
+    },
+    "memory_pressure": {
+      "test_name": "Memory Pressure",
+      "start_time": "2026-06-24T15:44:04.650648",
+      "events": [
+        {
+          "timestamp": "2026-06-24T15:44:04.650903",
+          "event": "baseline_memory",
+          "memory_mb": 31.40234375
+        }
+      ],
+      "end_time": "2026-06-24T15:44:04.653499"
+    },
+    "network_latency": {
+      "test_name": "Network Degradation",
+      "start_time": "2026-06-24T15:44:04.653593",
+      "events": [],
+      "latencies_observed": [],
+      "end_time": "2026-06-24T15:44:04.655246"
+    },
+    "concurrent_connections": {
+      "test_name": "Concurrent Connections",
+      "start_time": "2026-06-24T15:44:04.655320",
+      "events": [
+        {
+          "timestamp": "2026-06-24T15:44:04.713569",
+          "event": "concurrent_connections_test",
+          "concurrent_count": 50,
+          "successful": 50,
+          "failed": 0,
+          "success_rate_percent": 100.0
+        }
+      ],
+      "end_time": "2026-06-24T15:44:04.713578"
+    }
+  },
+  "recovery_metrics": {}
+}

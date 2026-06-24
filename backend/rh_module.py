@@ -675,6 +675,9 @@ def build_rh_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         limit: int = Query(50, le=200),
         skip: int = Query(0, ge=0)
     ):
+        """
+        List employees with bulk enrichment (optimized: O(n) instead of O(n²))
+        """
         user = await resolve_user(request, authorization)
         _ensure(user["role"] in READ_ROLES, 403, "Accès refusé")
         
@@ -706,40 +709,50 @@ def build_rh_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         )
         docs = await cursor.to_list(limit)
         
-        # Enrich with related data
-        for doc in docs:
-            # Departement
-            if doc.get("departement_id"):
-                dept = await db.departements.find_one(
-                    {"departement_id": doc["departement_id"]},
-                    {"_id": 0, "nom": 1}
-                )
-                doc["departement_nom"] = dept.get("nom") if dept else None
+        # === PERFORMANCE OPTIMIZATION ===
+        # Bulk fetch all related data instead of N+1 queries
+        if docs:
+            # Collect all IDs to fetch
+            dept_ids = {doc["departement_id"] for doc in docs if doc.get("departement_id")}
+            fonc_ids = {doc["fonction_id"] for doc in docs if doc.get("fonction_id")}
+            cat_ids = {doc["categorie_pro_id"] for doc in docs if doc.get("categorie_pro_id")}
+            sup_ids = {doc["superieur_hierarchique_id"] for doc in docs if doc.get("superieur_hierarchique_id")}
             
-            # Fonction
-            if doc.get("fonction_id"):
-                fonc = await db.fonctions.find_one(
-                    {"fonction_id": doc["fonction_id"]},
-                    {"_id": 0, "nom": 1}
-                )
-                doc["fonction_nom"] = fonc.get("nom") if fonc else None
+            # Bulk fetch all related documents (4 queries instead of N*4)
+            depts = await db.departements.find(
+                {"departement_id": {"$in": list(dept_ids)}},
+                {"_id": 0, "departement_id": 1, "nom": 1}
+            ).to_list(None)
+            depts_map = {d["departement_id"]: d["nom"] for d in depts}
             
-            # Catégorie pro
-            if doc.get("categorie_pro_id"):
-                cat = await db.categories_pro.find_one(
-                    {"categorie_pro_id": doc["categorie_pro_id"]},
-                    {"_id": 0, "nom": 1}
-                )
-                doc["categorie_pro_nom"] = cat.get("nom") if cat else None
+            foncs = await db.fonctions.find(
+                {"fonction_id": {"$in": list(fonc_ids)}},
+                {"_id": 0, "fonction_id": 1, "nom": 1}
+            ).to_list(None)
+            funcs_map = {f["fonction_id"]: f["nom"] for f in foncs}
             
-            # Supérieur hiérarchique
-            if doc.get("superieur_hierarchique_id"):
-                sup = await db.employes.find_one(
-                    {"employe_id": doc["superieur_hierarchique_id"]},
-                    {"_id": 0, "nom": 1, "prenoms": 1}
-                )
-                if sup:
-                    doc["superieur_nom"] = f"{sup['nom']} {sup['prenoms']}"
+            cats = await db.categories_pro.find(
+                {"categorie_pro_id": {"$in": list(cat_ids)}},
+                {"_id": 0, "categorie_pro_id": 1, "nom": 1}
+            ).to_list(None)
+            cats_map = {c["categorie_pro_id"]: c["nom"] for c in cats}
+            
+            sups = await db.employes.find(
+                {"employe_id": {"$in": list(sup_ids)}},
+                {"_id": 0, "employe_id": 1, "nom": 1, "prenoms": 1}
+            ).to_list(None)
+            sups_map = {s["employe_id"]: f"{s['nom']} {s['prenoms']}" for s in sups}
+            
+            # Enrich documents from maps (O(n) memory lookups)
+            for doc in docs:
+                if doc.get("departement_id"):
+                    doc["departement_nom"] = depts_map.get(doc["departement_id"])
+                if doc.get("fonction_id"):
+                    doc["fonction_nom"] = funcs_map.get(doc["fonction_id"])
+                if doc.get("categorie_pro_id"):
+                    doc["categorie_pro_nom"] = cats_map.get(doc["categorie_pro_id"])
+                if doc.get("superieur_hierarchique_id"):
+                    doc["superieur_nom"] = sups_map.get(doc["superieur_hierarchique_id"])
         
         return [EmployeOut(**doc) for doc in docs]
     
@@ -968,15 +981,19 @@ def build_rh_router(db: AsyncIOMotorDatabase, resolve_user) -> APIRouter:
         cursor = db.departements.find(filters, {"_id": 0}).sort([("nom", 1)])
         docs = await cursor.to_list(100)
         
-        # Enrich with responsable
-        for doc in docs:
-            if doc.get("responsable_id"):
-                resp = await db.employes.find_one(
-                    {"employe_id": doc["responsable_id"]},
-                    {"_id": 0, "nom": 1, "prenoms": 1}
-                )
-                if resp:
-                    doc["responsable_nom"] = f"{resp['nom']} {resp['prenoms']}"
+        # === BULK FETCH RESPONSABLES (Performance Optimization) ===
+        if docs:
+            resp_ids = {doc["responsable_id"] for doc in docs if doc.get("responsable_id")}
+            if resp_ids:
+                resps = await db.employes.find(
+                    {"employe_id": {"$in": list(resp_ids)}},
+                    {"_id": 0, "employe_id": 1, "nom": 1, "prenoms": 1}
+                ).to_list(None)
+                resps_map = {r["employe_id"]: f"{r['nom']} {r['prenoms']}" for r in resps}
+                
+                for doc in docs:
+                    if doc.get("responsable_id"):
+                        doc["responsable_nom"] = resps_map.get(doc["responsable_id"])
         
         return [DepartementOut(**doc) for doc in docs]
     

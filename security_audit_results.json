@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-06-24T15:42:48.598365",
+  "vulnerability_score": 57.14285714285714,
+  "findings": [],
+  "tests": {
+    "xss": {
+      "vulnerable": false,
+      "payloads_tested": 5,
+      "findings": [],
+      "status": "PASS"
+    },
+    "sql_injection": {
+      "vulnerable": false,
+      "payloads_tested": 5,
+      "findings": [],
+      "status": "PASS"
+    },
+    "authentication": {
+      "passed": [
+        "Password validation enforced"
+      ],
+      "failed": [
+        "Missing credentials not rejected (expected 401)",
+        "Invalid token not rejected (expected 401)"
+      ],
+      "status": "FAIL"
+    },
+    "csrf": {
+      "has_csrf_token": false,
+      "token_validation": false,
+      "findings": [],
+      "status": "PARTIAL"
+    },
+    "security_headers": {
+      "found_headers": {},
+      "missing_headers": [
+        "Content-Security-Policy",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "X-XSS-Protection",
+        "Strict-Transport-Security"
+      ],
+      "status": "WARN"
+    },
+    "https": {
+      "is_https": false,
+      "findings": [
+        "HTTP used (expected for local dev)"
+      ],
+      "status": "DEV"
+    },
+    "dependencies": {
+      "vulnerable_packages": [],
+      "checked": 51,
+      "findings": "Scanned 51 dependencies",
+      "status": "PARTIAL"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "clients": [
+    {
+      "id": 1,
+      "name": "Client A",
+      "email": "a@test.com"
+    },
+    {
+      "id": 2,
+      "name": "Client B",
+      "email": "b@test.com"
+    },
+    {
+      "id": 3,
+      "name": "Client C",
+      "email": "c@test.com"
+    }
+  ],
+  "products": [
+    {
+      "id": 101,
+      "name": "Product X",
+      "price": 100.0
+    },
+    {
+      "id": 102,
+      "name": "Product Y",
+      "price": 200.0
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1001,
+      "client_id": 1,
+      "amount": 500.0
+    },
+    {
+      "id": 1002,
+      "client_id": 2,
+      "amount": 1000.0
+    }
+  ],
+  "version": "v1",
+  "timestamp": "2026-06-24T15:42:50.931441"
+}
