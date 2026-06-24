@@ -1,0 +1,41 @@
+[WARNING] ✗ MongoDB non disponible: localhost:27017: [Errno 111] Connection refused, Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a3bf7caf9c7625a81ebb431, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused')>]>
+[INFO] Utilisation de simulation en mémoire...
+[INFO] 
+[COMMERCIAL] Simulation workflow client...
+[INFO] 
+[ACHATS] Simulation workflow fournisseur...
+[INFO] 
+[STOCK] Simulation mouvements...
+[INFO] 
+[FINANCE] Simulation comptabilité...
+[INFO] 
+[RH] Simulation paie...
+[INFO] 
+[CRM] Simulation pipeline...
+
+================================================================================
+PHASE 3 — SIMULATION MÉTIER RÉELLE
+================================================================================
+Début: 2026-06-24 15:29:14
+
+
+================================================================================
+RÉSUMÉ PHASE 3 — SIMULATION MÉTIER
+================================================================================
+
+Documents créés par module:
+  • COMMERCIAL_DOCS: 0 documents
+  • ACHATS_DOCS: 0 documents
+  • STOCK_DOCS: 0 documents
+  • FINANCE_DOCS: 0 documents
+  • RH_DOCS: 0 documents
+  • CRM_DOCS: 0 documents
+
+Total: 0 documents
+
+⚠ Aucun document créé (MongoDB probablement non disponible)
+   Les données ont été préparées pour simulation.
+
+Résultats sauvegardés: /home/user/ERP-FABS-V10/phase3_simulation_results.json
+================================================================================
+

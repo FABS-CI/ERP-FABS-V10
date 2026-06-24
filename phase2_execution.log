@@ -1,0 +1,72 @@
+[INFO] PHASE2_TESTS — ✓ SessionManager::Initialize SessionManager
+[ERROR] PHASE2_TESTS — ✗ SessionManager::Suite Exception — SessionManager.create_session() missing 1 required positional argument: 'user_agent'
+[INFO] PHASE2_TESTS — ✓ APIKeyManager::Initialize APIKeyManager
+[ERROR] PHASE2_TESTS — ✗ APIKeyManager::Suite Exception — "Attempt to overwrite 'name' in LogRecord"
+[INFO] redis — ✓ Redis connected (localhost:6379)
+[INFO] PHASE2_TESTS — ✓ RedisClient::Initialize RedisClient
+[ERROR] PHASE2_TESTS — ✗ RedisClient::Suite Exception — RedisClient.cache_set() got an unexpected keyword argument 'ttl'
+[INFO] PHASE2_TESTS — ✓ OpenTelemetry::Initialize OpenTelemetrySetup
+[WARNING] root — CompositePropagator or W3CTraceContextPropagator not available
+[INFO] root — OpenTelemetry initialized: ERP-FABS-CI v10.1.0 in test
+[INFO] PHASE2_TESTS — ✓ OpenTelemetry::setup()
+[INFO] PHASE2_TESTS — ✓ OpenTelemetry::get_tracer()
+[INFO] PHASE2_TESTS — ✓ OpenTelemetry::create_span()
+[ERROR] PHASE2_TESTS — ✗ OpenTelemetry::Suite Exception — OpenTelemetrySetup.create_trace_context() missing 1 required positional argument: 'context_id'
+[INFO] PHASE2_TESTS — ✓ PrometheusMetrics::Initialize PrometheusMetrics
+[INFO] PHASE2_TESTS — ✓ PrometheusMetrics::initialize_all()
+[ERROR] PHASE2_TESTS — ✗ PrometheusMetrics::Suite Exception — PrometheusMetrics.set_active_sessions() missing 1 required positional argument: 'count'
+[INFO] PHASE2_TESTS — ✓ GrafanaDashboards::Initialize GrafanaDashboards
+[INFO] PHASE2_TESTS — ✓ GrafanaDashboards::get_api_performance_dashboard()
+[INFO] PHASE2_TESTS — ✓ GrafanaDashboards::get_all_dashboards()
+[ERROR] PHASE2_TESTS — ✗ GrafanaDashboards::export_all_dashboards_json() — Failed
+[INFO] PHASE2_TESTS — ✓ AlertManager::Initialize AlertManager
+[INFO] backend.alert_manager_external — Alert channel registered: email
+[INFO] PHASE2_TESTS — ✓ AlertManager::register_channel()
+[ERROR] PHASE2_TESTS — ✗ AlertManager::Suite Exception — AlertManager.queue_alert() got an unexpected keyword argument 'severity'
+
+================================================================================
+PHASE 2 — TESTS RÉELS EXÉCUTÉS
+================================================================================
+Début: 2026-06-24 15:28:22
+
+
+[SUITE] SessionManager
+--------------------------------------------------------------------------------
+
+[SUITE] APIKeyManager
+--------------------------------------------------------------------------------
+
+[SUITE] RedisClient
+--------------------------------------------------------------------------------
+
+[SUITE] OpenTelemetry
+--------------------------------------------------------------------------------
+
+[SUITE] PrometheusMetrics
+--------------------------------------------------------------------------------
+
+[SUITE] GrafanaDashboards
+--------------------------------------------------------------------------------
+
+[SUITE] AlertManager
+--------------------------------------------------------------------------------
+
+================================================================================
+RÉSUMÉ PHASE 2
+================================================================================
+✗ SessionManager: 1/2 (50%)
+✗ APIKeyManager: 1/2 (50%)
+✗ RedisClient: 1/2 (50%)
+✗ OpenTelemetry: 4/5 (80%)
+✗ PrometheusMetrics: 2/3 (66%)
+✗ GrafanaDashboards: 3/4 (75%)
+✗ AlertManager: 2/3 (66%)
+
+================================================================================
+TOTAL: 14/21 tests passent (66%)
+
+⚠ 7 test(s) échoué(s)
+
+Résultats sauvegardés: /home/user/ERP-FABS-V10/phase2_test_results.json
+================================================================================
+

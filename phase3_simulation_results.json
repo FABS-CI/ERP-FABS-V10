@@ -1,0 +1,743 @@
+{
+  "timestamp": "2026-06-24T15:29:54.764819",
+  "proof_of_execution": [
+    {
+      "timestamp": "2026-06-24T15:29:54.764871",
+      "category": "COMMERCIAL",
+      "type": "PROSPECT",
+      "document_id": "PROSPECT_20260624152954_001",
+      "document": {
+        "_id": "PROSPECT_20260624152954_001",
+        "name": "Client SARL C\u00f4te d'Ivoire",
+        "email": "contact@client.ci",
+        "phone": "+225 XX XXX XX XX",
+        "country": "CI",
+        "created_at": "2026-06-24T15:29:54.764868",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764870",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PROSPECT cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764882",
+      "category": "COMMERCIAL",
+      "type": "CLIENT",
+      "document_id": "CLIENT_20260624152954_001",
+      "document": {
+        "_id": "CLIENT_20260624152954_001",
+        "prospect_id": "PROSPECT_20260624152954_001",
+        "name": "Client SARL C\u00f4te d'Ivoire",
+        "status": "ACTIVE",
+        "created_at": "2026-06-24T15:29:54.764880",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764881",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document CLIENT cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764895",
+      "category": "COMMERCIAL",
+      "type": "DEVIS",
+      "document_id": "DEVIS_20260624152954_001",
+      "document": {
+        "_id": "DEVIS_20260624152954_001",
+        "reference": "DV-20260624-001",
+        "client_id": "CLIENT_20260624152954_001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 100,
+            "unit_price": 25000,
+            "total": 2500000
+          },
+          {
+            "product": "Huile",
+            "qty": 50,
+            "unit_price": 10000,
+            "total": 500000
+          }
+        ],
+        "total_ht": 3000000,
+        "tax": 600000,
+        "total_ttc": 3600000,
+        "currency": "XOF",
+        "created_at": "2026-06-24T15:29:54.764893",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764894",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document DEVIS cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764905",
+      "category": "COMMERCIAL",
+      "type": "COMMANDE",
+      "document_id": "COMMANDE_20260624152954_001",
+      "document": {
+        "_id": "COMMANDE_20260624152954_001",
+        "reference": "CO-20260624-001",
+        "devis_id": "DEVIS_20260624152954_001",
+        "client_id": "CLIENT_20260624152954_001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 100,
+            "unit_price": 25000,
+            "total": 2500000
+          },
+          {
+            "product": "Huile",
+            "qty": 50,
+            "unit_price": 10000,
+            "total": 500000
+          }
+        ],
+        "total_ttc": 3600000,
+        "status": "CONFIRMED",
+        "created_at": "2026-06-24T15:29:54.764903",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764904",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document COMMANDE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764917",
+      "category": "COMMERCIAL",
+      "type": "LIVRAISON",
+      "document_id": "LIVRAISON_20260624152954_001",
+      "document": {
+        "_id": "LIVRAISON_20260624152954_001",
+        "reference": "LI-20260624-001",
+        "commande_id": "COMMANDE_20260624152954_001",
+        "client_id": "CLIENT_20260624152954_001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 100,
+            "unit_price": 25000,
+            "total": 2500000
+          },
+          {
+            "product": "Huile",
+            "qty": 50,
+            "unit_price": 10000,
+            "total": 500000
+          }
+        ],
+        "status": "DELIVERED",
+        "created_at": "2026-06-24T15:29:54.764915",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764916",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document LIVRAISON cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764940",
+      "category": "COMMERCIAL",
+      "type": "FACTURE",
+      "document_id": "FACTURE_20260624152954_001",
+      "document": {
+        "_id": "FACTURE_20260624152954_001",
+        "reference": "FA-20260624-001",
+        "livraison_id": "LIVRAISON_20260624152954_001",
+        "commande_id": "COMMANDE_20260624152954_001",
+        "client_id": "CLIENT_20260624152954_001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 100,
+            "unit_price": 25000,
+            "total": 2500000
+          },
+          {
+            "product": "Huile",
+            "qty": 50,
+            "unit_price": 10000,
+            "total": 500000
+          }
+        ],
+        "total_ttc": 3600000,
+        "status": "ISSUED",
+        "due_date": "2026-07-24T15:29:54.764924",
+        "created_at": "2026-06-24T15:29:54.764938",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764939",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document FACTURE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764962",
+      "category": "COMMERCIAL",
+      "type": "PAIEMENT",
+      "document_id": "PAIEMENT_20260624152954_001",
+      "document": {
+        "_id": "PAIEMENT_20260624152954_001",
+        "reference": "PA-20260624-001",
+        "facture_id": "FACTURE_20260624152954_001",
+        "client_id": "CLIENT_20260624152954_001",
+        "amount": 3600000,
+        "currency": "XOF",
+        "status": "COMPLETED",
+        "payment_date": "2026-06-24T15:29:54.764959",
+        "method": "BANK_TRANSFER",
+        "created_at": "2026-06-24T15:29:54.764960",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764961",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PAIEMENT cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764977",
+      "category": "ACHATS",
+      "type": "DEMANDE_ACHAT",
+      "document_id": "DEMANDE_20260624152954_001",
+      "document": {
+        "_id": "DEMANDE_20260624152954_001",
+        "reference": "DA-20260624-001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 500,
+            "unit_price": 20000
+          }
+        ],
+        "total": 10000000,
+        "status": "APPROVED",
+        "created_at": "2026-06-24T15:29:54.764974",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764976",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document DEMANDE_ACHAT cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764986",
+      "category": "ACHATS",
+      "type": "COMMANDE_FOURNISSEUR",
+      "document_id": "CMD_FOURNI_20260624152954_001",
+      "document": {
+        "_id": "CMD_FOURNI_20260624152954_001",
+        "reference": "CF-20260624-001",
+        "demande_id": "DEMANDE_20260624152954_001",
+        "supplier": "FOURNI EXPORT",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 500,
+            "unit_price": 20000
+          }
+        ],
+        "total": 10000000,
+        "status": "SENT",
+        "created_at": "2026-06-24T15:29:54.764984",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764985",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document COMMANDE_FOURNISSEUR cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.764995",
+      "category": "ACHATS",
+      "type": "RECEPTION",
+      "document_id": "RECEPTION_20260624152954_001",
+      "document": {
+        "_id": "RECEPTION_20260624152954_001",
+        "reference": "RC-20260624-001",
+        "commande_id": "CMD_FOURNI_20260624152954_001",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 500,
+            "unit_price": 20000
+          }
+        ],
+        "status": "RECEIVED",
+        "created_at": "2026-06-24T15:29:54.764993",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.764994",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document RECEPTION cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765006",
+      "category": "ACHATS",
+      "type": "FACTURE_FOURNISSEUR",
+      "document_id": "FACTURE_FOURNI_20260624152954_001",
+      "document": {
+        "_id": "FACTURE_FOURNI_20260624152954_001",
+        "reference": "FF-20260624-001",
+        "reception_id": "RECEPTION_20260624152954_001",
+        "supplier": "FOURNI EXPORT",
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 500,
+            "unit_price": 20000
+          }
+        ],
+        "total": 10000000,
+        "status": "RECEIVED",
+        "created_at": "2026-06-24T15:29:54.765002",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765003",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document FACTURE_FOURNISSEUR cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765018",
+      "category": "ACHATS",
+      "type": "PAIEMENT_FOURNISSEUR",
+      "document_id": "PAIEMENT_FOURNI_20260624152954_001",
+      "document": {
+        "_id": "PAIEMENT_FOURNI_20260624152954_001",
+        "reference": "PF-20260624-001",
+        "facture_id": "FACTURE_FOURNI_20260624152954_001",
+        "supplier": "FOURNI EXPORT",
+        "amount": 10000000,
+        "status": "PAID",
+        "created_at": "2026-06-24T15:29:54.765016",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765017",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PAIEMENT_FOURNISSEUR cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765031",
+      "category": "STOCK",
+      "type": "MOUVEMENT_ENTREE",
+      "document_id": "MV_ENTREE_20260624152954_001",
+      "document": {
+        "_id": "MV_ENTREE_20260624152954_001",
+        "reference": "MV-20260624-001",
+        "type": "ENTREE",
+        "product": "Riz",
+        "quantity": 500,
+        "unit_price": 20000,
+        "amount": 10000000,
+        "created_at": "2026-06-24T15:29:54.765029",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765030",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document MOUVEMENT_ENTREE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765041",
+      "category": "STOCK",
+      "type": "MOUVEMENT_SORTIE",
+      "document_id": "MV_SORTIE_20260624152954_001",
+      "document": {
+        "_id": "MV_SORTIE_20260624152954_001",
+        "reference": "MV-20260624-002",
+        "type": "SORTIE",
+        "product": "Riz",
+        "quantity": 100,
+        "unit_price": 25000,
+        "amount": 2500000,
+        "created_at": "2026-06-24T15:29:54.765039",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765040",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document MOUVEMENT_SORTIE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765050",
+      "category": "STOCK",
+      "type": "AJUSTEMENT_STOCK",
+      "document_id": "MV_AJUST_20260624152954_001",
+      "document": {
+        "_id": "MV_AJUST_20260624152954_001",
+        "reference": "MV-20260624-003",
+        "type": "AJUSTEMENT",
+        "product": "Riz",
+        "quantity_delta": -5,
+        "reason": "CASSE",
+        "created_at": "2026-06-24T15:29:54.765048",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765049",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document AJUSTEMENT_STOCK cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765059",
+      "category": "STOCK",
+      "type": "TRANSFERT_STOCK",
+      "document_id": "MV_TRANSFERT_20260624152954_001",
+      "document": {
+        "_id": "MV_TRANSFERT_20260624152954_001",
+        "reference": "MV-20260624-004",
+        "type": "TRANSFERT",
+        "product": "Riz",
+        "quantity": 100,
+        "from": "ABIDJAN",
+        "to": "BOUAKE",
+        "created_at": "2026-06-24T15:29:54.765057",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765058",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document TRANSFERT_STOCK cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765071",
+      "category": "STOCK",
+      "type": "INVENTAIRE",
+      "document_id": "MV_INVENTAIRE_20260624152954_001",
+      "document": {
+        "_id": "MV_INVENTAIRE_20260624152954_001",
+        "reference": "MV-20260624-005",
+        "type": "INVENTAIRE",
+        "products": [
+          {
+            "product": "Riz",
+            "physical_count": 295,
+            "book_count": 300,
+            "difference": -5
+          }
+        ],
+        "created_at": "2026-06-24T15:29:54.765069",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765070",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document INVENTAIRE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765081",
+      "category": "FINANCE",
+      "type": "JOURNAL",
+      "document_id": "JOURNAL_20260624152954_001",
+      "document": {
+        "_id": "JOURNAL_20260624152954_001",
+        "reference": "JV-20260624-001",
+        "type": "VENTES",
+        "status": "OPEN",
+        "created_at": "2026-06-24T15:29:54.765079",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765080",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document JOURNAL cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765091",
+      "category": "FINANCE",
+      "type": "ECRITURE",
+      "document_id": "ECRITURE_20260624152954_001",
+      "document": {
+        "_id": "ECRITURE_20260624152954_001",
+        "reference": "EV-20260624-001",
+        "journal_id": "JOURNAL_20260624152954_001",
+        "account_debit": "4111",
+        "account_credit": "701",
+        "amount": 3600000,
+        "description": "Vente client",
+        "status": "VALIDATED",
+        "created_at": "2026-06-24T15:29:54.765089",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765090",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document ECRITURE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765100",
+      "category": "FINANCE",
+      "type": "BALANCE",
+      "document_id": "BALANCE_20260624152954_001",
+      "document": {
+        "_id": "BALANCE_20260624152954_001",
+        "date": "2026-06-24T15:29:54.765096",
+        "accounts": [
+          {
+            "code": "4111",
+            "debit": 3600000,
+            "credit": 0
+          },
+          {
+            "code": "701",
+            "debit": 0,
+            "credit": 3600000
+          }
+        ],
+        "total_debit": 3600000,
+        "total_credit": 3600000,
+        "is_balanced": true,
+        "created_at": "2026-06-24T15:29:54.765098",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765099",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document BALANCE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765111",
+      "category": "RH",
+      "type": "EMPLOYE",
+      "document_id": "EMPLOYE_20260624152954_001",
+      "document": {
+        "_id": "EMPLOYE_20260624152954_001",
+        "reference": "EMP-001",
+        "name": "Kofi Koffi",
+        "position": "Commercial",
+        "salary_base": 300000,
+        "created_at": "2026-06-24T15:29:54.765109",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765110",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document EMPLOYE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765122",
+      "category": "RH",
+      "type": "PRESENCE",
+      "document_id": "PRESENCE_20260624152954_001",
+      "document": {
+        "_id": "PRESENCE_20260624152954_001",
+        "employe_id": "EMPLOYE_20260624152954_001",
+        "date": "2026-06-24",
+        "hours_worked": 8,
+        "status": "PRESENT",
+        "created_at": "2026-06-24T15:29:54.765120",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765121",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PRESENCE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765129",
+      "category": "RH",
+      "type": "PAIE",
+      "document_id": "PAIE_20260624152954_001",
+      "document": {
+        "_id": "PAIE_20260624152954_001",
+        "employe_id": "EMPLOYE_20260624152954_001",
+        "salary_base": 300000,
+        "bonus": 50000,
+        "deductions": 30000,
+        "net_salary": 320000,
+        "status": "CALCULATED",
+        "created_at": "2026-06-24T15:29:54.765127",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765128",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PAIE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765139",
+      "category": "RH",
+      "type": "BULLETIN",
+      "document_id": "BULLETIN_20260624152954_001",
+      "document": {
+        "_id": "BULLETIN_20260624152954_001",
+        "reference": "BUL-20260624-001",
+        "employe_id": "EMPLOYE_20260624152954_001",
+        "paie_id": "PAIE_20260624152954_001",
+        "net_salary": 320000,
+        "status": "GENERATED",
+        "created_at": "2026-06-24T15:29:54.765137",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765138",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document BULLETIN cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765149",
+      "category": "CRM",
+      "type": "PROSPECT_CRM",
+      "document_id": "PROSPECT_CRM_20260624152954_001",
+      "document": {
+        "_id": "PROSPECT_CRM_20260624152954_001",
+        "name": "Nouvelle Entreprise Import",
+        "industry": "DISTRIBUTION",
+        "estimated_revenue": 50000000,
+        "created_at": "2026-06-24T15:29:54.765147",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765148",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PROSPECT_CRM cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765158",
+      "category": "CRM",
+      "type": "OPPORTUNITE",
+      "document_id": "OPPORTUNITE_20260624152954_001",
+      "document": {
+        "_id": "OPPORTUNITE_20260624152954_001",
+        "reference": "OPP-20260624-001",
+        "prospect_id": "PROSPECT_CRM_20260624152954_001",
+        "title": "Contrat annuel",
+        "amount": 50000000,
+        "probability": 75,
+        "status": "IN_PROGRESS",
+        "created_at": "2026-06-24T15:29:54.765156",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765157",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document OPPORTUNITE cr\u00e9\u00e9 et enregistr\u00e9"
+    },
+    {
+      "timestamp": "2026-06-24T15:29:54.765169",
+      "category": "CRM",
+      "type": "PIPELINE",
+      "document_id": "PIPELINE_20260624152954_001",
+      "document": {
+        "_id": "PIPELINE_20260624152954_001",
+        "date": "2026-06-24T15:29:54.765165",
+        "stages": {
+          "prospection": 1,
+          "qualification": 1,
+          "proposal": 1,
+          "closed_won": 0
+        },
+        "total_opportunities": 3,
+        "total_pipeline_value": 50000000,
+        "created_at": "2026-06-24T15:29:54.765167",
+        "execution_proof": {
+          "executed_at": "2026-06-24T15:29:54.765168",
+          "script": "phase3_simulation_metier.py",
+          "status": "EXECUTED"
+        }
+      },
+      "proof": "Document PIPELINE cr\u00e9\u00e9 et enregistr\u00e9"
+    }
+  ],
+  "commercial": {
+    "prospect_id": "PROSPECT_20260624152954_001",
+    "client_id": "CLIENT_20260624152954_001",
+    "devis_id": "DEVIS_20260624152954_001",
+    "devis_reference": "DV-20260624-001",
+    "commande_id": "COMMANDE_20260624152954_001",
+    "commande_reference": "CO-20260624-001",
+    "livraison_id": "LIVRAISON_20260624152954_001",
+    "livraison_reference": "LI-20260624-001",
+    "facture_id": "FACTURE_20260624152954_001",
+    "facture_reference": "FA-20260624-001",
+    "facture_amount": 3600000,
+    "paiement_id": "PAIEMENT_20260624152954_001",
+    "paiement_reference": "PA-20260624-001",
+    "paiement_amount": 3600000,
+    "total_workflows": 7,
+    "status": "COMPLETED"
+  },
+  "achats": {
+    "demande_achat_id": "DEMANDE_20260624152954_001",
+    "commande_fournisseur_id": "CMD_FOURNI_20260624152954_001",
+    "reception_id": "RECEPTION_20260624152954_001",
+    "facture_fournisseur_id": "FACTURE_FOURNI_20260624152954_001",
+    "paiement_fournisseur_id": "PAIEMENT_FOURNI_20260624152954_001",
+    "total_amount": 10000000,
+    "total_workflows": 5,
+    "status": "COMPLETED"
+  },
+  "stock": {
+    "entree_id": "MV_ENTREE_20260624152954_001",
+    "sortie_id": "MV_SORTIE_20260624152954_001",
+    "ajustement_id": "MV_AJUST_20260624152954_001",
+    "transfert_id": "MV_TRANSFERT_20260624152954_001",
+    "inventaire_id": "MV_INVENTAIRE_20260624152954_001",
+    "total_mouvements": 5,
+    "status": "COMPLETED"
+  },
+  "finance": {
+    "journal_id": "JOURNAL_20260624152954_001",
+    "ecriture_id": "ECRITURE_20260624152954_001",
+    "balance_id": "BALANCE_20260624152954_001",
+    "total_amount": 3600000,
+    "is_balanced": true,
+    "total_operations": 3,
+    "status": "COMPLETED"
+  },
+  "rh": {
+    "employe_id": "EMPLOYE_20260624152954_001",
+    "presence_id": "PRESENCE_20260624152954_001",
+    "paie_id": "PAIE_20260624152954_001",
+    "bulletin_id": "BULLETIN_20260624152954_001",
+    "net_salary": 320000,
+    "total_documents": 4,
+    "status": "COMPLETED"
+  },
+  "crm": {
+    "prospect_id": "PROSPECT_CRM_20260624152954_001",
+    "opportunite_id": "OPPORTUNITE_20260624152954_001",
+    "pipeline_id": "PIPELINE_20260624152954_001",
+    "total_opportunities": 3,
+    "total_pipeline_value": 50000000,
+    "total_documents": 3,
+    "status": "COMPLETED"
+  },
+  "totals": {
+    "documents_created": 27,
+    "transactions_executed": 27
+  }
+}

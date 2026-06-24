@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-06-24T15:21:26.634390",
+  "tests": [
+    {
+      "name": "SessionManager suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:26.675726",
+      "details": "",
+      "error": "SessionManager.__init__() got an unexpected keyword argument 'redis_client'"
+    },
+    {
+      "name": "APIKeyManager suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:26.678143",
+      "details": "",
+      "error": "APIKeyManager.generate_key() missing 1 required positional argument: 'name'"
+    },
+    {
+      "name": "RedisClient suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:26.778172",
+      "details": "",
+      "error": "'RedisClient' object has no attribute 'health_check'"
+    },
+    {
+      "name": "OpenTelemetrySetup.setup()",
+      "passed": true,
+      "timestamp": "2026-06-24T15:21:27.036841",
+      "details": "TracerProvider initialized",
+      "error": "Setup failed"
+    },
+    {
+      "name": "OpenTelemetrySetup.get_tracer()",
+      "passed": true,
+      "timestamp": "2026-06-24T15:21:27.036879",
+      "details": "Tracer type: Tracer",
+      "error": "Tracer not available"
+    },
+    {
+      "name": "OpenTelemetrySetup.create_span()",
+      "passed": true,
+      "timestamp": "2026-06-24T15:21:27.036999",
+      "details": "Span created: _Span",
+      "error": "Span creation failed"
+    },
+    {
+      "name": "PrometheusMetrics suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:27.049059",
+      "details": "",
+      "error": "'PrometheusMetrics' object has no attribute 'increment_counter'"
+    },
+    {
+      "name": "GrafanaDashboards suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:27.050334",
+      "details": "",
+      "error": "'GrafanaDashboards' object has no attribute 'create_dashboard'"
+    },
+    {
+      "name": "AlertManager suite",
+      "passed": false,
+      "timestamp": "2026-06-24T15:21:27.051640",
+      "details": "",
+      "error": "<module 'backend.alert_manager_external' from '/home/user/ERP-FABS-V10/backend/alert_manager_external.py'> does not have the attribute 'smtplib'"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 6,
+    "total": 9
+  }
+}
