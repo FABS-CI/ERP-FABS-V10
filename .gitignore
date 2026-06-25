@@ -9,6 +9,8 @@
 .git_auth
 secrets.json
 credentials.json
+CREDENTIALS_FINAL.txt
+CREDENTIALS*.txt
 .aws/
 
 # Python

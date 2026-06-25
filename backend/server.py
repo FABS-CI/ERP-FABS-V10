@@ -238,7 +238,7 @@ class CSRFValidationMiddleware(BaseHTTPMiddleware):
         # Only validate POST, PUT, DELETE (not GET, OPTIONS, HEAD)
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             # Skip CSRF check for auth endpoints (login, logout, csrf token generation)
-            if request.url.path not in ["/api/auth/login", "/api/auth/csrf", "/api/auth/logout", "/api/auth/login_simple"]:
+            if request.url.path not in ["/api/auth/login", "/api/auth/csrf", "/api/auth/logout"]:
                 csrf_header = request.headers.get("X-CSRF-Token", "").strip()
                 
                 if not csrf_header:
@@ -695,7 +695,9 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFValidationMiddleware)
 
 # Add request signing middleware (Phase 3.3)
-app.add_middleware(RequestSigningMiddleware)
+# NOTE: RequestSigningMiddleware désactivé — le frontend n'envoie pas les headers
+# X-Timestamp / X-Signature. Réactiver uniquement si le frontend est mis à jour.
+# app.add_middleware(RequestSigningMiddleware)
 
 # Add output encoding middleware (Phase 3.3.3)
 app.add_middleware(OutputEncodingMiddleware)
@@ -871,7 +873,7 @@ async def login(request: Request, response: Response, credentials: LoginRequest 
         key="session_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Allow HTTP cookies in dev (frontend runs on http://localhost:3000)
+        secure=(env == "production"),  # HTTPS only in production
         samesite="lax",
         max_age=JWT_ACCESS_TOKEN_EXPIRY_MINUTES * 60  # Convert minutes to seconds
     )
@@ -1910,51 +1912,4 @@ if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=True)
 
 
-# SIMPLE LOGIN BYPASS FOR TESTING
-@app.post("/api/auth/login_simple")
-async def login_simple(credentials: dict):
-    """Simplified login without rate limiting or Redis"""
-    import bcrypt
-    from datetime import datetime, timedelta, timezone
-    
-    email = credentials.get("email")
-    password = credentials.get("password")
-    
-    logger.info(f"[SIMPLE_LOGIN] Trying email={email}, pwd={password}")
-    
-    # Find user
-    user = await db.users.find_one({"email": email})
-    logger.info(f"[SIMPLE_LOGIN] Found user: {user.get('_id') if user else 'NOT FOUND'}, email={user.get('email') if user else 'N/A'}")
-    
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    # Verify password
-    user_password_hash = user.get("password_hash") or user.get("password")
-    logger.info(f"[SIMPLE_LOGIN] hash={user_password_hash[:30] if user_password_hash else 'NONE'}...")
-    
-    if not user_password_hash:
-        raise HTTPException(status_code=401, detail="No password set")
-    
-    try:
-        logger.info(f"[SIMPLE_LOGIN] Calling bcrypt.checkpw...")
-        pwd_match = bcrypt.checkpw(password.encode('utf-8'), user_password_hash.encode('utf-8'))
-        logger.info(f"[SIMPLE_LOGIN] bcrypt result={pwd_match}")
-    except Exception as e:
-        logger.error(f"[SIMPLE_LOGIN] bcrypt error: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=401, detail="Invalid password")
-    
-    if not pwd_match:
-        raise HTTPException(status_code=401, detail="Password incorrect")
-    
-    # Create token
-    access_token = create_jwt_token(str(user.get("_id")), user["email"], user["role"])
-    
-    return {
-        "access_token": access_token,
-        "user": {
-            "id": str(user["_id"]),
-            "email": user["email"],
-            "role": user["role"]
-        }
-    }
+# NOTE: login_simple endpoint supprimé — porte dérobée de test non autorisée en production
